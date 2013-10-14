@@ -3,3 +3,5 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 export GEOMTRANSPORT=${DIR%%/etc*}
+
+export PATH=$GEOMTRANSPORT/src/scripts/:$PATH
