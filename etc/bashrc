@@ -8,4 +8,6 @@ export PATH=$GEOMTRANSPORT/src/scripts/:$PATH
 
 export CXXFLAGS=$WM_CXXFLAGS
 
+export GEOMTRANSPORT_CPP_DIRECTIVE='-std=c++1y' 
+
 export LD_LIBRARY_PATH=$GEOMTRANSPORT/third-party/gtest/build:$LD_LIBRARY_PATH
