@@ -1,2 +1,43 @@
-./src/Allwmake
-./applications/Allwmake
+#!/bin/sh
+cd ${0%/*} || exit 1    # run from this directory
+
+if [ "$GEOMTRANSPORT" != "" ]; 
+then
+    # Build gtest
+
+    GEOMTRANSPORT_THIRD_PARTY=$GEOMTRANSPORT/third-party
+    mkdir -p $GEOMTRANSPORT_THIRD_PARTY
+
+    GEOMTRANSPORT_GTEST=$GEOMTRANSPORT_THIRD_PARTY/gtest
+
+    echo "Building Google Test..." 
+    echo "svn checkout http://googletest.googlecode.com/svn/trunk/ $GEOMTRANSPORT_GTEST" 
+    svn checkout http://googletest.googlecode.com/svn/trunk/ $GEOMTRANSPORT_GTEST
+
+    GEOMTRANSPORT_GTEST_BUILD=$GEOMTRANSPORT_GTEST/build
+
+    if [ ! -d $GEOMTRANSPORT_GTEST_BUILD ]; 
+    then
+        mkdir $GEOMTRANSPORT_GTEST_BUILD
+    fi
+
+    cmake -B $GEOMTRANSPORT_GTEST_BUILD  -H $GEOMTRANSPORT_GTEST \
+        -DBUILD_SHARED_LIBS=ON -Dgtest_build_samples=ON -G"Unix Makefiles"
+
+    make -C $GEOMTRANSPORT_GTEST_BUILD 
+
+    echo "Done building Google Test."
+    # Build lent
+
+    echo "Building GEOMTRANSPORT..."
+    if [ "$WM_PROJECT_DIR" != "" ]; 
+    then
+        src/Allwmake
+        applications/Allwmake
+        echo "Done building Google Test."
+    else
+        echo "OpenFOAM is not configured properly. Source the project's etc/bashrc file." 
+    fi
+else
+    echo "The GEOMTRANSPORT project is not configured properly. Source the project's etc/bashrc file." 
+fi
