@@ -87,7 +87,7 @@ const volScalarField& geomMeshIntersection::volFraction()
     const pointField& tPoints = toolMesh_.points(); 
     const faceList& tFaces = toolMesh_.faces();
 
-    Info << "Setting the volume fraction by mesh intersection..." << endl;
+    Info << "Setting the volume fraction by mesh intersection. Time = "; 
     double time = omp_get_wtime(); 
     #pragma omp parallel 
     {
@@ -138,7 +138,7 @@ const volScalarField& geomMeshIntersection::volFraction()
             }
         }
     }
-    Info << "Done in " << omp_get_wtime() - time << " seconds." << endl;
+    Info << omp_get_wtime() - time << " seconds." << endl;
 
     return volFraction_;  
 }
