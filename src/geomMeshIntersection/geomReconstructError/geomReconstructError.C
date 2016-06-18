@@ -25,8 +25,6 @@ Class
     Foam::geomReconstructError
 
 Description
-    A class for computing the standard errors of the geometrical two phase
-    flow methods (VoF, MoF).
 
 Author
     Tomislav Maric
@@ -38,24 +36,20 @@ Author
 
 \*---------------------------------------------------------------------------*/
 
-#include "geomReconstructError.H"
-#include "polyhedron.H"
-
 namespace Foam {
     namespace GeometricalTransport {
 
-template<typename MeshIntersection, typename PhaseInterface>
+template<typename MeshIntersection, typename GeomInterface>
 tmp<volScalarField> volSymmDiff(
     MeshIntersection const& meshIntersection, 
-    PhaseInterface const& interface,
+    GeomInterface const& interface,
     const volScalarField& alpha1
 )
 {
     const auto& runTime = alpha1.time(); 
     const auto& mesh = alpha1.mesh(); 
 
-
-    tmp<volScalarField> volSymmDiff(
+    tmp<volScalarField> volSymmDiffTmp(
         new volScalarField(
             IOobject(
                 "volSymmDiff", 
@@ -68,77 +62,49 @@ tmp<volScalarField> volSymmDiff(
             dimensionedScalar("zero", dimVolume, 0)
         )
     );
+    volScalarField& volSymmDiff = volSymmDiffTmp(); 
 
-    Info << "Computing the volume of symmetric difference error ..." << endl;
+    Info << "Computing the volume of symmetric difference..." << endl;
     runTime.cpuTimeIncrement();
 
     typedef pointVectorVector polyhedron; 
-    typedef PointSequenceIntersection<polyhedron> polyhedronIntersection;
+    typedef PolygonSequenceIntersection<polyhedron> polyhedronIntersection;
+
+    // Get a copy of the list of polyhedrons from the tool mesh.
+    const auto& cellPolyhedra = meshIntersection.cellPolyhedra();
+    const auto& V = mesh.V(); 
     
     // Loop through interface cells.
     forAll (alpha1, cellI)
     {
-        // TODO: parametrize the alpha1_ tolerance.
-        // Initialize geomControl, empty constructor, reads default dictionary.  
-        //if ((alpha1[cellI] > 1e-09) && (alpha1[cellI] < (1-1e-09)))
-        //{
-            //// Calculate the polyhedron.
-            
-            //// Build an outward oriented halfspace from the interface element.
-            //auto halfspace = build<halfspace>(interface_[cellI])
-            //// Point it towards the first phase.
-            //halfspace.flip(); 
+        // TODO: Initialize geomControl and get tolerance.
+        if ((alpha1[cellI] > 1e-09) && (alpha1[cellI] < (1-1e-09)))
+        {
+            // Calculate the polyhedron.
+            // Build an outward oriented halfspace from the interface element.
+            auto hspace = build<halfspace>(interface[cellI]);
 
-            //// Build the polyhedron from the cell. 
-            //auto cellPolyhedron = build<polyhedron>(cellI, mesh); 
+            // Positive symmetric difference error.
+            scalar Vpos = 0;
+            // Negative symmetric difference error.
+            scalar VsdNeg = 0;
 
-            //// Intersect the cell with a halfspace.  
-            //auto cellIntersection = 
-                //intersect<polyhedronIntersection>(cellPolyhedron,halfspace);
+            // Compute the volume of symmetric difference error.  
+            for (const auto& cellPoly : cellPolyhedra[cellI])
+            {
+                hspace.flip();
+                auto intersection = intersect<polyhedronIntersection>(cellPoly,hspace);
+                VsdNeg += volume(intersection.polyhedron()); 
 
-            //// Get a copy of the list of polyhedrons from the tool mesh.
-            //const auto& intersectionPolyhedra = meshIntersection.polyhedra();
+                hspace.flip();
+                intersection = intersect<polyhedronIntersection>(cellPoly,hspace);
+                Vpos += volume(intersection.polyhedron()); 
+            } // End loop through tool mesh polyhedra.
+            volSymmDiff[cellI] += VsdNeg + ((alpha1[cellI] * V[cellI]) - Vpos); 
 
-            //// Positive symmetric difference error.
-            //scalar VsdPos = 0;
-            //// Negative symmetric difference error.
-            //scalar VsdNeg = 0;
-
-            //// Compute the volume of symmetric difference error.  
-            ////std::list<polyhedron>::const_iterator pcellIt;
-            ////pcellIt = intersectionPolys[cellI].begin();
-            ////for (; pcellIt != intersectionPolys[cellI].end(); ++pcellIt)
-            //for (const auto& interPolyhedron : intersectionPolyhedra)
-            //{
-                //// Clip the polyhedron with the cell.
-                //polyhedron clippedPoly = pcellIt->intersect(cellPoly);
-
-                //// Compute the volume of intersection with the interface
-                //// polyhedron.
-
-                //scalar Vintersect = clippedPoly.intersect(interfacePoly).mag();
-
-                //// Add the volume of intersection to the positive error.
-                //VsdPos += Vintersect; 
-
-                //if (clippedPoly.intersects(interfacePlane))
-                //{
-                    //// Add the difference volume to the negative error.
-                    ////VsdNeg += pcellIt->mag() - Vintersect; 
-                    //VsdNeg += clippedPoly.mag() - Vintersect; 
-                //}
-
-            //} // End loop through tool mesh polyhedra.
-
-            //VsdPos = interfacePoly.mag() - VsdPos;
-
-            //volSymmDiff[cellI] = VsdPos + VsdNeg;
-
-        //} // End loop through interface cells.
+        } // End loop through interface cells.
     } // End loop through all cells.
-
-    Info << "Done in " << intersectedMesh_.baseTime().cpuTimeIncrement() 
-        << " seconds. " << endl;
+    Info << "Done in " << runTime.cpuTimeIncrement() << " seconds. " << endl;
 
     return volSymmDiff; 
 }

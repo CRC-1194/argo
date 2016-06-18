@@ -28,9 +28,7 @@ Description
     A class for computing the standard errors of the geometrical two phase
     flow methods (VoF, MoF) with piecewise planar interface description.
 
-    Reconstruction error: 
-
-        * volume of symmetric difference
+    Volume of symmetric difference. 
 
 Author
     Tomislav Maric
@@ -48,8 +46,7 @@ SourceFiles
 #ifndef geomReconstructError_H
 #define geomReconstructError_H
 
-#include "geomInterface.H"
-#include "geoMeshIntersection.H"
+#include "geomMeshIntersection.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -57,10 +54,10 @@ namespace Foam {
 namespace GeometricalTransport {
 
     //- Volume of symmetric difference calculator.
-    template<typename MeshIntersection, typename PhaseInterface>
+    template<typename MeshIntersection, typename GeomInterface>
     tmp<volScalarField> volSymmDiff(
         MeshIntersection const& intersection, 
-        PhaseInterface const& interface, 
+        GeomInterface const& interface, 
         const volScalarField& alpha1
     ); 
 
@@ -68,6 +65,8 @@ namespace GeometricalTransport {
 } // End namespace Foam
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "geomReconstructError.C"
 
 #endif
 
