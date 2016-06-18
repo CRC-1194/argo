@@ -107,21 +107,6 @@ class geomMeshIntersection
         //- Vol fraction field
         volScalarField volFraction_;
 
-    // Private Member Functions 
-    
-        //- Compute the bounding boxes for both meshes.
-        void computeBoundBoxes();
-
-        //- Calculate intersections between bounding boxes O(m * n), 
-        //  m = number of cells in baseMesh_, and n -//- in toolMesh_ 
-        void intersectAABB();
-
-        // Geometrically intersect polyhedra and store them.
-        void intersectPolyhedra();
-
-        // Set the volume fraction based on the intersected polyhedra.
-        void setIntersectedVolFraction();
-
 public:
 
     // Constructors

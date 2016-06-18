@@ -42,91 +42,6 @@ namespace Foam
 namespace GeometricalTransport
 {
 
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-void geomMeshIntersection::computeBoundBoxes()
-{
-    Info << "Computing bound boxes..." << endl;
-    baseMesh_.time().cpuTimeIncrement();
-
-    const cellList& bCells = baseMesh_.cells(); 
-    const pointField& bPoints = baseMesh_.points(); 
-    const faceList& bFaces = baseMesh_.faces();
-
-    const cellList& tCells = toolMesh_.cells(); 
-    const pointField& tPoints = toolMesh_.points(); 
-    const faceList& tFaces = toolMesh_.faces();
-
-    #pragma omp parallel 
-    {
-        #pragma omp for schedule(dynamic) nowait
-        for(label i = 0; i < baseMesh_.nCells(); ++i) 
-            baseAABBs_[i] = boundBox(bPoints, bCells[i].labels(bFaces));
-
-        #pragma omp for schedule(dynamic) nowait
-        for(label i = 0; i < toolMesh_.nCells(); ++i) 
-            toolAABBs_[i] = boundBox(tPoints, tCells[i].labels(tFaces));
-    }
-
-    Info << "Done in " << baseMesh_.time().cpuTimeIncrement() 
-        << " seconds." << endl;
-}
-
-void geomMeshIntersection::intersectAABB()
-{
-    Info << "Computing AABB intersection..." << endl;
-    double time = omp_get_wtime(); 
-    #pragma omp parallel for schedule(dynamic)
-    for (decltype (baseAABBs_.size()) i = 0; i < baseAABBs_.size(); ++i)
-        for (decltype(toolAABBs_.size()) j = 0; j < toolAABBs_.size(); ++j)
-            if (baseAABBs_[i].overlaps(toolAABBs_[j]))
-                AABBintersects_[i].push_back(j);
-    Info << "Done in " << omp_get_wtime() - time << " seconds." << endl;
-}
-
-
-void geomMeshIntersection::intersectPolyhedra()
-{
-    Info << "Intersecting polyhedra..." << endl;
-    double time = omp_get_wtime(); 
-    #pragma omp parallel for schedule(dynamic)
-    for(decltype(AABBintersects_.size()) i = 0; i < AABBintersects_.size(); ++i)
-    {
-        auto baseCellHspaces = build<halfspaceVector>(i, baseMesh_);
-        polyhedronSeq results;  
-        for(const auto j : AABBintersects_[i])
-        {
-            auto inputCellPolyhedron = build<polyhedron>(j, toolMesh_);
-            auto result = 
-                intersect<polyhedronIntersection>(baseCellHspaces, inputCellPolyhedron);
-
-            if (result.polyhedron_size() > 3)
-                results.push_back(result.polyhedron()); 
-        }
-        cellPolyhedra_[i] = results; 
-    }
-    Info << "Done in " << omp_get_wtime() - time << " seconds. " << endl;
-}
-
-void geomMeshIntersection::setIntersectedVolFraction()
-{
-    Info << "Setting volume fraction from the intersected polyhedra... " << endl;
-    baseMesh_.time().cpuTimeIncrement(); 
-
-    const DimensionedField<scalar, volMesh>& Vb = baseMesh_.V();
-
-    double time = omp_get_wtime(); 
-    #pragma omp parallel for schedule(dynamic)
-    for(decltype(cellPolyhedra_.size()) i = 0;  i < cellPolyhedra_.size(); ++i)
-    {
-        if (cellPolyhedra_[i].size() > 0)
-        {
-            for (const auto& poly : cellPolyhedra_[i])
-                volFraction_[i] += volume(poly) / Vb[i];
-        }
-    }
-    Info << "Done in " << omp_get_wtime() - time << " seconds. " << endl;
-}
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 geomMeshIntersection::geomMeshIntersection(const fvMesh& baseMesh, const fvMesh& toolMesh)
@@ -160,17 +75,70 @@ geomMeshIntersection::geomMeshIntersection(const fvMesh& baseMesh, const fvMesh&
 
 const volScalarField& geomMeshIntersection::volFraction() 
 {
-    // Compute bounding boxes of the mesh cells. 
-    computeBoundBoxes();
-    
-    // Test bounding box intersections. 
-    intersectAABB();
-    
-    // Compute the intersection polyhedrons.
-    intersectPolyhedra();
 
-    // Set the volume fraction values for intersected cells.
-    setIntersectedVolFraction();
+    baseMesh_.time().cpuTimeIncrement();
+
+    const cellList& bCells = baseMesh_.cells(); 
+    const pointField& bPoints = baseMesh_.points(); 
+    const faceList& bFaces = baseMesh_.faces();
+    const auto& Vb = baseMesh_.V();
+
+    const cellList& tCells = toolMesh_.cells(); 
+    const pointField& tPoints = toolMesh_.points(); 
+    const faceList& tFaces = toolMesh_.faces();
+
+    Info << "Setting the volume fraction by mesh intersection..." << endl;
+    double time = omp_get_wtime(); 
+    #pragma omp parallel 
+    {
+        // Computing bounding boxes for the base mesh.
+        #pragma omp for schedule(dynamic) nowait
+        for(label i = 0; i < baseMesh_.nCells(); ++i) 
+            baseAABBs_[i] = boundBox(bPoints, bCells[i].labels(bFaces));
+
+        // Computing bounding boxes for the tool mesh.
+        #pragma omp for schedule(dynamic) 
+        for(label i = 0; i < toolMesh_.nCells(); ++i) 
+            toolAABBs_[i] = boundBox(tPoints, tCells[i].labels(tFaces));
+
+        // Computing bounding boxes intersections. 
+        #pragma omp for schedule(dynamic)
+        for (decltype (baseAABBs_.size()) i = 0; i < baseAABBs_.size(); ++i)
+            for (decltype(toolAABBs_.size()) j = 0; j < toolAABBs_.size(); ++j)
+                if (baseAABBs_[i].overlaps(toolAABBs_[j]))
+                    AABBintersects_[i].push_back(j);
+
+        // Intersecting cells whose AABBs intersect
+        #pragma omp for schedule(dynamic)
+        for(decltype(AABBintersects_.size()) i = 0; i < AABBintersects_.size(); ++i)
+        {
+            auto baseCellHspaces = build<halfspaceVector>(i, baseMesh_);
+            polyhedronSeq results;  
+            for(const auto j : AABBintersects_[i])
+            {
+                auto inputCellPolyhedron = build<polyhedron>(j, toolMesh_);
+                auto result = 
+                    intersect<polyhedronIntersection>(baseCellHspaces, inputCellPolyhedron);
+
+                if (result.polyhedron_size() > 3)
+                    results.push_back(result.polyhedron()); 
+            }
+            cellPolyhedra_[i] = results; 
+        }
+
+        // Setting the volume fraction : volume(intersected polyhedron) / cellVolume 
+        // Done for the base mesh. 
+        #pragma omp for schedule(dynamic)
+        for(decltype(cellPolyhedra_.size()) i = 0;  i < cellPolyhedra_.size(); ++i)
+        {
+            if (cellPolyhedra_[i].size() > 0)
+            {
+                for (const auto& poly : cellPolyhedra_[i])
+                    volFraction_[i] += volume(poly) / Vb[i];
+            }
+        }
+    }
+    Info << "Done in " << omp_get_wtime() - time << " seconds." << endl;
 
     return volFraction_;  
 }
