@@ -1,0 +1,8 @@
+EXE_INC = \
+    -fopenmp \
+    $(GEOMTRANSPORT_CPP_DIRECTIVE) \
+    -I$(LIB_SRC)/finiteVolume/lnInclude \
+    -I$(GEOMTRANSPORT)/src/lnInclude 
+
+EXE_LIBS = \
+    -lfiniteVolume 
