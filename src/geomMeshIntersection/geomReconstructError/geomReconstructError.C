@@ -47,7 +47,7 @@ tmp<volScalarField> volSymmDiff(
 )
 {
     const auto& runTime = alpha1.time(); 
-    const auto& mesh = alpha1.mesh(); 
+    const auto& mesh = meshIntersection.baseMesh(); 
 
     tmp<volScalarField> volSymmDiffTmp(
         new volScalarField(
@@ -77,16 +77,15 @@ tmp<volScalarField> volSymmDiff(
     // Loop through interface cells.
     forAll (alpha1, cellI)
     {
-        // TODO: Initialize geomControl and get tolerance.
+        // TODO: Initialize geomControl and get the reconstruction tolerance. TM.
         if ((alpha1[cellI] > 1e-09) && (alpha1[cellI] < (1-1e-09)))
         {
-            // Calculate the polyhedron.
             // Build an outward oriented halfspace from the interface element.
             auto hspace = build<halfspace>(interface[cellI]);
 
-            // Positive symmetric difference error.
+            // Positive halfspace symmetric difference error.
             scalar Vpos = 0;
-            // Negative symmetric difference error.
+            // Negative halfspace symmetric difference error.
             scalar VsdNeg = 0;
 
             // Compute the volume of symmetric difference error.  
@@ -106,7 +105,7 @@ tmp<volScalarField> volSymmDiff(
     } // End loop through all cells.
     Info << "Done in " << runTime.cpuTimeIncrement() << " seconds. " << endl;
 
-    return volSymmDiff; 
+    return volSymmDiffTmp; 
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
