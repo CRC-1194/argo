@@ -51,29 +51,12 @@ geomMeshIntersection::geomMeshIntersection(const fvMesh& baseMesh, const fvMesh&
     baseAABBs_(baseMesh.nCells()), 
     toolAABBs_(toolMesh.nCells()), 
     AABBintersects_(baseMesh.nCells()),
-    cellPolyhedra_(baseMesh.nCells()), 
-    volFraction_(
-        IOobject
-        (
-            "alphaMesh", 
-            baseMesh_.time().timeName(), 
-            baseMesh_, 
-            IOobject::NO_READ, 
-            IOobject::NO_WRITE
-        ), 
-        baseMesh_, 
-        dimensionedScalar
-        (
-            "zero", 
-            dimless, 
-            pTraits<scalar>::zero
-        )
-    )
+    cellPolyhedra_(baseMesh.nCells())
 {}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
-const volScalarField& geomMeshIntersection::volFraction() 
+void geomMeshIntersection::setVolFraction(volScalarField& volFraction) 
 {
 
     baseMesh_.time().cpuTimeIncrement();
@@ -86,6 +69,12 @@ const volScalarField& geomMeshIntersection::volFraction()
     const cellList& tCells = toolMesh_.cells(); 
     const pointField& tPoints = toolMesh_.points(); 
     const faceList& tFaces = toolMesh_.faces();
+
+    volFraction = dimensionedScalar(
+            volFraction.name(), 
+            volFraction.dimensions(), 
+            scalar(0)
+    );
 
     Info << "Setting the volume fraction by mesh intersection. Time = "; 
     double time = omp_get_wtime(); 
@@ -102,7 +91,7 @@ const volScalarField& geomMeshIntersection::volFraction()
             toolAABBs_[i] = boundBox(tPoints, tCells[i].labels(tFaces));
 
         // Computing bounding boxes intersections. 
-        #pragma omp for schedule(dynamic)
+        #pragma omp for schedule(dynamic) 
         for (decltype (baseAABBs_.size()) i = 0; i < baseAABBs_.size(); ++i)
             for (decltype(toolAABBs_.size()) j = 0; j < toolAABBs_.size(); ++j)
                 if (baseAABBs_[i].overlaps(toolAABBs_[j]))
@@ -134,24 +123,26 @@ const volScalarField& geomMeshIntersection::volFraction()
             if (cellPolyhedra_[i].size() > 0)
             {
                 for (const auto& poly : cellPolyhedra_[i])
-                    volFraction_[i] += volume(poly) / Vb[i];
+                    volFraction[i] += volume(poly) / Vb[i];
             }
         }
     }
-    Info << omp_get_wtime() - time << " seconds." << endl;
 
-    return volFraction_;  
+    // Correct BC field values after processing cell values.  
+    volFraction.correctBoundaryConditions(); 
+
+    Info << omp_get_wtime() - time << " seconds." << endl;
 }
 
 
-Ostream& geomMeshIntersection::report (Ostream& os) const
+Ostream& geomMeshIntersection::report (Ostream& os, const volScalarField& volFraction) const
 {
     // Report volume fraction field errors.
     os << "Tool mesh volume: " << sum(toolMesh_.V()).value() << endl; 
 
     // Compute the tool mesh volume from the volume fraction provided by 
     // the intersection of two meshes..
-    scalar toolMeshVolume = sum(baseMesh_.V() * volFraction_).value();
+    scalar toolMeshVolume = sum(baseMesh_.V() * volFraction).value();
 
     os << "Tool mesh volume by volume fraction: " 
         << toolMeshVolume << endl;
@@ -161,7 +152,7 @@ Ostream& geomMeshIntersection::report (Ostream& os) const
 
     // Total volume of the tool mesh (from the vol. fraction field on the
     // base mesh).
-    scalar toolVolFromVolFracSum = sum(baseMesh_.V() * volFraction_).value(); 
+    scalar toolVolFromVolFracSum = sum(baseMesh_.V() * volFraction).value(); 
 
     // Relative difference of the tool mesh volumes (cells, vol. fraction).
     scalar volFracRelError = mag(toolVolSum - toolVolFromVolFracSum) / toolVolSum; 
@@ -169,22 +160,21 @@ Ostream& geomMeshIntersection::report (Ostream& os) const
     os << "Relative error in volume fraction: " << volFracRelError << endl;
 
     // Report numerical boundedness error for the volume fraction.
-    //auto epsilonB = max(max(mag(min(0.0,volFractionPtr_()))));
     auto boundednessError = max(
-        max(mag(min(0.0,volFraction_))),
-        max(mag(min(0.0,1.0-volFraction_)))
+        max(mag(min(0.0,volFraction))),
+        max(mag(min(0.0,1.0-volFraction)))
     ).value();
     os << "Maximal boundedness error: " << boundednessError << "\nDone.\n";
 
     // Uncomment to debug.
-    //Info << "Writing the intersection polyhedra to VTK. " << endl;
-    //const auto& runTime = baseMesh_.time(); 
-    //vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
+    Info << "Writing the intersection polyhedra to VTK. " << endl;
+    const auto& runTime = baseMesh_.time(); 
+    vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
 
-    //for (const auto& polys : cellPolyhedra_)
-        //for (const auto& poly: polys)
-            //polyhedronStream << poly;
-    //Info << "Done." << endl;
+    for (const auto& polys : cellPolyhedra_)
+        for (const auto& poly: polys)
+            polyhedronStream << poly;
+   Info << "Done." << endl;
 
     return os;
 }
