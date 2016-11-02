@@ -71,35 +71,36 @@ tmp<volScalarField> volSymmDiff(
     typedef PolygonSequenceIntersection<polyhedron> polyhedronIntersection;
 
     // Get a copy of the list of polyhedrons from the tool mesh.
-    const auto& cellPolyhedra = meshIntersection.cellPolyhedra();
+    const auto& ifacePolyhedra = meshIntersection.cellPolyhedra();
     const auto& V = mesh.V(); 
     
     // Loop through interface cells.
     forAll (alpha1, cellI)
     {
-        // TODO: Initialize geomControl and get the reconstruction tolerance. TM.
+        // FIXME: Make the reconstruction algorithm store the element-cell list into the 
+        // interface. Avoid the branching statement. TM. 
         if ((alpha1[cellI] > 1e-09) && (alpha1[cellI] < (1-1e-09)))
         {
             // Build an outward oriented halfspace from the interface element.
-            auto hspace = build<halfspace>(interface[cellI]);
+            auto negHspace = build<halfspace>(interface[cellI]);
+            auto posHspace(negHspace); 
+            posHspace.flip();
 
-            // Positive halfspace symmetric difference error.
-            scalar Vpos = 0;
             // Negative halfspace symmetric difference error.
             scalar VsdNeg = 0;
+            // Positive halfspace symmetric difference error.
+            scalar VsdPos = 0;
 
             // Compute the volume of symmetric difference error.  
-            for (const auto& cellPoly : cellPolyhedra[cellI])
+            for (const auto& ifacePoly : ifacePolyhedra[cellI])
             {
-                hspace.flip();
-                auto intersection = intersect<polyhedronIntersection>(cellPoly,hspace);
+                auto intersection = intersect<polyhedronIntersection>(ifacePoly,negHspace);
                 VsdNeg += volume(intersection.polyhedron()); 
 
-                hspace.flip();
-                intersection = intersect<polyhedronIntersection>(cellPoly,hspace);
-                Vpos += volume(intersection.polyhedron()); 
+                intersection = intersect<polyhedronIntersection>(ifacePoly,posHspace);
+                VsdPos += volume(intersection.polyhedron()); 
             } // End loop through tool mesh polyhedra.
-            volSymmDiff[cellI] += VsdNeg + ((alpha1[cellI] * V[cellI]) - Vpos); 
+            volSymmDiff[cellI] = VsdNeg + mag((alpha1[cellI] * V[cellI]) - VsdPos); 
 
         } // End loop through interface cells.
     } // End loop through all cells.

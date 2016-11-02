@@ -98,14 +98,14 @@ class geomMeshIntersection
         // Input mesh Axis Aligned Bound Boxes
         boundBoxSeq toolAABBs_;
 
+        // FIXME: Too long running times for large cases. Split into AABBintersects_
+        // and AABBinsides_. Intersect the intersects_ and sum the volume from the 
+        // insides. TM. 
         //- AABB of baseMesh_ intersects AABB of toolMesh_
         labelSeqSeq AABBintersects_;
 
         //- List of polyhedron sets 
         polyhedronSeqSeq cellPolyhedra_;
-
-        //- Vol fraction field
-        volScalarField volFraction_;
 
 public:
 
@@ -119,8 +119,9 @@ public:
 
     // Member Functions
 
+        void setVolFraction(volScalarField& volFraction); 
+
         // Access
-        const volScalarField& volFraction(); 
 
         const polyhedronSeqSeq& cellPolyhedra() const
         {
@@ -138,7 +139,7 @@ public:
         }
 
         // Write
-        Ostream& report (Ostream& os) const;
+        Ostream& report (Ostream& os, const volScalarField& volFraction) const;
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

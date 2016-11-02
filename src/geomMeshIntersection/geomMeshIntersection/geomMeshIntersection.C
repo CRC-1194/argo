@@ -93,9 +93,13 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
         // Computing bounding boxes intersections. 
         #pragma omp for schedule(dynamic) 
         for (decltype (baseAABBs_.size()) i = 0; i < baseAABBs_.size(); ++i)
+        {
             for (decltype(toolAABBs_.size()) j = 0; j < toolAABBs_.size(); ++j)
+            {
                 if (baseAABBs_[i].overlaps(toolAABBs_[j]))
                     AABBintersects_[i].push_back(j);
+            }
+        }
 
         // Intersecting cells whose AABBs intersect
         #pragma omp for schedule(dynamic)
@@ -126,7 +130,14 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
                     volFraction[i] += volume(poly) / Vb[i];
             }
         }
+
     }
+
+    // FIXME: A bad hack to get rid of intersection issues for tiny cells. Remove 
+    // as soon as bulk intersections are removed.  
+    forAll(volFraction, cellI)
+        if (mag(1 - volFraction[cellI]) < (5*1e-09))
+            volFraction[cellI] = 1; 
 
     // Correct BC field values after processing cell values.  
     volFraction.correctBoundaryConditions(); 
@@ -167,14 +178,14 @@ Ostream& geomMeshIntersection::report (Ostream& os, const volScalarField& volFra
     os << "Maximal boundedness error: " << boundednessError << "\nDone.\n";
 
     // Uncomment to debug.
-    Info << "Writing the intersection polyhedra to VTK. " << endl;
-    const auto& runTime = baseMesh_.time(); 
-    vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
+    //Info << "Writing the intersection polyhedra to VTK. " << endl;
+    //const auto& runTime = baseMesh_.time(); 
+    //vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
 
-    for (const auto& polys : cellPolyhedra_)
-        for (const auto& poly: polys)
-            polyhedronStream << poly;
-   Info << "Done." << endl;
+    //for (const auto& polys : cellPolyhedra_)
+        //for (const auto& poly: polys)
+            //polyhedronStream << poly;
+   //Info << "Done." << endl;
 
     return os;
 }
