@@ -62,7 +62,7 @@ tmp<volScalarField> volSymmDiff(
             dimensionedScalar("zero", dimVolume, 0)
         )
     );
-    volScalarField& volSymmDiff = volSymmDiffTmp(); 
+    volScalarField& volSymmDiff = volSymmDiffTmp.ref(); 
 
     Info << "Computing the volume of symmetric difference..." << endl;
     runTime.cpuTimeIncrement();
