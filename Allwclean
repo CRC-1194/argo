@@ -1,2 +1,5 @@
-./applications/Allwclean
-./src/Allwclean
+
+wclean all src
+
+wclean all applications
+

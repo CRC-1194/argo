@@ -3,36 +3,43 @@ cd ${0%/*} || exit 1    # run from this directory
 
 if [ "$GEOMTRANSPORT" != "" ]; 
 then
+
     # Build gtest
+    if [ ! -d $GEOMTRANSPORT_THIRD_PARTY ]; 
+    then
+        mkdir -p $GEOMTRANSPORT_THIRD_PARTY
+    fi
 
-    GEOMTRANSPORT_THIRD_PARTY=$GEOMTRANSPORT/third-party
-    mkdir -p $GEOMTRANSPORT_THIRD_PARTY
-
-    GEOMTRANSPORT_GTEST=$GEOMTRANSPORT_THIRD_PARTY/gtest
-
-    echo "Building Google Test..." 
-    echo "svn checkout http://googletest.googlecode.com/svn/trunk/ $GEOMTRANSPORT_GTEST" 
-    svn checkout http://googletest.googlecode.com/svn/trunk/ $GEOMTRANSPORT_GTEST
-
-    GEOMTRANSPORT_GTEST_BUILD=$GEOMTRANSPORT_GTEST/build
+    if [ ! -d $GEOMTRANSPORT_GTEST ];
+    then
+        echo "Cloning Google Test..." 
+        git clone https://github.com/google/googletest.git $GEOMTRANSPORT_GTEST && \
+        echo "Done cloning Google Test." 
+    else
+        echo "Updating Google Test..." 
+        cd $GEOMTRANSPORT_GTEST && \
+        git pull && \
+        echo "Done updating Google Test." && \
+        cd - 
+    fi
 
     if [ ! -d $GEOMTRANSPORT_GTEST_BUILD ]; 
     then
-        mkdir $GEOMTRANSPORT_GTEST_BUILD
+        mkdir -p $GEOMTRANSPORT_GTEST_BUILD
     fi
 
-    cmake -B $GEOMTRANSPORT_GTEST_BUILD  -H $GEOMTRANSPORT_GTEST \
-        -DBUILD_SHARED_LIBS=ON -Dgtest_build_samples=ON -G"Unix Makefiles"
-
-    make -C $GEOMTRANSPORT_GTEST_BUILD 
-
+    cd $GEOMTRANSPORT_GTEST_BUILD && \
+    cmake -DBUILD_SHARED_LIBS=ON -Dgtest_build_samples=ON -G"Unix Makefiles" \
+          $GEOMTRANSPORT_GTEST_SRC && \
+    make  && \
+    cd $GEOMTRANSPORT && \
     echo "Done building Google Test."
     # Build lent
 
     echo "Building GEOMTRANSPORT..."
     if [ "$WM_PROJECT_DIR" != "" ]; 
     then
-        src/Allwmake
+        src/Allwmake 
         applications/Allwmake
         echo "Done building Google Test."
     else
