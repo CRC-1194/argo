@@ -131,13 +131,16 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
             }
         }
 
-    }
+        #pragma omp for schedule(static)
+        forAll(volFraction, cellI)
+        {
+            if (volFraction[cellI] > 1)
+                volFraction[cellI] = 1.0; 
+            else if (volFraction[cellI] > (1 - 5e-09)) 
+                volFraction[cellI] = 1; 
+        }
 
-    // FIXME: A bad hack to get rid of intersection issues for tiny cells. Remove 
-    // as soon as bulk intersections are removed.  
-    forAll(volFraction, cellI)
-        if (mag(1 - volFraction[cellI]) < (5*1e-09))
-            volFraction[cellI] = 1; 
+    }
 
     // Correct BC field values after processing cell values.  
     volFraction.correctBoundaryConditions(); 
