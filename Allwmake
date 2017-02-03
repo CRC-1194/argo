@@ -15,12 +15,12 @@ then
         echo "Cloning Google Test..." 
         git clone https://github.com/google/googletest.git $GEOMTRANSPORT_GTEST && \
         echo "Done cloning Google Test." 
-    else
-        echo "Updating Google Test..." 
-        cd $GEOMTRANSPORT_GTEST && \
-        git pull && \
-        echo "Done updating Google Test." && \
-        cd - 
+    #else
+        #echo "Updating Google Test..." 
+        #cd $GEOMTRANSPORT_GTEST && \
+        #git pull && \
+        #echo "Done updating Google Test." && \
+        #cd - 
     fi
 
     if [ ! -d $GEOMTRANSPORT_GTEST_BUILD ]; 
