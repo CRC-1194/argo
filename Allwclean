@@ -1,5 +1,13 @@
+if [ -d "two-phase-validation" ]; 
+then 
+    echo "Cleaning two-phase-validation" 
+    cd two-phase-validation
+
+    ./Allwclean
+
+    cd ..
+fi
 
 wclean all src
-
 wclean all applications
 
