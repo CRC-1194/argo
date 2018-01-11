@@ -44,15 +44,29 @@ namespace GeometricalTransport
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-geomMeshIntersection::geomMeshIntersection(const fvMesh& baseMesh, const fvMesh& toolMesh)
+geomMeshIntersection::geomMeshIntersection
+(
+    const fvMesh& baseMesh, 
+    const fvMesh& toolMesh, 
+    const Switch& writeGeo 
+)
 :
     baseMesh_(baseMesh),
     toolMesh_(toolMesh), 
     baseAABBs_(baseMesh.nCells()), 
     toolAABBs_(toolMesh.nCells()), 
     AABBintersects_(baseMesh.nCells()),
-    cellPolyhedra_(baseMesh.nCells())
-{}
+    cellPolyhedra_(baseMesh.nCells()), 
+    writeGeometry_(writeGeo)
+{
+    #pragma omp single 
+    {
+        // Precalculate mesh geometry. Lazy evaluation triggers race conditions. TM.
+        baseMesh.Sf(); 
+        baseMesh.Cf();
+        baseMesh.C(); 
+    }
+}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
@@ -180,39 +194,24 @@ Ostream& geomMeshIntersection::report (Ostream& os, const volScalarField& volFra
     ).value();
     os << "Maximal boundedness error: " << boundednessError << "\nDone.\n";
 
-    // Uncomment to debug.
-    //Info << "Writing the intersection polyhedra to VTK. " << endl;
-    //const auto& runTime = baseMesh_.time(); 
-    //vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
+    if (writeGeometry_)
+    {
+        Info << "Writing the intersection polyhedra to VTK. " << endl;
+        const auto& runTime = baseMesh_.time(); 
+        vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
 
-    //for (const auto& polys : cellPolyhedra_)
-        //for (const auto& poly: polys)
-            //polyhedronStream << poly;
-   //Info << "Done." << endl;
+        for (const auto& polys : cellPolyhedra_)
+            for (const auto& poly: polys)
+                polyhedronStream << poly;
+        Info << "Done." << endl;
+    }
 
     return os;
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace GeometricalTransport 
-
-// Global utility function for mesh intersection.
-void setMeshIntersectionArgs(int argc, char* argv[])
-{
-    // Help information for applications that use geomIntersectMeshes.
-    argList::addNote
-    (
-        "Intersect the base mesh with the tool mesh and store the volume fraction given by the intersection on the base mesh."
-    );
-
-    // No MPI parallel implementation is available at this point. 
-    argList::noParallel();
-}
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+}} // End namespace Foam:GeometricalTransport 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

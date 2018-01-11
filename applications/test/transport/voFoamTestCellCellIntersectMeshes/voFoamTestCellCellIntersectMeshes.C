@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) Tomislav Maric and TU Darmstadt 
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,10 +22,10 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Description
-    Intersect two meshes and compute the resulting volume fraction field.
-
     This application is only used for testing of the CCI mesh intersection
     algorithm. 
+
+    Intersect two meshes and compute the resulting volume fraction field.
     
     Test description: 
     
@@ -35,7 +35,7 @@ Description
     
 Author
     Tomislav Maric
-    maric@csi.tu-darmstadt.de
+    maric@csi.tu-darmstadt.de, maric@mma.tu-darmstadt.de, tomislav.maric@gmx.com
     Mathematical Modeling and Analysis Group 
     Center of Smart Interfaces
     TU Darmstadt
@@ -63,7 +63,10 @@ using namespace GeometricalTransport;
 
 int main(int argc, char *argv[])
 {
-    setMeshIntersectionArgs(argc,argv);
+    argList::addNote
+    (
+        "Intersect the base mesh with the tool mesh and store the volume fraction given by the intersection on the base mesh."
+    );
 
     argList::addOption
     (
@@ -159,6 +162,7 @@ int main(int argc, char *argv[])
     // Te : execution time of the CCI mesh intersection operation.
     errorFile << "Nt,Nb,Ev,Te\n"; 
 
+
     for (int testI = 0; testI < nIterations; ++testI)
     {
         const vector randomPosition = r.position(baseMin,baseMax); 
@@ -183,14 +187,6 @@ int main(int argc, char *argv[])
         Info << "Random displacement = " << randomDisplacement << nl;
         // The toolMesh centroid now overlaps the base mesh centroid.
         toolMesh.movePoints(toolMesh.points() + randomDisplacement); 
-
-        #pragma omp single 
-        {
-            // Precalculate mesh geometry. Lazy evaluation triggers race conditions. TM.
-            baseMesh.Sf(); 
-            baseMesh.Cf();
-            baseMesh.C(); 
-        }
 
         const double t0 = omp_get_wtime(); 
         geomMeshIntersection intersect(baseMesh, toolMesh);

@@ -107,12 +107,20 @@ class geomMeshIntersection
         //- List of polyhedron sets 
         polyhedronSeqSeq cellPolyhedra_;
 
+        //- Enable/disable VTK IO for the intersection result. 
+        Switch writeGeometry_; 
+
 public:
 
     // Constructors
 
         //- Construct from components
-        geomMeshIntersection(const fvMesh& baseMesh, const fvMesh& toolMesh);
+        geomMeshIntersection
+        (
+            const fvMesh& baseMesh, 
+            const fvMesh& toolMesh, 
+            const Switch& writeGeo=false
+        );
 
     //- Destructor
         ~geomMeshIntersection() = default;
@@ -144,22 +152,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace GeometricalTransport 
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-// Global utility functions for mesh intersection.
-
-void getRootCase(fileName& casePath);
-
-// Set the application arguments for mesh intersection.
-void setMeshIntersectionArgs(int argc, char* argv[]);
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+}} // End namespace Foam::GeometricalTransport 
 
 #endif
 
