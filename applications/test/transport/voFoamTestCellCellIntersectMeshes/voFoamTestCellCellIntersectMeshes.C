@@ -24,35 +24,22 @@ License
 Description
     Intersect two meshes and compute the resulting volume fraction field.
 
-    This application is only used for testing. 
+    This application is only used for testing of the CCI mesh intersection
+    algorithm. 
     
-    It moves the tool mesh randomly before intersection to accurately measure
-    the execution time. 
-
     Test description: 
-        - The base mesh is either a 3D unit-domain [1x1x1] or a 2D unit-domain
-          [1x1]. 
-        - The tool mesh is initialized in the center of the base mesh.
-        - The tool mesh is moved randomly. 
-        - Built for cylinder and sphere tool meshes: random placement of other
-          tool mesh shapes might cause the tool mesh not to be within the base
-          mesh!
-
-     Possible generalization:
-        - Use bounding boxes of both meshes to randomly place the tool mesh
-          within the base mesh.  
-        - Works only for convex meshes anyway: performance can be measured 
-          accurately also with unit-domains, so there is no need for this. 
-
+    
+    Use bounding boxes of both meshes to randomly place the tool mesh within
+    the base mesh such that the tool mesh bounding box is contained within the
+    base mesh bounding box.  
+    
 Author
-
     Tomislav Maric
     maric@csi.tu-darmstadt.de
     Mathematical Modeling and Analysis Group 
     Center of Smart Interfaces
     TU Darmstadt
     Germany
-
 
 \*---------------------------------------------------------------------------*/
 
@@ -108,7 +95,27 @@ int main(int argc, char *argv[])
 
     argList args(argc, argv);
 
+    // Read user-defined options.
+    const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
+    const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "geomIntersectMeshes.csv"); 
+    const label nIterations = args.optionLookupOrDefault<label>("nIterations", 100);  
+
     #include "createMeshes.H"
+
+    Info<< "Reading field alpha1\n" << endl;
+    volScalarField alpha1
+    (
+        IOobject
+        (
+            fieldName,
+            runTimeBase.timeName(),
+            baseMesh,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        baseMesh, 
+        dimensionedScalar ("zero", dimless, 0)
+    );
 
     // RANDOM tool mesh positioning. 
     // Position the tool mesh centroid at the base mesh centroid. 
@@ -141,13 +148,15 @@ int main(int argc, char *argv[])
     
     // Generate a random tool mesh centroid position within the shrunk base
     // mesh bounding box. 
-    Random r(3231271); 
+    Random r(1e04); 
 
     // Open the error file for measurement output..
-    const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "geomIntersectMeshes.csv"); 
-    const label nIterations = args.optionLookupOrDefault<label>("nIterations", 100);  
     OFstream errorFile(dataFileName); 
+    // Nt : number of cells in the tool mesh 
+    // Nb : number of cells in the tool mesh 
+    // Ev : volume conservation error: 
+    // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
+    // Te : execution time of the CCI mesh intersection operation.
     errorFile << "Nt,Nb,Ev,Te\n"; 
 
     for (int testI = 0; testI < nIterations; ++testI)
@@ -175,25 +184,6 @@ int main(int argc, char *argv[])
         // The toolMesh centroid now overlaps the base mesh centroid.
         toolMesh.movePoints(toolMesh.points() + randomDisplacement); 
 
-        // TODO: Remove, used for testing.
-        toolMesh.write(); 
-        
-
-        Info<< "Reading field alpha1\n" << endl;
-        volScalarField alpha1
-        (
-            IOobject
-            (
-                fieldName,
-                runTimeBase.timeName(),
-                baseMesh,
-                IOobject::NO_READ,
-                IOobject::AUTO_WRITE
-            ),
-            baseMesh, 
-            dimensionedScalar ("zero", dimless, 0)
-        );
-
         #pragma omp single 
         {
             // Precalculate mesh geometry. Lazy evaluation triggers race conditions. TM.
@@ -211,8 +201,8 @@ int main(int argc, char *argv[])
         intersect.report(Info, alpha1); 
 
         const scalar Vb = gSum((baseMesh.V() * alpha1)()); 
-        const scalar Vt = sum(toolMesh.V()).value();  
-        const scalar Ev = mag(Vt - Vb);  
+        const scalar Vt = gSum(toolMesh.V());
+        const scalar Ev = mag(Vt - Vb) / Vt;  
         const double Te = t1 - t0;
 
         errorFile << toolMesh.nCells() << "," 
