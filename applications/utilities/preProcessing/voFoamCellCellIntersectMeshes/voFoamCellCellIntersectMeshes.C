@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) Tomislav Maric and TU Darmstadt 
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -22,16 +22,16 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Description
-    Intersect two meshes and compute the resulting volume fraction field.
+    Compute the volume fraction field in the base mesh by intersecting the base
+    mesh with the tool mesh. 
 
 Author
     Tomislav Maric
-    maric@csi.tu-darmstadt.de
-    Mathematical Modelling and Analysis Group 
+    maric@csi.tu-darmstadt.de, maric@mma.tu-darmstadt.de, tomislav.maric@gmx.com
+    Mathematical Modeling and Analysis Group 
     Center of Smart Interfaces
     TU Darmstadt
     Germany
-
 
 \*---------------------------------------------------------------------------*/
 
