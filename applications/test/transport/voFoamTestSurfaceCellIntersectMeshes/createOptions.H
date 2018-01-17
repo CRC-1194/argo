@@ -12,16 +12,9 @@
 
     argList::addOption
     (
-        "distanceFactor", 
+        "sqrDistFactor", 
         "scalar",
         "Expand (>1) or contract (<1) the distance field narrow band."
-    ); 
-
-    argList::addOption
-    (
-        "radiusFactor", 
-        "scalar",
-        "Expand (>1) or contract or contract (<1) the radius used to find triangles for mesh intersection."
     ); 
 
     argList::addBoolOption
@@ -39,6 +32,6 @@
     argList::addOption
     (
         "dataFile", 
-        "voFoamSetSurfaceFraction.dat",
+        "surfaceCellMeshIntersection.csv",
         "Name of the volume fraction field." 
     ); 

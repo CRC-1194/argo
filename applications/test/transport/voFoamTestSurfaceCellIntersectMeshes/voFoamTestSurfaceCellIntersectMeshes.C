@@ -60,12 +60,9 @@ Author
 #ifndef _OPENMP
     #define omp_get_wtime() 0
 #endif
-
-#include "Random.H"
+#include <random>
 
 using namespace GeometricalTransport;
-
-#include "surfaceMeshIntersection.H"
 
 typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangulationIntersection;
 
@@ -80,9 +77,8 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const label distanceFactor = args.optionLookupOrDefault<scalar>("distanceFactor", 1.5); 
-    const label radiusFactor = args.optionLookupOrDefault<scalar>("radiusFactor", 1.71); 
-    const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.dat"); 
+    const label sqrDistFactor = args.optionLookupOrDefault<scalar>("sqrDistFactor", 3); 
+    const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
 
     fileName triFile = args.path() + "/surface.stl";
 
@@ -100,22 +96,17 @@ int main(int argc, char *argv[])
     // undefined behavior. TM. 
     // TODO: Check for large cases if this needs speeding up with 
     // tasks. TM.
-    #pragma omp parallel 
-    #pragma omp single nowait
-    {
-        tri.faceFaces();
-        tri.faceCentres(); 
-        tri.faceNormals(); 
-        mesh.deltaCoeffs();
-        mesh.cells();
-        mesh.faces();
-        mesh.Sf();
-        mesh.C();
-        mesh.V(); 
-        mesh.faceOwner();
-    }
+    tri.faceNormals(); 
+    mesh.deltaCoeffs();
+    mesh.cells();
+    mesh.faces();
+    mesh.Sf();
+    mesh.C();
+    mesh.V(); 
+    mesh.faceOwner();
 
-    const pointField& triPoints = tri.points();
+    pointField& triPoints = const_cast<pointField&>(tri.points());
+    pointField& triLocalPoints = const_cast<pointField&>(tri.localPoints());
 
     auto& triNormals = const_cast<pointField&>(tri.faceNormals());
     auto& triangles = static_cast<List<labelledTri>& >(tri);
@@ -129,7 +120,7 @@ int main(int argc, char *argv[])
         vector surfaceMeshCentroid = sum(triPoints) / tri.nPoints();  
         const auto& triCentres = tri.faceCentres(); 
 
-        #pragma omp parallel for 
+        #pragma omp for 
         forAll(triNormals, tI)
         {
             if (((triCentres[tI] - surfaceMeshCentroid) & triNormals[tI]) > 0) 
@@ -149,12 +140,15 @@ int main(int argc, char *argv[])
 
     vector toolCenter = sum(tri.points()) / tri.size(); 
     // This invalidates surface normals!
-    tri.movePoints(tri.points() + baseCenter - toolCenter); 
+    //tri.movePoints(tri.points() + baseCenter - toolCenter); 
+    triPoints += baseCenter - toolCenter;
+    // Update local points for addressing.
+    triLocalPoints += baseCenter - toolCenter;
 
     boundBox baseBox = mesh.bounds(); 
     const boundBox toolBox = boundBox(tri.points()); 
     const Vector<label> solutionVector = mesh.solutionD(); 
-    vector toolBoxDelta = toolBox.max() - toolBox.min(); 
+    vector toolBoxDelta = 0.5 * (toolBox.max() - toolBox.min()); 
     // Null the toolBoxDelta in a dimension that is not used in pseudo2D. 
     forAll(toolBoxDelta, I)
     {
@@ -169,8 +163,10 @@ int main(int argc, char *argv[])
     baseMin += toolBoxDelta; 
     baseMax -= toolBoxDelta;  
 
-    // Generate a random tool mesh centroid position within the shrunk base // mesh bounding box. 
-    Random r(1e04); 
+    // Random number initialization.
+    std::random_device rd;  
+    std::mt19937 gen(rd()); 
+    std::uniform_real_distribution<> dis(0.0, 1.0);
 
     // Open the error file for measurement output..
     OFstream errorFile(dataFileName); 
@@ -188,8 +184,13 @@ int main(int argc, char *argv[])
         signedDist = dimensionedScalar("signedDist", dimLength, 0);
 
         // Compute the random displacement with respect to the base mesh centroid.
-        const vector randomPosition = r.position(baseMin, baseMax); 
+        vector randomPosition = baseMin;  
+        forAll(randomPosition, cmptI)
+            randomPosition[cmptI] += dis(gen) * (baseMax[cmptI] - baseMin[cmptI]);
+
         vector randomDisplacement = randomPosition - baseCenter; 
+        // TODO: Remove, debugging
+        Info << "Random displacement = " << randomDisplacement << endl;
         // Null the displacement in a dimension that is not used in pseudo2D. 
         forAll(randomDisplacement, I)
         {
@@ -205,14 +206,17 @@ int main(int argc, char *argv[])
                 << "Random position outside of the base mesh bounding box." 
                 << Foam::abort(FatalError);
         }
-        tri.movePoints(triPoints + randomDisplacement); 
+        //tri.movePoints(tri.points() + randomDisplacement); 
+        triPoints += randomDisplacement;
+        triLocalPoints += randomDisplacement;
 
-        tri.write(appendSuffix("triMesh", runTime.timeIndex()) + ".stl");
+#ifdef TESTING
+        tri.write(appendSuffix("tri", runTime.timeIndex()) + ".stl");
+#endif
 
-        // Moving a triSurface clears all geometrical data, so it needs to be
-        // re-calculated outside of a parallel region, because the calculation
-        // loop is not threaded in OpenFOAM.
-        tri.faceNormals(); 
+        //Moving a triSurface clears all geometrical data, so it needs to be
+        //re-calculated outside of a parallel region, because the calculation
+        //loop is not threaded in OpenFOAM.
 
         const scalar t0 = omp_get_wtime(); 
 
@@ -231,13 +235,16 @@ int main(int argc, char *argv[])
         DynamicList<pointIndexHit> cellNearestTriangle;
         cellNearestTriangle.reserve(mesh.nCells()); 
 
-        calcSearchFields(sqrSearchDist,sqrCellRadius,distanceFactor,radiusFactor); 
+        sqrSearchDist = fvc::average(Foam::pow(mesh.deltaCoeffs(), -2));
 
         triMesh.findNearest(
             mesh.C(),
-            sqrSearchDist,
+            sqrDistFactor * sqrDistFactor * sqrSearchDist,
             cellNearestTriangle 
         );
+        // Use a single-cell wide search distance for intersections. 
+        // Widen the squared search distance for sign propagation to ensure 
+        // numerical stability when solving the Laplace equation.
 
         // Use octree search to find a nearest triangle for each cell point.
         DynamicList<pointIndexHit> pointNearestTriangle;
@@ -256,7 +263,7 @@ int main(int argc, char *argv[])
         // intersections because there may exist cells with positive signed 
         // distance that are intersected and whose alpha1 value must then 
         // be subsequently corrected. TM.
-        const auto& triConstNormals = tri.faceNormals(); 
+        //const auto& triConstNormals = tri.faceNormals(); 
         
         #pragma omp parallel for schedule (dynamic) 
         forAll(cellNearestTriangle, cellI)
@@ -267,16 +274,14 @@ int main(int argc, char *argv[])
             {
                 signedDist[cellI] = 
                     (C[cellI] - triPoints[tri[cellHit.index()][0]]) & 
-                    triConstNormals[cellHit.index()];
+                    triNormals[cellHit.index()];
             }
         }
 
-#ifdef TESTING
+        // Initial signed distance field given by the octree.
         volScalarField signedDist0("signedDist0", signedDist); 
-        signedDist0.write(); 
-#endif
 
-        // Solve a laplace equation to propagate the sign.
+        // Solve a Laplace equation to propagate the sign.
         dimensionedScalar lambda ("lambda", sqr(dimLength) * pow(dimTime,-1), 1);
         fvScalarMatrix distEqn
         (
@@ -286,71 +291,78 @@ int main(int argc, char *argv[])
 
         // Set the fill level of all cells with the positive
         // signed distance to 1. 
-        #pragma omp parallel for schedule (dynamic) 
-        forAll(signedDist, cellI)
+        #pragma omp parallel 
         {
-            if (signedDist[cellI] > 0)
-                alpha[cellI] = 1; 
-        }
+            //#pragma omp for nowait
+            //forAll(signedDist, cellI)
+            //{
+            //}
 
-        //#pragma omp parallel for schedule (dynamic) 
-        forAll(cellNearestTriangle, cellI)
-        {
-            const pointIndexHit& cellHit = cellNearestTriangle[cellI];
-
-            if (cellHit.hit()) 
+            #pragma omp for schedule (dynamic) 
+            forAll(cellNearestTriangle, cellI)
             {
-                labelList cellTriangles = octree.findSphere(C[cellI],sqrCellRadius[cellI]);
+                if (signedDist[cellI] > 0)
+                    alpha[cellI] = 1; 
+                // Correct boundary oscillation using the initial field.
+                // NOTE: not connected with above test!
+                if (signedDist0[cellI] < 0)
+                    alpha[cellI] = 0; 
 
+                const pointIndexHit& cellHit = cellNearestTriangle[cellI];
 
-                if (!cellTriangles.empty())
+                if (cellHit.hit()) 
                 {
-                    // Uncomment for debugging. This will write out a tri-surface chunk 
-                    // for every cell that is intersected with it.  
-                    /*
-                    // Write the triSurface chunk for cellI.
-                    List<labelledTri> cellTriangleGeo(cellTriangles.size()); 
-                    forAll(cellTriangleGeo, I)
-                        cellTriangleGeo[I] = triangles[cellTriangles[I]];
-                    triSurface cellSurface(cellTriangleGeo, triPoints); 
-                    cellSurface.write(appendSuffix("cellSurface", cellI) + ".stl");
-                    // Write the polyhedron for cellI. 
-                    build<pointVectorVector>(cellI, mesh)
-                    TODO: 
-                    */
+                    labelList cellTriangles = octree.findSphere(C[cellI], sqrSearchDist[cellI]);
 
-                    triangulationIntersection cellIntersection
-                    (
-                        barycentric_triangulate<tetrahedronVector>
-                        (
-                            build<pointVectorVector>(cellI, mesh)
-                        )
-                    );
-
-                    // Intersect the cell triangulation with all the triangle halfspaces. 
-                    for (const auto triLabel : cellTriangles)
+                    if (!cellTriangles.empty())
                     {
-                        cellIntersection = intersect<triangulationIntersection>(
-                            cellIntersection, 
-                            halfspace(triPoints[triangles[triLabel][0]], triConstNormals[triLabel])
-                        );  
-                    }
-                    // Calculate volume fraction value that is bounded from above by 1. 
-                    alpha[cellI] = min(1, volume(cellIntersection) / V[cellI]); 
+                        // Uncomment for debugging. This will write out a tri-surface chunk 
+                        // for every cell that is intersected with it.  
+                            // Write the triSurface chunk for cellI.
+                            // List<labelledTri> cellTriangleGeo(cellTriangles.size()); 
+                            // forAll(cellTriangleGeo, I)
+                            //     cellTriangleGeo[I] = triangles[cellTriangles[I]];
+                            // triSurface cellSurface(cellTriangleGeo, triPoints); 
+                            // cellSurface.write(appendSuffix("cellSurface", cellI) + ".stl");
+                            
+                        build<pointVectorVector>(cellI, mesh);
+
+                        triangulationIntersection cellIntersection
+                        (
+                            barycentric_triangulate<tetrahedronVector>
+                            (
+                                build<pointVectorVector>(cellI, mesh)
+                            )
+                        );
+
+                        // Intersect the cell triangulation with all the triangle halfspaces. 
+                        for (const auto triLabel : cellTriangles)
+                        {
+                            cellIntersection = intersect<triangulationIntersection>(
+                                cellIntersection, 
+                                halfspace(triPoints[triangles[triLabel][0]], triNormals[triLabel])
+                            );  
+                        }
+                        // Calculate volume fraction value that is bounded from above by 1. 
+                        alpha[cellI] = min(1, volume(cellIntersection) / V[cellI]); 
 #ifdef TESTING
-                    #pragma omp critical
-                    cutCellStream << cellIntersection;
+                        #pragma omp critical
+                        cutCellStream << cellIntersection;
 #endif
+                    }
                 }
             }
-        }
+
+        } // end omp parallel
 
         const scalar t1 = omp_get_wtime(); 
 
-        // Write the volume fraction field.
+        // alpha is not written in the test application. 
+#ifdef TESTING
         alpha.write(); 
-        signedDist.write(); 
-        
+        signedDist.write();
+        signedDist0.write();
+#endif
         // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
         const scalar Te = t1 - t0; 
@@ -408,13 +420,12 @@ int main(int argc, char *argv[])
 
             // For each edge. 
             const edgeList& edges = tri.edges(); 
-            const pointField& localPoints = tri.localPoints();
             forAll(edges, edgeI)
             {
                 if (! tri.isInternalEdge(edgeI))
                 {
-                    const vector& ePoint0 = localPoints[edges[edgeI][0]]; 
-                    const vector& ePoint1 = localPoints[edges[edgeI][1]]; 
+                    const vector& ePoint0 = triLocalPoints[edges[edgeI][0]]; 
+                    const vector& ePoint1 = triLocalPoints[edges[edgeI][1]]; 
 
                     Vs +=mag
                     (
@@ -434,13 +445,16 @@ int main(int argc, char *argv[])
         Info<< "Volume error = " << Ev << endl; 
         Info<< "Execution time = " << Te << endl << endl;
 
-        // Move the tri surface back to the original position. 
-        tri.movePoints(tri.points() - randomDisplacement); 
 
         errorFile << triMesh.size() << "," 
             << mesh.nCells() << ","
             << Ev << ","  
             << Te << "\n";  
+            
+        // Move the tri surface back to the original position. 
+        //tri.movePoints(tri.points() - randomDisplacement); 
+        triPoints -= randomDisplacement;
+        triLocalPoints -= randomDisplacement;
 
         runTime++; 
     }

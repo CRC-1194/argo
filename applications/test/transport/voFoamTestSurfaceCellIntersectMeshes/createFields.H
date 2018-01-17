@@ -12,7 +12,7 @@
         mesh
     );
 
-    // Squared search distance field
+    // Squared search distance field for sign propagation.
     volScalarField sqrSearchDist 
     (
         IOobject
@@ -27,19 +27,19 @@
         dimensionedScalar("sqrSearchDist", Foam::pow(dimLength,2),0)
     );
 
-    // Squared cell radius 
-    volScalarField sqrCellRadius 
+    // Squared search distance for intersection. 
+    volScalarField sqrInterDist
     (
         IOobject
         (
-            "sqrCellRadius", 
+            "sqrInterDist", 
             runTime.timeName(), 
             mesh, 
             IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
         mesh,
-        dimensionedScalar("sqrCellRadius", Foam::pow(dimLength,2),0)
+        dimensionedScalar("sqrInterDist", Foam::pow(dimLength,2),0)
     );
 
 
