@@ -27,22 +27,6 @@
         dimensionedScalar("sqrSearchDist", Foam::pow(dimLength,2),0)
     );
 
-    // Squared search distance for intersection. 
-    volScalarField sqrInterDist
-    (
-        IOobject
-        (
-            "sqrInterDist", 
-            runTime.timeName(), 
-            mesh, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh,
-        dimensionedScalar("sqrInterDist", Foam::pow(dimLength,2),0)
-    );
-
-
     // The signed distance field 
     volScalarField signedDist 
     (
@@ -57,4 +41,23 @@
         mesh,
         dimensionedScalar("signedDist", dimLength,0),
         "zeroGradient"
+    );
+
+    // Initial signed distance field given by the octree.
+    volScalarField signedDist0("signedDist0", signedDist); 
+
+    // The diffusion coefficient field used for sign propagation. 
+    surfaceScalarField lambda 
+    (
+        IOobject
+        (
+            "lambda", 
+            runTime.timeName(), 
+            mesh, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh,
+        // Solve a Laplace equation to propagate the sign.
+        dimensionedScalar ("lambda", sqr(dimLength) * pow(dimTime,-1), 1)
     );

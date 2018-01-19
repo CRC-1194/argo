@@ -55,14 +55,18 @@ Author
 #include "triSurfaceMesh.H"
 #include "OFstream.H"
 #include <set>
-#include <omp.h>
 
 #ifndef _OPENMP
     #define omp_get_wtime() 0
 #endif
+
+// Time measurement
+#include <chrono>
+// Random tri surface mesh positioning
 #include <random>
 
 using namespace GeometricalTransport;
+using namespace std::chrono;
 
 typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangulationIntersection;
 
@@ -71,6 +75,8 @@ typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangula
 
 int main(int argc, char *argv[])
 {
+    high_resolution_clock::time_point p0 = high_resolution_clock::now();
+
     #include "createOptions.H"
     #include "setRootCase.H"
     #include "createTime.H"
@@ -89,6 +95,8 @@ int main(int argc, char *argv[])
     triSurface tri(triFile);
 
     #include "createFields.H"
+
+    high_resolution_clock::time_point p1 = high_resolution_clock::now();
 
     // Initialize mesh geometrical data. This data uses lazy evaluation:
     // it is stored with raw pointers set to null until initialized. If
@@ -120,7 +128,7 @@ int main(int argc, char *argv[])
         vector surfaceMeshCentroid = sum(triPoints) / tri.nPoints();  
         const auto& triCentres = tri.faceCentres(); 
 
-        #pragma omp for 
+        //#pragma omp for 
         forAll(triNormals, tI)
         {
             if (((triCentres[tI] - surfaceMeshCentroid) & triNormals[tI]) > 0) 
@@ -134,16 +142,40 @@ int main(int argc, char *argv[])
     // RANDOM tool mesh positioning. 
     // Position the tool mesh centroid at the base mesh centroid. 
     // NOTE: triSurface is not decomposed!
-    label nBaseCells = mesh.nCells();  
-    Pstream::gather(nBaseCells, sumOp<label>()); 
-    const vector baseCenter = gSum(mesh.C()) / nBaseCells;  
+    label nBasePoints = mesh.nPoints();  
+    Pstream::gather(nBasePoints, sumOp<label>()); 
+    const vector baseCenter = gSum(mesh.points()) / nBasePoints;  
+    vector toolCenter = sum(triPoints) / tri.nPoints(); 
 
-    vector toolCenter = sum(tri.points()) / tri.size(); 
-    // This invalidates surface normals!
-    //tri.movePoints(tri.points() + baseCenter - toolCenter); 
-    triPoints += baseCenter - toolCenter;
-    // Update local points for addressing.
-    triLocalPoints += baseCenter - toolCenter;
+#ifdef TESTING
+    Info << "Base mesh centroid = " << baseCenter << nl 
+        << "Initial tool mesh centroid = "  << toolCenter << nl 
+        << "Displacement = " << baseCenter - toolCenter << endl;
+
+    Info << triPoints.size()  << " : " << triLocalPoints.size() << endl;
+#endif 
+
+    // Move the triSurface 
+    triPoints += (baseCenter - toolCenter);
+    // Displace also local points used for addressing.
+    triLocalPoints += (baseCenter - toolCenter);
+
+#ifdef TESTING // Write the initial tri surface and test the centroid position.
+    tri.write(appendSuffix("trisurface-initial", runTime.timeIndex()) + ".stl");
+
+    // New tool center after motion.
+    toolCenter = sum(triPoints) / tri.nPoints(); 
+    const scalar centroidDiff = mag(baseCenter - toolCenter);  
+
+    // Tolerance increased because of the roundoff error.
+    if (centroidDiff > 1e03 * SMALL)
+        FatalErrorIn("voFoamTestCellCellIntersectMeshes")                                                 
+            << "Failed initial tool mesh positioning at the base mesh centroid." << nl 
+            << "Final tool mesh centroid = " << toolCenter << nl 
+            << "Final centroid diff = " << baseCenter - toolCenter << nl 
+            << "Final centroid diff magnitude = " << centroidDiff << nl 
+            << Foam::abort(FatalError);
+#endif
 
     boundBox baseBox = mesh.bounds(); 
     const boundBox toolBox = boundBox(tri.points()); 
@@ -179,7 +211,7 @@ int main(int argc, char *argv[])
 
     while(runTime.run())
     {
-        // Zero the volume fraction and signed distance fields.
+        // Zero the volume fraction, signed distance and radius.
         alpha = dimensionedScalar("alpha", dimless, 0);  
         signedDist = dimensionedScalar("signedDist", dimLength, 0);
 
@@ -206,19 +238,17 @@ int main(int argc, char *argv[])
                 << "Random position outside of the base mesh bounding box." 
                 << Foam::abort(FatalError);
         }
-        //tri.movePoints(tri.points() + randomDisplacement); 
         triPoints += randomDisplacement;
         triLocalPoints += randomDisplacement;
 
 #ifdef TESTING
-        tri.write(appendSuffix("tri", runTime.timeIndex()) + ".stl");
+        tri.write(appendSuffix("trisurface", runTime.timeIndex()) + ".stl");
 #endif
-
         //Moving a triSurface clears all geometrical data, so it needs to be
         //re-calculated outside of a parallel region, because the calculation
         //loop is not threaded in OpenFOAM.
 
-        const scalar t0 = omp_get_wtime(); 
+        high_resolution_clock::time_point t0 = high_resolution_clock::now();
 
         // Build the octree around the triSurface. 
         triSurfaceMesh triMesh(
@@ -237,11 +267,16 @@ int main(int argc, char *argv[])
 
         sqrSearchDist = fvc::average(Foam::pow(mesh.deltaCoeffs(), -2));
 
+        high_resolution_clock::time_point q0 = high_resolution_clock::now();
+
         triMesh.findNearest(
             mesh.C(),
             sqrDistFactor * sqrDistFactor * sqrSearchDist,
             cellNearestTriangle 
         );
+
+        high_resolution_clock::time_point q1 = high_resolution_clock::now();
+
         // Use a single-cell wide search distance for intersections. 
         // Widen the squared search distance for sign propagation to ensure 
         // numerical stability when solving the Laplace equation.
@@ -264,8 +299,7 @@ int main(int argc, char *argv[])
         // distance that are intersected and whose alpha1 value must then 
         // be subsequently corrected. TM.
         //const auto& triConstNormals = tri.faceNormals(); 
-        
-        #pragma omp parallel for schedule (dynamic) 
+
         forAll(cellNearestTriangle, cellI)
         {
             const pointIndexHit& cellHit = cellNearestTriangle[cellI];
@@ -281,81 +315,77 @@ int main(int argc, char *argv[])
         // Initial signed distance field given by the octree.
         volScalarField signedDist0("signedDist0", signedDist); 
 
-        // Solve a Laplace equation to propagate the sign.
-        dimensionedScalar lambda ("lambda", sqr(dimLength) * pow(dimTime,-1), 1);
+        high_resolution_clock::time_point r0 = high_resolution_clock::now();
         fvScalarMatrix distEqn
         (
             -fvm::laplacian(lambda, signedDist)
         );
         distEqn.solve(); 
+        high_resolution_clock::time_point r1 = high_resolution_clock::now();
 
-        // Set the fill level of all cells with the positive
-        // signed distance to 1. 
-        #pragma omp parallel 
+        high_resolution_clock::time_point s0 = high_resolution_clock::now();
+        const cellList& cells = mesh.cells(); 
+        forAll(cellNearestTriangle, cellI)
         {
-            //#pragma omp for nowait
-            //forAll(signedDist, cellI)
-            //{
-            //}
+            if (signedDist[cellI] > 0)
+                alpha[cellI] = 1; 
+            // Correct boundary oscillation using the initial field.
+            // NOTE: not connected with above test!
+            if (signedDist0[cellI] < 0)
+                alpha[cellI] = 0; 
 
-            #pragma omp for schedule (dynamic) 
-            forAll(cellNearestTriangle, cellI)
+            const pointIndexHit& cellHit = cellNearestTriangle[cellI];
+
+            if (cellHit.hit()) 
             {
-                if (signedDist[cellI] > 0)
-                    alpha[cellI] = 1; 
-                // Correct boundary oscillation using the initial field.
-                // NOTE: not connected with above test!
-                if (signedDist0[cellI] < 0)
-                    alpha[cellI] = 0; 
+                const pointField cellPoints = cells[cellI].points(mesh.faces(), mesh.points());  
+                labelList cellTriangles = octree.findBox(treeBoundBox(cellPoints)); 
 
-                const pointIndexHit& cellHit = cellNearestTriangle[cellI];
-
-                if (cellHit.hit()) 
+                if (!cellTriangles.empty())
                 {
-                    labelList cellTriangles = octree.findSphere(C[cellI], sqrSearchDist[cellI]);
 
-                    if (!cellTriangles.empty())
-                    {
-                        // Uncomment for debugging. This will write out a tri-surface chunk 
-                        // for every cell that is intersected with it.  
-                            // Write the triSurface chunk for cellI.
-                            // List<labelledTri> cellTriangleGeo(cellTriangles.size()); 
-                            // forAll(cellTriangleGeo, I)
-                            //     cellTriangleGeo[I] = triangles[cellTriangles[I]];
-                            // triSurface cellSurface(cellTriangleGeo, triPoints); 
-                            // cellSurface.write(appendSuffix("cellSurface", cellI) + ".stl");
-                            
-                        build<pointVectorVector>(cellI, mesh);
-
-                        triangulationIntersection cellIntersection
+                    triangulationIntersection cellIntersection
+                    (
+                        barycentric_triangulate<tetrahedronVector>
                         (
-                            barycentric_triangulate<tetrahedronVector>
-                            (
-                                build<pointVectorVector>(cellI, mesh)
-                            )
-                        );
+                            build<pointVectorVector>(cellI, mesh)
+                        )
+                    );
 
-                        // Intersect the cell triangulation with all the triangle halfspaces. 
-                        for (const auto triLabel : cellTriangles)
-                        {
-                            cellIntersection = intersect<triangulationIntersection>(
-                                cellIntersection, 
-                                halfspace(triPoints[triangles[triLabel][0]], triNormals[triLabel])
-                            );  
-                        }
-                        // Calculate volume fraction value that is bounded from above by 1. 
-                        alpha[cellI] = min(1, volume(cellIntersection) / V[cellI]); 
-#ifdef TESTING
-                        #pragma omp critical
-                        cutCellStream << cellIntersection;
-#endif
+                    // Intersect the cell triangulation with all the triangle halfspaces. 
+                    for (const auto triLabel : cellTriangles)
+                    {
+                        cellIntersection = intersect<triangulationIntersection>(
+                            cellIntersection, 
+                            halfspace(triPoints[triangles[triLabel][0]], triNormals[triLabel])
+                        );  
                     }
+                    // Calculate volume fraction value that is bounded from above by 1. 
+                    alpha[cellI] = min(1, volume(cellIntersection) / V[cellI]); 
+#ifdef TESTING
+                    cutCellStream << cellIntersection;
+                    // Uncomment for debugging. 
+                    // For every cell that is intersected: 
+                    // - write the part of the triSurface that intersects it into an stl file
+                    List<labelledTri> cellTriangleGeo(cellTriangles.size()); 
+                    forAll(cellTriangleGeo, I)
+                        cellTriangleGeo[I] = triangles[cellTriangles[I]];
+                    triSurface cellSurface(cellTriangleGeo, triPoints); 
+                    cellSurface.write(appendSuffix("cellSurface", cellI) + ".stl");
+                    // - write the intersection into a .vtk file. 
+                    write_vtk_polydata(cellIntersection, appendSuffix("cellIntersection", cellI) + ".vtk");
+                    write_vtk_polydata
+                    (
+                        build<pointVectorVector>(cellI,mesh), 
+                        appendSuffix("cell", cellI) + ".vtk"
+                    );
+#endif
                 }
             }
+        }
+        high_resolution_clock::time_point s1 = high_resolution_clock::now();
 
-        } // end omp parallel
-
-        const scalar t1 = omp_get_wtime(); 
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
         // alpha is not written in the test application. 
 #ifdef TESTING
@@ -365,9 +395,7 @@ int main(int argc, char *argv[])
 #endif
         // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-        const scalar Te = t1 - t0; 
-
-        toolCenter = sum(tri.points()) / tri.size(); 
+        toolCenter = sum(tri.points()) / tri.nPoints(); 
         scalar Vs = 0; 
 
         // 3D and pseudo 2D.
@@ -388,8 +416,7 @@ int main(int argc, char *argv[])
             if (deltaV < 0) 
             {
                 write_vtk_polydata(build<arrayTriangle>(p0,p1,p2), "bad-triangle.vtk");
-                Perr << "ERRROR:" 
-                    << "Negative mesh volume contribution!"  
+                Perr << "Negative mesh volume contribution!"  
                     << "deltaV = " << deltaV << endl
                     << "toolCenter = " << toolCenter << endl
                     << "p0 = " << p0 << endl
@@ -404,7 +431,7 @@ int main(int argc, char *argv[])
         if (mesh.nSolutionD() == 2)
         {
             Info << "This is a 2D case!" << endl;
-            // Pseudo 2D: update the total volume for the edges that have only a single
+            // Pseudo 2D:fields update the total volume for the edges that have only a single
             // edge owner.
             
             // Find the hight of the surface mesh using the bounding box height
@@ -437,13 +464,22 @@ int main(int argc, char *argv[])
             }
         }
 
+        const scalar Te = duration_cast<nanoseconds>(t1 - t0).count() / 1e09;
+        const scalar Ti = duration_cast<nanoseconds>(p1 - p0).count() / 1e09;
+        const scalar To = duration_cast<nanoseconds>(q1 - q0).count() / 1e09;
+        const scalar Tl = duration_cast<nanoseconds>(r1 - r0).count() / 1e09;
+        const scalar Tx = duration_cast<nanoseconds>(s1 - s0).count() / 1e09;
         const scalar Valpha = sum(alpha * mesh.V()).value();
         const scalar Ev = mag(Vs - Valpha) / Vs; 
 
         Info<< "Volume from surface mesh = " << Vs << endl;
         Info<< "Volume from volume fraction = " << Valpha << endl;
         Info<< "Volume error = " << Ev << endl; 
-        Info<< "Execution time = " << Te << endl << endl;
+        Info<< "Initialization time = " << Ti << endl;
+        Info<< "Calculation time = " << Te << endl;
+        Info<< "Octree search time = " << To << endl;
+        Info<< "Laplace solution time = " << Tl << endl;
+        Info<< "Intersection time = " << Tx << endl;
 
 
         errorFile << triMesh.size() << "," 
@@ -452,7 +488,6 @@ int main(int argc, char *argv[])
             << Te << "\n";  
             
         // Move the tri surface back to the original position. 
-        //tri.movePoints(tri.points() - randomDisplacement); 
         triPoints -= randomDisplacement;
         triLocalPoints -= randomDisplacement;
 
