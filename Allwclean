@@ -11,3 +11,5 @@ fi
 wclean all src
 wclean all applications
 
+
+rm -rf third-party/googletest/build
