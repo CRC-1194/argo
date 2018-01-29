@@ -6,6 +6,8 @@ EXE_INC = \
     -I$(GEOMTRANSPORT)/src/lnInclude 
 
 EXE_LIBS = \
+    -L$(FOAM_USER_LIBBIN) \
     -lfiniteVolume \
     -lmeshTools \
-    -ltriSurface 
+    -ltriSurface \
+    -lgeomio

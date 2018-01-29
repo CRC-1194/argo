@@ -52,7 +52,8 @@ Author
 #include "fvCFD.H"
 #include "Geometry.H"
 #include "triSurface.H"
-#include "triSurfaceMesh.H"
+//#include "triSurfaceMesh.H"
+#include "triSurfaceSearch.H"
 #include "OFstream.H"
 #include <set>
 
@@ -213,7 +214,6 @@ int main(int argc, char *argv[])
     {
         // Zero the volume fraction, signed distance and radius.
         alpha = dimensionedScalar("alpha", dimless, 0);  
-        signedDist = dimensionedScalar("signedDist", dimLength, 0);
 
         // Compute the random displacement with respect to the base mesh centroid.
         vector randomPosition = baseMin;  
@@ -251,16 +251,7 @@ int main(int argc, char *argv[])
         high_resolution_clock::time_point t0 = high_resolution_clock::now();
 
         // Build the octree around the triSurface. 
-        triSurfaceMesh triMesh(
-            IOobject(
-                "triMesh",
-                "constant",
-                mesh,
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            tri 
-        );
+        triSurfaceSearch triMesh(tri);
 
         DynamicList<pointIndexHit> cellNearestTriangle;
         cellNearestTriangle.reserve(mesh.nCells()); 
@@ -282,17 +273,13 @@ int main(int argc, char *argv[])
         // numerical stability when solving the Laplace equation.
 
         // Use octree search to find a nearest triangle for each cell point.
-        DynamicList<pointIndexHit> pointNearestTriangle;
-        pointNearestTriangle.reserve(mesh.nPoints()); 
+        //DynamicList<pointIndexHit> pointNearestTriangle;
+        //pointNearestTriangle.reserve(mesh.nPoints()); 
 
         // Compute the marker field. 
         const auto& C = mesh.C();
         const auto& V = mesh.V(); 
 
-#ifdef TESTING
-        vtk_polydata_stream cutCellStream(prependVtkFileName("cutCells", runTime.timeIndex())); 
-#endif
-        const auto& octree = triMesh.tree();
 
         // Distance calculation and setting of alpha1 must precede geometrical 
         // intersections because there may exist cells with positive signed 
@@ -325,6 +312,7 @@ int main(int argc, char *argv[])
 
         high_resolution_clock::time_point s0 = high_resolution_clock::now();
         const cellList& cells = mesh.cells(); 
+        const auto& octree = triMesh.tree();
         forAll(cellNearestTriangle, cellI)
         {
             if (signedDist[cellI] > 0)
@@ -482,7 +470,7 @@ int main(int argc, char *argv[])
         Info<< "Intersection time = " << Tx << endl;
 
 
-        errorFile << triMesh.size() << "," 
+        errorFile << tri.size() << "," 
             << mesh.nCells() << ","
             << Ev << ","  
             << Te << "\n";  
