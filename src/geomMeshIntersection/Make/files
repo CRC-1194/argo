@@ -1,3 +1,5 @@
 geomMeshIntersection/geomMeshIntersection.C
+geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.C
+geomTriSurfaceTools/geomTriSurfaceTools.C
 
 LIB = $(FOAM_USER_LIBBIN)/libgeometricalMeshIntersection

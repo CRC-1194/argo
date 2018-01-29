@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
     // Read user-defined options.
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "geomIntersectMeshes.csv"); 
+    const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "cellCellMeshIntersection.csv"); 
     const label nIterations = args.optionLookupOrDefault<label>("nIterations", 100);  
 
     #include "createMeshes.H"
@@ -184,7 +184,6 @@ int main(int argc, char *argv[])
                 << Foam::abort(FatalError);
         }
 
-        Info << "Random displacement = " << randomDisplacement << nl;
         // The toolMesh centroid now overlaps the base mesh centroid.
         toolMesh.movePoints(toolMesh.points() + randomDisplacement); 
 
