@@ -91,6 +91,11 @@ class geomSurfaceCellMeshIntersection
         // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
         const scalar sqrDistFactor_; 
 
+        // Number of intersected cells. 
+        label Nx_;
+        // Average number of triangles (intersections) per intersected cell. 
+        scalar Ax_;
+
 public:
 
     typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangulationIntersection;
@@ -147,6 +152,12 @@ public:
         const surfaceScalarField& lambda() const; 
 
         const triSurface& surface() const;
+
+        triSurface& surfaceRef(); 
+
+        label Nx() const; 
+
+        scalar Ax() const; 
 
         //- Computation
 

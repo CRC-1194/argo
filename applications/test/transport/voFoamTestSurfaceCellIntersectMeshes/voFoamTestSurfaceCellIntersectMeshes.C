@@ -51,18 +51,10 @@ Author
 
 #include "fvCFD.H"
 #include "triSurface.H"
+#include "triSurfaceSearch.H"
 #include "geomSurfaceCellMeshIntersection.H"
 #include "geomTriSurfaceTools.H"
-
-#include "Geometry.H"
-#include "triSurfaceSearch.H"
-
 #include "OFstream.H"
-#include <set>
-
-#ifndef _OPENMP
-    #define omp_get_wtime() 0
-#endif
 
 // Time measurement
 #include <chrono>
@@ -71,8 +63,6 @@ Author
 
 using namespace GeometricalTransport;
 using namespace std::chrono;
-
-typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangulationIntersection;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // Main program:
@@ -92,7 +82,6 @@ int main(int argc, char *argv[])
     const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
 
     fileName triFile = args.path() + "/surface.stl";
-
     if (args.optionFound("surfaceFile"))
         triFile = args.optionRead<fileName>("surfaceFile");
 
@@ -109,7 +98,7 @@ int main(int argc, char *argv[])
     const Switch fixNormals = args.optionFound("fixNormals");
 
     if (fixNormals)
-        orientStarSurfaceNormalsInward(tri); 
+        orientNormalsInward(tri); 
 
     // Position the tool mesh centroid at the base mesh centroid. 
     label nBasePoints = mesh.nPoints();  
@@ -129,7 +118,7 @@ int main(int argc, char *argv[])
     // Ev : volume conservation error: 
     // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
     // Te : execution time of the CCI mesh intersection operation.
-    errorFile << "Nt,Nb,Ev,Ti,Te,Tx\n"; 
+    errorFile << "Nt,Nb,Ev,Ti,Te,Tx,Nx,Ax,Ni,Nb\n"; 
 
     // Compute the search distances once: the mesh is not moving, nor is it
     // topologically changed. 
@@ -189,12 +178,27 @@ int main(int argc, char *argv[])
         Info<< "Calculation time = " << Te << endl;
         Info<< "Intersection time = " << Tx << endl;
 
+        label Nb = 0; 
+        label Ni = 0; 
+
+        forAll(alpha, cellI)
+        {
+            if (alpha[cellI] == 1)
+                Nb++; 
+            if ((alpha[cellI] > 0) && (alpha[cellI] < 1))
+                Ni++; 
+        }
+
         errorFile << tri.size() << "," 
             << mesh.nCells() << ","
             << Ev << ","  
             << Ti << "," 
             << Te << "," 
-            << Tx << nl;  
+            << Tx << "," 
+            << meshIntersection.Nx() << ","
+            << meshIntersection.Ax() << "," 
+            << Ni << ","
+            << Nb << endl;
             
         // Move the surface back to its original position. 
         displaceSurface(tri, -randomDisplacement);

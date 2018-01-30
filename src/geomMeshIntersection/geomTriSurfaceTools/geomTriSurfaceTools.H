@@ -51,7 +51,7 @@ namespace Foam { namespace GeometricalTransport {
 
 // Orient the triangles of a star-shaped triangulated surface such that they
 // are all pointing inwards. 
-void orientStarSurfaceNormalsInward(triSurface& tri);
+void orientNormalsInward(triSurface& tri);
 
 // Compute the volume of a star-shaped triangulated surface.
 // A two-dimensional triangular surface is a surface-stripe.  

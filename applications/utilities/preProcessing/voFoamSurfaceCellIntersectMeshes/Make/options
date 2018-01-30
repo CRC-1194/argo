@@ -8,6 +8,9 @@ EXE_INC = \
     -DTESTING 
 
 EXE_LIBS = \
+    -L$(FOAM_USER_LIBBIN) \
     -lfiniteVolume \
     -lmeshTools \
-    -ltriSurface 
+    -ltriSurface \
+    -lgeometricalMeshIntersection \
+    -lgeomio 

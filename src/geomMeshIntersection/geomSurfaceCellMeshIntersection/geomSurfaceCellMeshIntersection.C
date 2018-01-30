@@ -91,7 +91,8 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     ), 
     triSurfPtr_(), // WARNING: Uninitialized pointer, watch out for this when inheriting. 
     cellNearestTriangle_(), 
-    sqrDistFactor_(max(3.0, sqrDistFactor)) // Narrow band minimal width = 3 cells. 
+    sqrDistFactor_(max(3.0, sqrDistFactor)), // Narrow band minimal width = 3 cells. 
+    Nx_(0)
 {
     cellNearestTriangle_.reserve(signedDist_.size());
 }
@@ -137,7 +138,8 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     lambda_(copy.lambda_),
     triSurfPtr_(new triSurface(copy.triSurfPtr_())), // Deep copy. 
     cellNearestTriangle_(copy.cellNearestTriangle_), 
-    sqrDistFactor_(copy.sqrDistFactor_)
+    sqrDistFactor_(copy.sqrDistFactor_), 
+    Nx_(copy.Nx_)
 {} 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
@@ -232,6 +234,8 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
     const auto& triPoints = tri.points(); 
     const auto& triNormals = tri.faceNormals(); 
     const auto& V = mesh_.V(); 
+    Nx_ = 0; 
+    Ax_ = 0; 
     forAll(cellNearestTriangle_, cellI)
     {
         if (signedDist_[cellI] > 0)
@@ -263,6 +267,9 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
                         build<pointVectorVector>(cellI, mesh_)
                     )
                 );
+
+                Nx_++; 
+                Ax_ += cellTriangles.size(); 
 
                 // For all triangles in a cell
                 for (const auto triLabel : cellTriangles)
@@ -302,6 +309,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
             }
         }
     }
+    Ax_ /= Nx_; 
 }
 
 void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
@@ -335,6 +343,8 @@ void geomSurfaceCellMeshIntersection::operator=(const geomSurfaceCellMeshInterse
     // Deep copy on assignment.
     triSurfPtr_ = new triSurface(rhs.triSurfPtr_()); 
     cellNearestTriangle_ = rhs.cellNearestTriangle_;
+    Nx_ = rhs.Nx_; 
+    Ax_ = rhs.Ax_; 
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

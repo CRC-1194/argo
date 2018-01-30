@@ -47,7 +47,7 @@ Author
 
 namespace Foam { namespace GeometricalTransport { 
 
-void orientStarSurfaceNormalsInward(triSurface& tri)
+void orientNormalsInward(triSurface& tri)
 {
     const pointField& triPoints = tri.localPoints(); 
     pointField& triNormals = const_cast<pointField&>(tri.faceNormals()); 
