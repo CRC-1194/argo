@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
     const label sqrDistFactor = args.optionLookupOrDefault<scalar>("sqrDistFactor", 3); 
-    const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
+    const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "smci.csv"); 
 
     fileName triFile = args.path() + "/surface.stl";
     if (args.optionFound("surfaceFile"))
