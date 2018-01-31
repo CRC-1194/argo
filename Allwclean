@@ -8,6 +8,7 @@ then
     cd ..
 fi
 
+wcleanLnIncludeAll 
 wclean all src
 wclean all applications
 
