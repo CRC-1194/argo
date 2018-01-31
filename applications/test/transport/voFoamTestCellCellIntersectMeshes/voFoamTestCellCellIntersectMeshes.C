@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 
     // Read user-defined options.
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "cellCellMeshIntersection.csv"); 
+    const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "cci.csv"); 
     const label nIterations = args.optionLookupOrDefault<label>("nIterations", 100);  
 
     high_resolution_clock::time_point p0 = high_resolution_clock::now();
