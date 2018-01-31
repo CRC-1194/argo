@@ -1,11 +1,9 @@
 EXE_INC = \
-    -fopenmp \
     -std=c++1y \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
     -I$(LIB_SRC)/triSurface/lnInclude \
-    -I$(GEOMTRANSPORT)/src/lnInclude \
-    -DTESTING 
+    -I$(GEOMTRANSPORT)/src/lnInclude
 
 EXE_LIBS = \
     -L$(FOAM_USER_LIBBIN) \
