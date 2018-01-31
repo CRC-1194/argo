@@ -163,10 +163,10 @@ int main(int argc, char *argv[])
         // Measurement point
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-        alpha.write(); 
 
 #ifdef TESTING
         meshIntersection.writeFields(); 
+        alpha.write(); 
 #endif
         // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
