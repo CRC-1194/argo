@@ -76,15 +76,6 @@ int main(int argc, char *argv[])
     if (fixNormals)
         orientNormalsInward(meshIntersection.surfaceRef()); 
 
-    // Open the error file for measurement output..
-    OFstream errorFile(dataFileName); 
-    // Nt : number of cells in the tool mesh 
-    // Nb : number of cells in the tool mesh 
-    // Ev : volume conservation error: 
-    // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
-    // Te : execution time of the CCI mesh intersection operation.
-    errorFile << "Nt,Nb,Ev,Ti,Te,Tx\n"; 
-
     // Compute the search distances once: the mesh is not moving, nor is it
     // topologically changed. 
     meshIntersection.calcSqrSearchDist(); 
@@ -112,10 +103,6 @@ int main(int argc, char *argv[])
     Info<< "Volume from surface mesh = " << Vs << endl;
     Info<< "Volume from volume fraction = " << Valpha << endl;
     Info<< "Volume error = " << Ev << endl; 
-
-    errorFile << meshIntersection.surface().size() << "," 
-        << mesh.nCells() << ","
-        << Ev << nl; 
         
     Info<< "End" << endl;
 }

@@ -1,5 +1,4 @@
 EXE_INC = \
-    -fopenmp \
     $(GEOMTRANSPORT_CPP_DIRECTIVE) \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/triSurface/lnInclude \

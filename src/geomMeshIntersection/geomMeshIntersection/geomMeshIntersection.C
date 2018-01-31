@@ -34,7 +34,6 @@ Author
 
 #include "geomMeshIntersection.H"
 #include "argList.H"
-#include <omp.h>
 
 namespace Foam
 {
@@ -57,21 +56,18 @@ geomMeshIntersection::geomMeshIntersection
     toolAABBs_(toolMesh.nCells()), 
     AABBintersects_(baseMesh.nCells()),
     cellPolyhedra_(baseMesh.nCells()), 
-    writeGeometry_(writeGeo)
-{
-    #pragma omp single 
-    {
-        // Precalculate mesh geometry. Lazy evaluation triggers race conditions. TM.
-        baseMesh.Sf(); 
-        baseMesh.Cf();
-        baseMesh.C(); 
-    }
-}
+    writeGeometry_(writeGeo),
+    Nx_(0), 
+    Ax_(0)
+{}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
 void geomMeshIntersection::setVolFraction(volScalarField& volFraction) 
 {
+    // Zero the measurement values. 
+    Ax_ = 0; 
+    Nx_ = 0; 
 
     baseMesh_.time().cpuTimeIncrement();
 
@@ -91,75 +87,72 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
     );
 
     Info << "Setting the volume fraction by mesh intersection. Time = "; 
-    double time = omp_get_wtime(); 
-    #pragma omp parallel 
+
+    // Computing bounding boxes for the base mesh.
+    for(label i = 0; i < baseMesh_.nCells(); ++i) 
+        baseAABBs_[i] = boundBox(bPoints, bCells[i].labels(bFaces));
+
+    // Computing bounding boxes for the tool mesh.
+    for(label i = 0; i < toolMesh_.nCells(); ++i) 
+        toolAABBs_[i] = boundBox(tPoints, tCells[i].labels(tFaces));
+
+    // Computing bounding boxes intersections. 
+    for (decltype (baseAABBs_.size()) i = 0; i < baseAABBs_.size(); ++i)
     {
-        // Computing bounding boxes for the base mesh.
-        #pragma omp for schedule(dynamic) nowait
-        for(label i = 0; i < baseMesh_.nCells(); ++i) 
-            baseAABBs_[i] = boundBox(bPoints, bCells[i].labels(bFaces));
-
-        // Computing bounding boxes for the tool mesh.
-        #pragma omp for schedule(dynamic) 
-        for(label i = 0; i < toolMesh_.nCells(); ++i) 
-            toolAABBs_[i] = boundBox(tPoints, tCells[i].labels(tFaces));
-
-        // Computing bounding boxes intersections. 
-        #pragma omp for schedule(dynamic) 
-        for (decltype (baseAABBs_.size()) i = 0; i < baseAABBs_.size(); ++i)
+        for (decltype(toolAABBs_.size()) j = 0; j < toolAABBs_.size(); ++j)
         {
-            for (decltype(toolAABBs_.size()) j = 0; j < toolAABBs_.size(); ++j)
-            {
-                if (baseAABBs_[i].overlaps(toolAABBs_[j]))
-                    AABBintersects_[i].push_back(j);
-            }
+            if (baseAABBs_[i].overlaps(toolAABBs_[j]))
+                AABBintersects_[i].push_back(j);
         }
+    }
 
-        // Intersecting cells whose AABBs intersect
-        #pragma omp for schedule(dynamic)
-        for(decltype(AABBintersects_.size()) i = 0; i < AABBintersects_.size(); ++i)
+    // Intersecting cells whose AABBs intersect
+    // FIXME: Set volume directly, do not store the cell intersects, better efficiency. TM.
+    for(decltype(AABBintersects_.size()) i = 0; i < AABBintersects_.size(); ++i)
+    {
+        auto baseCellHspaces = build<halfspaceVector>(i, baseMesh_);
+        polyhedronSeq results;  
+
+        if (AABBintersects_[i].size())
         {
-            auto baseCellHspaces = build<halfspaceVector>(i, baseMesh_);
-            polyhedronSeq results;  
+            ++Nx_; 
             for(const auto j : AABBintersects_[i])
             {
                 auto inputCellPolyhedron = build<polyhedron>(j, toolMesh_);
                 auto result = 
                     intersect<polyhedronIntersection>(baseCellHspaces, inputCellPolyhedron);
 
+                Ax_ += inputCellPolyhedron.size(); 
+
                 if (result.polyhedron_size() > 3)
                     results.push_back(result.polyhedron()); 
             }
             cellPolyhedra_[i] = results; 
         }
+    }
+    Ax_ /= Nx_; 
 
-        // Setting the volume fraction : volume(intersected polyhedron) / cellVolume 
-        // Done for the base mesh. 
-        #pragma omp for schedule(dynamic)
-        for(decltype(cellPolyhedra_.size()) i = 0;  i < cellPolyhedra_.size(); ++i)
+    // Setting the volume fraction : volume(intersected polyhedron) / cellVolume 
+    // Done for the base mesh. 
+    for(decltype(cellPolyhedra_.size()) i = 0;  i < cellPolyhedra_.size(); ++i)
+    {
+        if (cellPolyhedra_[i].size() > 0)
         {
-            if (cellPolyhedra_[i].size() > 0)
-            {
-                for (const auto& poly : cellPolyhedra_[i])
-                    volFraction[i] += volume(poly) / Vb[i];
-            }
+            for (const auto& poly : cellPolyhedra_[i])
+                volFraction[i] += volume(poly) / Vb[i];
         }
+    }
 
-        #pragma omp for schedule(static)
-        forAll(volFraction, cellI)
-        {
-            if (volFraction[cellI] > 1)
-                volFraction[cellI] = 1.0; 
-            else if (volFraction[cellI] > (1 - 5e-09)) 
-                volFraction[cellI] = 1; 
-        }
-
+    forAll(volFraction, cellI)
+    {
+        if (volFraction[cellI] > 1)
+            volFraction[cellI] = 1.0; 
+        else if (volFraction[cellI] > (1 - 5e-09)) 
+            volFraction[cellI] = 1; 
     }
 
     // Correct BC field values after processing cell values.  
     volFraction.correctBoundaryConditions(); 
-
-    Info << omp_get_wtime() - time << " seconds." << endl;
 }
 
 
@@ -201,8 +194,13 @@ Ostream& geomMeshIntersection::report (Ostream& os, const volScalarField& volFra
         vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
 
         for (const auto& polys : cellPolyhedra_)
-            for (const auto& poly: polys)
-                polyhedronStream << poly;
+        {
+            if (polys.size())
+            {
+                for (const auto& poly: polys)
+                    polyhedronStream << poly;
+            }
+        }
         Info << "Done." << endl;
     }
 

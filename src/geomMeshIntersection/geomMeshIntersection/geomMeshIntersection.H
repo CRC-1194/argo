@@ -110,6 +110,11 @@ class geomMeshIntersection
         //- Enable/disable VTK IO for the intersection result. 
         Switch writeGeometry_; 
 
+        // Number of intersected cells.
+        label Nx_; 
+
+        // Average number of intersections / intersected cell. 
+        scalar Ax_; 
 public:
 
     // Constructors
@@ -144,6 +149,16 @@ public:
         const fvMesh& baseMesh() const
         {
             return baseMesh_;
+        }
+
+        label Nx() const 
+        {
+            return Nx_; 
+        }
+
+        scalar Ax() const
+        {
+            return Ax_; 
         }
 
         // Write

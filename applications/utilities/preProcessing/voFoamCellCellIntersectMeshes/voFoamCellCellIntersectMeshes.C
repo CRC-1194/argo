@@ -96,35 +96,11 @@ int main(int argc, char *argv[])
         dimensionedScalar ("zero", dimless, 0)
     );
 
-    #pragma omp single 
-    {
-        // Precalculate mesh geometry. Lazy evaluation triggers race conditions. TM.
-        baseMesh.Sf(); 
-        baseMesh.Cf();
-        baseMesh.C(); 
-    }
-
-    const double t0 = omp_get_wtime(); 
     geomMeshIntersection intersect(baseMesh, toolMesh);
     intersect.setVolFraction(alpha1);
-    const double t1 = omp_get_wtime(); 
 
     alpha1.write(); 
     intersect.report(Info, alpha1); 
-
-    const scalar Vb = gSum((baseMesh.V() * alpha1)()); 
-    const scalar Vt = sum(toolMesh.V()).value();  
-    const scalar Ev = mag(Vt - Vb);  
-    const double Te = t1 - t0;
-
-    std::ofstream errorFile;
-    errorFile.open(dataFile, std::ios_base::app); 
-    errorFile << toolMesh.nCells() << "," 
-        << baseMesh.nCells() << ","
-        << Ev << ","  
-        << Te << "\n";  
-
-    errorFile.close(); 
 
     Info<< "\nEnd\n" << endl;
 

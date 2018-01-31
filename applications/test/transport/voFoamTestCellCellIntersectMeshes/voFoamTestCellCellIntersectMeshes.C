@@ -55,8 +55,10 @@ Author
 using namespace Foam;
 using namespace GeometricalTransport;
 
-#include <omp.h>
+#include <chrono>
 #include <fstream>
+
+using namespace std::chrono;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // Main program:
@@ -103,10 +105,11 @@ int main(int argc, char *argv[])
     const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "cellCellMeshIntersection.csv"); 
     const label nIterations = args.optionLookupOrDefault<label>("nIterations", 100);  
 
+    high_resolution_clock::time_point p0 = high_resolution_clock::now();
     #include "createMeshes.H"
 
-    Info<< "Reading field alpha1\n" << endl;
-    volScalarField alpha1
+    Info<< "Reading field alpha\n" << endl;
+    volScalarField alpha
     (
         IOobject
         (
@@ -119,10 +122,10 @@ int main(int argc, char *argv[])
         baseMesh, 
         dimensionedScalar ("zero", dimless, 0)
     );
+    high_resolution_clock::time_point p1 = high_resolution_clock::now();
 
     // RANDOM tool mesh positioning. 
     // Position the tool mesh centroid at the base mesh centroid. 
-    // TODO: Parallelize, start with commented lines. TM. 
     label nToolCells = toolMesh.nCells(); 
     label nBaseCells = baseMesh.nCells();  
     Pstream::gather(nToolCells, sumOp<label>()); 
@@ -159,8 +162,15 @@ int main(int argc, char *argv[])
     // Nb : number of cells in the tool mesh 
     // Ev : volume conservation error: 
     // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
+    // Ti : initialization time, loading the mesh and fields, 
     // Te : execution time of the CCI mesh intersection operation.
-    errorFile << "Nt,Nb,Ev,Te\n"; 
+    // Nx : total number of cells that are intersected: larger than the 
+    //      number of interface cells, as bulk cells are intersected as well.
+    // Ax : average number of intersections per intersected cell: average sum of 
+    //      tool cell sizes per intersected cell.
+    // Ni : number of interface cells, 
+    // Nb : number of bulk cells.
+    errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ax,Ni,Nb\n"; 
 
 
     for (int testI = 0; testI < nIterations; ++testI)
@@ -187,23 +197,39 @@ int main(int argc, char *argv[])
         // The toolMesh centroid now overlaps the base mesh centroid.
         toolMesh.movePoints(toolMesh.points() + randomDisplacement); 
 
-        const double t0 = omp_get_wtime(); 
-        geomMeshIntersection intersect(baseMesh, toolMesh);
-        intersect.setVolFraction(alpha1);
-        const double t1 = omp_get_wtime(); 
+        high_resolution_clock::time_point t0 = high_resolution_clock::now();
+        geomMeshIntersection meshIntersection(baseMesh, toolMesh);
+        meshIntersection.setVolFraction(alpha);
+        high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-        alpha1.write(); 
-        intersect.report(Info, alpha1); 
+        alpha.write(); 
+        meshIntersection.report(Info, alpha); 
 
-        const scalar Vb = gSum((baseMesh.V() * alpha1)()); 
+        const scalar Valpha = gSum((baseMesh.V() * alpha)()); 
         const scalar Vt = gSum(toolMesh.V());
-        const scalar Ev = mag(Vt - Vb) / Vt;  
-        const double Te = t1 - t0;
+        const scalar Ev = mag(Vt - Valpha) / Vt;  
+        const scalar Ti = duration_cast<nanoseconds>(p1 - p0).count() / 1e09;
+        const scalar Te = duration_cast<nanoseconds>(t1 - t0).count() / 1e09;
+
+        label Ni = 0; 
+        label Nb = 0; 
+
+        forAll(alpha, cellI)
+        {
+            if ((alpha[cellI] > 0) && (alpha[cellI] < 1))
+                ++Ni;  
+            else 
+                ++Nb; 
+        }
 
         errorFile << toolMesh.nCells() << "," 
             << baseMesh.nCells() << ","
             << Ev << ","  
-            << Te << "\n";  
+            << Ti << "," 
+            << Te << ","
+            << meshIntersection.Nx() << ","
+            << meshIntersection.Ax() << ","
+            << Ni << "," << Nb << nl;
 
 
         // Return the tool mesh to the original position.

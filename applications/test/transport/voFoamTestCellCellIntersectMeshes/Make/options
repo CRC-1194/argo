@@ -1,5 +1,5 @@
 EXE_INC = \
-    -fopenmp \
+    -std=c++1y \
     $(GEOMTRANSPORT_CPP_DIRECTIVE) \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(FOAM_SRC)/meshTools/lnInclude \

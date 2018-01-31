@@ -117,7 +117,14 @@ int main(int argc, char *argv[])
     // Nb : number of cells in the tool mesh 
     // Ev : volume conservation error: 
     // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
+    // Ti : initialization time, loading the mesh and fields, 
     // Te : execution time of the CCI mesh intersection operation.
+    // Tx : intersection time, intersecting a set of cells with the surface 
+    // Nx : total number of cells that are intersected, can be larger than the 
+    //      number of interface cells, depends on the bounding box intersections.
+    // Ax : average number of intersections per intersected cell (number of triangles) 
+    // Ni : number of interface cells, 
+    // Nb : number of bulk cells.
     errorFile << "Nt,Nb,Ev,Ti,Te,Tx,Nx,Ax,Ni,Nb\n"; 
 
     // Compute the search distances once: the mesh is not moving, nor is it
@@ -183,10 +190,10 @@ int main(int argc, char *argv[])
 
         forAll(alpha, cellI)
         {
-            if (alpha[cellI] == 1)
-                Nb++; 
             if ((alpha[cellI] > 0) && (alpha[cellI] < 1))
-                Ni++; 
+                ++Ni; 
+            else
+                ++Nb;
         }
 
         errorFile << tri.size() << "," 
