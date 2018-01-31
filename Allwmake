@@ -67,10 +67,11 @@ then
 
         wmakeLnInclude .
 
-        wmake libso volSurfaceInterpolation 
-        wmake libso fieldCorrection
-        wmake libso geomMeshIntersection
-        wmake libso geomTemporalIntegration
+        wmake volSurfaceInterpolation 
+        wmake fieldCorrection
+        wmake geomMeshIntersection
+        wmake geomTemporalIntegration
+        wmake io/vtk 
 
         cd ..
 
