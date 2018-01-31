@@ -244,6 +244,8 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
         // Correct boundary oscillation using the octree distance field.
         if (signedDist0_[cellI] < 0)
             alpha[cellI] = 0; 
+        else if (signedDist0_[cellI] > 0)
+            alpha[cellI] = 1; 
 
         const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
 
