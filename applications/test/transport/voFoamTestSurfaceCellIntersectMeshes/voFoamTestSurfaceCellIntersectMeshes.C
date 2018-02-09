@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     // Open the error file for measurement output..
     OFstream errorFile(dataFileName); 
     // Nt : number of cells in the tool mesh 
-    // Nb : number of cells in the tool mesh 
+    // Nb : number of cells in the base mesh 
     // Ev : volume conservation error: 
     // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
     // Ti : initialization time, loading the mesh and fields, 
@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
     //      number of interface cells, depends on the bounding box intersections.
     // Ax : average number of intersections per intersected cell (number of triangles) 
     // Ni : number of interface cells, 
-    // Nb : number of bulk cells.
-    errorFile << "Nt,Nb,Ev,Ti,Te,Tx,Nx,Ax,Ni,Nb\n"; 
+    // Nk : number of bulk cells.
+    errorFile << "Nt,Nb,Ev,Ti,Te,Tx,Nx,Ax,Ni,Nk\n"; 
 
     // Compute the search distances once: the mesh is not moving, nor is it
     // topologically changed. 
