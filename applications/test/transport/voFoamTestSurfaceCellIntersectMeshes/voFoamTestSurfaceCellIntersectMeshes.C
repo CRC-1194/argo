@@ -119,13 +119,11 @@ int main(int argc, char *argv[])
     // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
     // Ti : initialization time, loading the mesh and fields, 
     // Te : execution time of the CCI mesh intersection operation.
-    // Tx : intersection time, intersecting a set of cells with the surface 
-    // Nx : total number of cells that are intersected, can be larger than the 
-    //      number of interface cells, depends on the bounding box intersections.
-    // Ax : average number of intersections per intersected cell (number of triangles) 
+    // Tx : intersection time, intersecting a set of cells with the surface.
+    // Nx : total number of halfspace / cell intersections. 
     // Ni : number of interface cells, 
     // Nk : number of bulk cells.
-    errorFile << "Nt,Nb,Ev,Ti,Te,Tx,Nx,Ax,Ni,Nk\n"; 
+    errorFile << "Nt,Nb,Ev,Ti,Te,Tx,Nx,Ni,Nk\n"; 
 
     // Compute the search distances once: the mesh is not moving, nor is it
     // topologically changed. 
@@ -203,7 +201,6 @@ int main(int argc, char *argv[])
             << Te << "," 
             << Tx << "," 
             << meshIntersection.Nx() << ","
-            << meshIntersection.Ax() << "," 
             << Ni << ","
             << Nb << endl;
             

@@ -70,11 +70,6 @@ triSurface& geomSurfaceCellMeshIntersection::surfaceRef()
     return triSurfPtr_(); 
 }
 
-scalar geomSurfaceCellMeshIntersection::Ax() const 
-{
-    return Ax_;
-}
-
 label geomSurfaceCellMeshIntersection::Nx() const
 {
     return Nx_;

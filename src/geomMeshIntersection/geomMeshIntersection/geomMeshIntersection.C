@@ -57,8 +57,7 @@ geomMeshIntersection::geomMeshIntersection
     AABBintersects_(baseMesh.nCells()),
     cellPolyhedra_(baseMesh.nCells()), 
     writeGeometry_(writeGeo),
-    Nx_(0), 
-    Ax_(0)
+    Nx_(0)
 {}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
@@ -66,7 +65,6 @@ geomMeshIntersection::geomMeshIntersection
 void geomMeshIntersection::setVolFraction(volScalarField& volFraction) 
 {
     // Zero the measurement values. 
-    Ax_ = 0; 
     Nx_ = 0; 
 
     baseMesh_.time().cpuTimeIncrement();
@@ -115,14 +113,13 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
 
         if (AABBintersects_[i].size())
         {
-            ++Nx_; 
             for(const auto j : AABBintersects_[i])
             {
                 auto inputCellPolyhedron = build<polyhedron>(j, toolMesh_);
                 auto result = 
                     intersect<polyhedronIntersection>(baseCellHspaces, inputCellPolyhedron);
 
-                Ax_ += inputCellPolyhedron.size(); 
+                ++Nx_; 
 
                 if (result.polyhedron_size() > 3)
                     results.push_back(result.polyhedron()); 
@@ -130,7 +127,6 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
             cellPolyhedra_[i] = results; 
         }
     }
-    Ax_ /= Nx_; 
 
     // Setting the volume fraction : volume(intersected polyhedron) / cellVolume 
     // Done for the base mesh. 
