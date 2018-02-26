@@ -84,7 +84,7 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
             scalar(0)
     );
 
-    Info << "Setting the volume fraction by mesh intersection. Time = "; 
+    Info << "Setting the volume fraction by mesh intersection." << endl; 
 
     // Computing bounding boxes for the base mesh.
     for(label i = 0; i < baseMesh_.nCells(); ++i) 
