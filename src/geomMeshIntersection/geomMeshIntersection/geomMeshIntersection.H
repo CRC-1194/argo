@@ -114,7 +114,6 @@ class geomMeshIntersection
         label Nx_; 
 
         // Average number of intersections / intersected cell. 
-        scalar Ax_; 
 public:
 
     // Constructors
@@ -154,11 +153,6 @@ public:
         label Nx() const 
         {
             return Nx_; 
-        }
-
-        scalar Ax() const
-        {
-            return Ax_; 
         }
 
         // Write

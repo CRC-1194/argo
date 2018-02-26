@@ -94,7 +94,6 @@ class geomSurfaceCellMeshIntersection
         // Number of intersected cells. 
         label Nx_;
         // Average number of triangles (intersections) per intersected cell. 
-        scalar Ax_;
 
 public:
 
@@ -156,8 +155,6 @@ public:
         triSurface& surfaceRef(); 
 
         label Nx() const; 
-
-        scalar Ax() const; 
 
         //- Computation
 

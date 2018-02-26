@@ -166,11 +166,9 @@ int main(int argc, char *argv[])
     // Te : execution time of the CCI mesh intersection operation.
     // Nx : total number of cells that are intersected: larger than the 
     //      number of interface cells, as bulk cells are intersected as well.
-    // Ax : average number of intersections per intersected cell: average sum of 
-    //      tool cell sizes per intersected cell.
     // Ni : number of interface cells, 
-    // Nb : number of bulk cells.
-    errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ax,Ni,Nb\n"; 
+    // Nk : number of bulk cells.
+    errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ni,Nk\n"; 
 
 
     for (int testI = 0; testI < nIterations; ++testI)
@@ -228,7 +226,6 @@ int main(int argc, char *argv[])
             << Ti << "," 
             << Te << ","
             << meshIntersection.Nx() << ","
-            << meshIntersection.Ax() << ","
             << Ni << "," << Nb << nl;
 
 

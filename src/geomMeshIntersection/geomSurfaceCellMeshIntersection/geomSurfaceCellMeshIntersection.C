@@ -235,7 +235,6 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
     const auto& triNormals = tri.faceNormals(); 
     const auto& V = mesh_.V(); 
     Nx_ = 0; 
-    Ax_ = 0; 
     forAll(cellNearestTriangle_, cellI)
     {
         if (signedDist_[cellI] > 0)
@@ -270,8 +269,6 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
                     )
                 );
 
-                Nx_++; 
-                Ax_ += cellTriangles.size(); 
 
                 // For all triangles in a cell
                 for (const auto triLabel : cellTriangles)
@@ -282,6 +279,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
                         //halfspace(triPoints[triangles[triLabel][0]], triNormals[triLabel])
                         halfspace(triPoints[tri[triLabel][0]], triNormals[triLabel])
                     );  
+                    Nx_++; 
                 }
 
                 // Set the volume fraction of the cell.  
@@ -311,7 +309,6 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
             }
         }
     }
-    Ax_ /= Nx_; 
 }
 
 void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
@@ -346,7 +343,6 @@ void geomSurfaceCellMeshIntersection::operator=(const geomSurfaceCellMeshInterse
     triSurfPtr_ = new triSurface(rhs.triSurfPtr_()); 
     cellNearestTriangle_ = rhs.cellNearestTriangle_;
     Nx_ = rhs.Nx_; 
-    Ax_ = rhs.Ax_; 
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
