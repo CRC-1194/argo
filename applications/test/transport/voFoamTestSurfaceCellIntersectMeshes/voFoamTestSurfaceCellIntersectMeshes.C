@@ -117,13 +117,12 @@ int main(int argc, char *argv[])
     // Nb : number of cells in the base mesh 
     // Ev : volume conservation error: 
     // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
-    // Ti : initialization time, loading the mesh and fields, 
-    // Te : execution time of the CCI mesh intersection operation.
-    // Tx : intersection time, intersecting a set of cells with the surface.
+    // Ti : initialization time, loading the mesh and fields. 
+    // Te : execution time.
     // Nx : total number of halfspace / cell intersections. 
     // Ni : number of interface cells, 
     // Nk : number of bulk cells.
-    errorFile << "Nt,Nb,Ev,Ti,Te,Tx,Nx,Ni,Nk\n"; 
+    errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ni,Nk\n"; 
 
     // Compute the search distances once: the mesh is not moving, nor is it
     // topologically changed. 
@@ -146,17 +145,8 @@ int main(int argc, char *argv[])
         // Measurement point
         high_resolution_clock::time_point t0 = high_resolution_clock::now();
 
-        // Build an octree from the *displaced* surface. 
-        triSurfaceSearch triSearch(tri); 
-        // Compute the signed distance field based on the surface octree.
-        meshIntersection.calcSignedDist(tri, triSearch); 
-
-        // Measurement point
-        high_resolution_clock::time_point s0 = high_resolution_clock::now();
         // Compute the volume fraction field.
         meshIntersection.calcVolFraction(alpha, tri); 
-        // Measurement point
-        high_resolution_clock::time_point s1 = high_resolution_clock::now();
 
         // Measurement point
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -170,7 +160,6 @@ int main(int argc, char *argv[])
 
         const scalar Ti = duration_cast<nanoseconds>(p1 - p0).count() / 1e09;
         const scalar Te = duration_cast<nanoseconds>(t1 - t0).count() / 1e09;
-        const scalar Tx = duration_cast<nanoseconds>(s1 - s0).count() / 1e09;
 
         const scalar Vs = starSurfaceVolume(tri, mesh.solutionD()); 
         const scalar Valpha = sum(alpha * mesh.V()).value();
@@ -181,7 +170,6 @@ int main(int argc, char *argv[])
         Info<< "Volume error = " << Ev << endl; 
         Info<< "Initialization time = " << Ti << endl;
         Info<< "Calculation time = " << Te << endl;
-        Info<< "Intersection time = " << Tx << endl;
 
         label Nb = 0; 
         label Ni = 0; 
@@ -199,7 +187,6 @@ int main(int argc, char *argv[])
             << Ev << ","  
             << Ti << "," 
             << Te << "," 
-            << Tx << "," 
             << meshIntersection.Nx() << ","
             << Ni << ","
             << Nb << endl;
