@@ -91,19 +91,13 @@ int main(int argc, char *argv[])
         "Name of file used to save the reported errors." 
     ); 
 
-    argList::addOption
-    (
-        "nIterations", 
-        100,
-        "Number of times the tool mesh is randomly positioned and intersected with the base mesh." 
-    ); 
-
-    argList args(argc, argv);
+    #include "setRootCase.H"
+    #include "createTime.H"
+    #include "createMesh.H"
 
     // Read user-defined options.
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
     const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "ccmi.csv"); 
-    const label nIterations = args.optionLookupOrDefault<label>("nIterations", 100);  
 
     high_resolution_clock::time_point p0 = high_resolution_clock::now();
     #include "createMeshes.H"
@@ -170,8 +164,7 @@ int main(int argc, char *argv[])
     // Nk : number of bulk cells.
     errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ni,Nk\n"; 
 
-
-    for (int testI = 0; testI < nIterations; ++testI)
+    while(runTime.run())
     {
         const vector randomPosition = r.position(baseMin,baseMax); 
         // Compute the displacement of the tool mesh with respect to the base mesh
@@ -231,6 +224,8 @@ int main(int argc, char *argv[])
 
         // Return the tool mesh to the original position.
         toolMesh.movePoints(toolMesh.points() - randomDisplacement); 
+
+        runTime++; 
     }
 
     Info<< "\nEnd\n" << endl;
