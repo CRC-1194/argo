@@ -302,7 +302,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
                 write_vtk_polydata(cellIntersection, appendSuffix("cellIntersection", cellI) + ".vtk");
                 write_vtk_polydata
                 (
-                    build<pointVectorVector>(cellI,mesh), 
+                    build<pointVectorVector>(cellI, mesh_), 
                     appendSuffix("cell", cellI) + ".vtk"
                 );
 #endif
