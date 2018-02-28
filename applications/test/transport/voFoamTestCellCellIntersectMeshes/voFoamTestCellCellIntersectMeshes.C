@@ -220,6 +220,9 @@ int main(int argc, char *argv[])
                 ++Nb; 
         }
 
+        if (writeGeometry)
+            toolMesh.write(); 
+
         errorFile << toolMesh.nCells() << "," 
             << baseMesh.nCells() << ","
             << Ev << ","  
@@ -233,6 +236,7 @@ int main(int argc, char *argv[])
         toolMesh.movePoints(toolMesh.points() - randomDisplacement); 
 
         runTimeBase++; 
+        runTimeTool++;
     }
 
     Info<< "\nEnd\n" << endl;
