@@ -84,6 +84,12 @@ int main(int argc, char *argv[])
         "Path to the tool case. Default '../toolCase'" 
     ); 
 
+    argList::addBoolOption
+    (
+        "writeGeometry", 
+        "Write cut cell geometry to VTK." 
+    ); 
+
     argList::addOption
     (
         "dataFile", 
@@ -92,15 +98,16 @@ int main(int argc, char *argv[])
     ); 
 
     #include "setRootCase.H"
-    #include "createTime.H"
-    #include "createMesh.H"
+    #include "createMeshes.H"
 
     // Read user-defined options.
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
     const word dataFileName = args.optionLookupOrDefault<word>("dataFile", "ccmi.csv"); 
+    const Switch writeGeometry = args.optionFound("writeGeometry"); 
+
+    Info << "Write geometry = " << writeGeometry << endl;
 
     high_resolution_clock::time_point p0 = high_resolution_clock::now();
-    #include "createMeshes.H"
 
     Info<< "Reading field alpha\n" << endl;
     volScalarField alpha
@@ -164,7 +171,7 @@ int main(int argc, char *argv[])
     // Nk : number of bulk cells.
     errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ni,Nk\n"; 
 
-    while(runTime.run())
+    while(runTimeBase.run())
     {
         const vector randomPosition = r.position(baseMin,baseMax); 
         // Compute the displacement of the tool mesh with respect to the base mesh
@@ -189,7 +196,7 @@ int main(int argc, char *argv[])
         toolMesh.movePoints(toolMesh.points() + randomDisplacement); 
 
         high_resolution_clock::time_point t0 = high_resolution_clock::now();
-        geomMeshIntersection meshIntersection(baseMesh, toolMesh);
+        geomMeshIntersection meshIntersection(baseMesh, toolMesh, writeGeometry);
         meshIntersection.setVolFraction(alpha);
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
@@ -225,7 +232,7 @@ int main(int argc, char *argv[])
         // Return the tool mesh to the original position.
         toolMesh.movePoints(toolMesh.points() - randomDisplacement); 
 
-        runTime++; 
+        runTimeBase++; 
     }
 
     Info<< "\nEnd\n" << endl;

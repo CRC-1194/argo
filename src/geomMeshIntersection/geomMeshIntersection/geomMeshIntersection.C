@@ -187,7 +187,9 @@ Ostream& geomMeshIntersection::report (Ostream& os, const volScalarField& volFra
     {
         Info << "Writing the intersection polyhedra to VTK. " << endl;
         const auto& runTime = baseMesh_.time(); 
-        vtk_polydata_stream polyhedronStream(runTime.path() + "/cutPolyhedra.vtk");
+        vtk_polydata_stream polyhedronStream(
+            prependVtkFileName(runTime.path() + "/cutPolyhedra", runTime.timeIndex())
+        );
 
         for (const auto& polys : cellPolyhedra_)
         {
