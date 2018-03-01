@@ -111,15 +111,6 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
     {
         auto baseCellHspaces = build<halfspaceVector>(i, baseMesh_);
 
-        // TODO: Remove, debugging: 
-        //auto baseCellPoly = build<polyhedron>(i, baseMesh_); 
-
-        //for (unsigned int i = 0; i < baseCellPoly.size(); ++i)
-        //{
-            //if ((normal_area_vec(baseCellPoly[i]) & baseCellHspaces[i].direction()) > 0)
-                //Info << "ERROR: hspace outward pointing " << baseMesh_.time().timeIndex() << " " << i << nl;
-        //}
-
         polyhedronSeq results;  
 
         if (AABBintersects_[i].size())
