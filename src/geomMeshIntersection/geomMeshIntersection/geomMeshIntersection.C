@@ -104,22 +104,53 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
         }
     }
 
+
     // Intersecting cells whose AABBs intersect
     // FIXME: Set volume directly, do not store the cell intersects, better efficiency. TM.
     for(decltype(AABBintersects_.size()) i = 0; i < AABBintersects_.size(); ++i)
     {
         auto baseCellHspaces = build<halfspaceVector>(i, baseMesh_);
+
+        // TODO: Remove, debugging: 
+        //auto baseCellPoly = build<polyhedron>(i, baseMesh_); 
+
+        //for (unsigned int i = 0; i < baseCellPoly.size(); ++i)
+        //{
+            //if ((normal_area_vec(baseCellPoly[i]) & baseCellHspaces[i].direction()) > 0)
+                //Info << "ERROR: hspace outward pointing " << baseMesh_.time().timeIndex() << " " << i << nl;
+        //}
+
         polyhedronSeq results;  
 
         if (AABBintersects_[i].size())
         {
+            autoPtr<vtk_polydata_stream> cellio; 
+            autoPtr<vtk_polydata_stream> cutio; 
+            autoPtr<vtk_polydata_stream> toolio; 
+
+            if (writeGeometry_)
+            {
+                cellio = new vtk_polydata_stream(prependVtkFileName("cell", baseMesh_.time().timeIndex(), i));
+                toolio = new vtk_polydata_stream(prependVtkFileName("toolCell", baseMesh_.time().timeIndex(), i));
+                cutio = new vtk_polydata_stream(prependVtkFileName("toolCellCut", baseMesh_.time().timeIndex(), i));
+                cellio->streamGeometry(build<pointVectorVector>(i, baseMesh_)); 
+            }
+
             for(const auto j : AABBintersects_[i])
             {
                 auto inputCellPolyhedron = build<polyhedron>(j, toolMesh_);
                 auto result = 
                     intersect<polyhedronIntersection>(baseCellHspaces, inputCellPolyhedron);
 
+
+
                 ++Nx_; 
+
+                if (writeGeometry_) 
+                {
+                    toolio->streamGeometry(inputCellPolyhedron);  
+                    cutio->streamGeometry(result.polyhedron());
+                }
 
                 if (result.polyhedron_size() > 3)
                     results.push_back(result.polyhedron()); 

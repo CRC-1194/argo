@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     
     // Generate a random tool mesh centroid position within the shrunk base
     // mesh bounding box. 
-    Random r(1e04); 
+    //Random r(1e04); 
 
     // Open the error file for measurement output..
     OFstream errorFile(dataFileName); 
@@ -173,10 +173,23 @@ int main(int argc, char *argv[])
 
     while(runTimeBase.run())
     {
-        const vector randomPosition = r.position(baseMin,baseMax); 
         // Compute the displacement of the tool mesh with respect to the base mesh
         // centroid.
-        vector randomDisplacement = randomPosition - baseCenter; 
+
+        // Initialize the random number generator and distribution. 
+        std::random_device rd;  
+        std::mt19937 gen(rd()); 
+        std::uniform_real_distribution<> dis(0.0, 1.0);
+
+        // Compute the random displacement with respect to the base mesh centroid.
+        vector randomPosition = baseMin;  
+        forAll(randomPosition, cmptI)
+            randomPosition[cmptI] += dis(gen) * (baseMax[cmptI] - baseMin[cmptI]);
+
+        // Place the tri surface such that the centroid of the tri surface box overlaps
+        // with the randomly generated position within aabb. 
+        vector randomDisplacement = randomPosition - (0.5 * (toolBox.min() + toolBox.max()));
+
         // Null the displacement in a dimension that is not used in pseudo2D. 
         forAll(randomDisplacement, I)
         {

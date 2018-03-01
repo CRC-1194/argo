@@ -71,7 +71,6 @@ then
         wmake fieldCorrection
         wmake geomMeshIntersection
         wmake geomTemporalIntegration
-        wmake io/vtk 
 
         cd ..
 
