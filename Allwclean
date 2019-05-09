@@ -8,6 +8,7 @@ then
     cd ..
 fi
 
+wclean all third-party/two-phase-validation
 wclean all src
 wclean all applications
 

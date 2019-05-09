@@ -1,10 +1,9 @@
 #!/bin/sh
 cd ${0%/*} || exit 1    # run from this directory
 
-git submodule init two-phase-validation && git submodule update 
+git submodule init third-party/two-phase-validation && git submodule update --remote
 
 source etc/bashrc 
-
 
 if [ "$WM_PROJECT_DIR" == "" ]; 
 then
@@ -16,15 +15,13 @@ fi
 
 echo Building two-phase validation.
 
-cd two-phase-validation 
+cd third-party/two-phase-validation 
 ./Allwmake 
-cd .. 
+cd ../..
 
 echo "Done building two-phase validation."
 
 echo "Building geomtransport."
-
-source etc/bashrc
 
 if [ "$GEOMTRANSPORT" != "" ]; 
 then

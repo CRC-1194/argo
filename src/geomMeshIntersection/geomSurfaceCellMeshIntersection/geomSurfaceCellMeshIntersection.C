@@ -108,7 +108,7 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     geomSurfaceCellMeshIntersection(mesh, sqrDistFactor, wo) 
 {
     // Construct the surface from name.
-    triSurfPtr_ = new triSurface(triName); 
+    triSurfPtr_ = autoPtr<triSurface>(new triSurface(triName)); 
 } 
 
 geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
@@ -122,7 +122,7 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     geomSurfaceCellMeshIntersection(mesh, sqrDistFactor, wo) 
 {
     // Copy-construct the surface. 
-    triSurfPtr_ = new triSurface(tri);
+    triSurfPtr_ = autoPtr<triSurface>(new triSurface(tri));
 } 
 
 geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
@@ -340,7 +340,7 @@ void geomSurfaceCellMeshIntersection::operator=(const geomSurfaceCellMeshInterse
     signedDist0_ = rhs.signedDist0_; 
     lambda_ = rhs.lambda_; 
     // Deep copy on assignment.
-    triSurfPtr_ = new triSurface(rhs.triSurfPtr_()); 
+    triSurfPtr_ = autoPtr<triSurface>(new triSurface(rhs.triSurfPtr_())); 
     cellNearestTriangle_ = rhs.cellNearestTriangle_;
     Nx_ = rhs.Nx_; 
 }

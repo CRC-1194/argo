@@ -121,9 +121,9 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
 
             if (writeGeometry_)
             {
-                cellio = new vtk_polydata_stream(prependVtkFileName("cell", baseMesh_.time().timeIndex(), i));
-                toolio = new vtk_polydata_stream(prependVtkFileName("toolCell", baseMesh_.time().timeIndex(), i));
-                cutio = new vtk_polydata_stream(prependVtkFileName("toolCellCut", baseMesh_.time().timeIndex(), i));
+                cellio = autoPtr<vtk_polydata_stream>(new vtk_polydata_stream(prependVtkFileName("cell", baseMesh_.time().timeIndex(), i)));
+                toolio = autoPtr<vtk_polydata_stream>(new vtk_polydata_stream(prependVtkFileName("toolCell", baseMesh_.time().timeIndex(), i)));
+                cutio = autoPtr<vtk_polydata_stream>(new vtk_polydata_stream(prependVtkFileName("toolCellCut", baseMesh_.time().timeIndex(), i)));
                 cellio->streamGeometry(build<pointVectorVector>(i, baseMesh_)); 
             }
 
