@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
 
     geomSurfaceCellMeshIntersection meshIntersection(mesh, triFile, sqrDistFactor); 
 
+    // TODO: Remove fix normals, this needs to be done externally, by picking an outside point 
+    // and using surfaceOrient or another program. The STL must have consistent normals. TM. 
     const Switch fixNormals = args.optionFound("fixNormals");
 
     if (fixNormals)
@@ -92,17 +94,23 @@ int main(int argc, char *argv[])
 
     alpha.write(); 
 
+    // FIXME: Make a runtime option -testing out of this. 
 #ifdef TESTING
     meshIntersection.writeFields(); 
 #endif
 
-    const scalar Vs = starSurfaceVolume(meshIntersection.surface(), mesh.solutionD()); 
-    const scalar Valpha = sum(alpha * mesh.V()).value();
-    const scalar Ev = mag(Vs - Valpha) / Vs; 
+    // TODO: Make a runtime option out of this. 
+    //if (checkVolume)
+    //{
+        //Info << "Cannot check volume 
+        //const scalar Vs = starSurfaceVolume(meshIntersection.surface(), mesh.solutionD()); 
+        //const scalar Valpha = sum(alpha * mesh.V()).value();
+        //const scalar Ev = mag(Vs - Valpha) / Vs; 
 
-    Info<< "Volume from surface mesh = " << Vs << endl;
-    Info<< "Volume from volume fraction = " << Valpha << endl;
-    Info<< "Volume error = " << Ev << endl; 
+        //Info<< "Volume from surface mesh = " << Vs << endl;
+        //Info<< "Volume from volume fraction = " << Valpha << endl;
+        //Info<< "Volume error = " << Ev << endl; 
+    //}
         
     Info<< "End" << endl;
 }

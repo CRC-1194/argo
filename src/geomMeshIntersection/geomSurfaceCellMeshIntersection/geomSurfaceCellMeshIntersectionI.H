@@ -55,10 +55,10 @@ const volScalarField& geomSurfaceCellMeshIntersection::signedDist0() const
     return signedDist0_;  
 }
 
-const surfaceScalarField& geomSurfaceCellMeshIntersection::lambda() const
-{
-    return lambda_;  
-}
+//const surfaceScalarField& geomSurfaceCellMeshIntersection::lambda() const
+//{
+    //return lambda_;  
+//}
 
 const triSurface& geomSurfaceCellMeshIntersection::surface() const
 {

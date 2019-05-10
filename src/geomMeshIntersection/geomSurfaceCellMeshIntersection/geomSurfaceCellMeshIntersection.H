@@ -76,7 +76,7 @@ class geomSurfaceCellMeshIntersection
         volScalarField signedDist0_;  
 
         // Laplace sign equation coefficient, defaults to 1.  
-        surfaceScalarField lambda_; 
+        //surfaceScalarField lambda_; 
 
         // Triangular surface mesh with the octree used for spatial queries. 
         // AutoPtr used because of constructor delegation. 
@@ -148,7 +148,7 @@ public:
 
         const volScalarField& signedDist0() const; 
 
-        const surfaceScalarField& lambda() const; 
+        //const surfaceScalarField& lambda() const; 
 
         const triSurface& surface() const;
 

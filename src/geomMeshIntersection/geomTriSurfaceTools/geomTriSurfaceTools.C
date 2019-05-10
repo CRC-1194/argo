@@ -82,15 +82,16 @@ scalar starSurfaceVolume(const triSurface& tri, const Vector<label>& solutionVec
         const point& p1 = triPoints[tri[tI][1]];
         const point& p2 = triPoints[tri[tI][2]];
 
-        // Assuming inward pointing normals for distance calculation!
-        // With inward normals, calculated volumes will be negative!
-        scalar deltaV = -1.0 / 6.0 * (p0 - triCenter) & 
+        // Assuming outward pointing normals for distance calculation!
+        scalar deltaV = 1.0 / 6.0 * (p0 - triCenter) & 
             ((p1 - triCenter) ^ (p2 - triCenter)); 
 
         if (deltaV < 0) 
         {
             write_vtk_polydata(build<arrayTriangle>(p0,p1,p2), "bad-triangle.vtk");
-            Perr << "Negative mesh volume contribution!"  
+            Perr << "Negative mesh volume contribution!\n" 
+                << "This volume computation assumes the surface mesh is star-shaped:\n" 
+                << "the volume it covers can be triangulated with its centroid." 
                 << "deltaV = " << deltaV << endl
                 << "triCenter = " << triCenter << endl
                 << "p0 = " << p0 << endl

@@ -28,6 +28,7 @@ License
 #include "fvcAverage.H"
 #include "fvScalarMatrix.H"
 #include "fvm.H"
+#include "fvc.H"
 #include "Geometry.H"
 
 
@@ -74,22 +75,8 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
         dimensionedScalar("signedDist", dimLength,0),
         "zeroGradient"
     ),
-    signedDist0_("signedDist0", signedDist_),  
-    lambda_
-    (
-        IOobject
-        (
-            "lambda", 
-            runTime_.timeName(), 
-            mesh, 
-            IOobject::NO_READ,
-            wo 
-        ),
-        mesh,
-        // Solve a Laplace equation to propagate the sign.
-        dimensionedScalar ("lambda", sqr(dimLength) * pow(dimTime,-1), 1)
-    ), 
-    triSurfPtr_(), // WARNING: Uninitialized pointer, watch out for this when inheriting. 
+    signedDist0_("signedDist0", signedDist_), 
+    triSurfPtr_(), // FIXME: Uninitialized pointer. 
     cellNearestTriangle_(), 
     sqrDistFactor_(max(3.0, sqrDistFactor)), // Narrow band minimal width = 3 cells. 
     Nx_(0)
@@ -135,7 +122,7 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     sqrSearchDist_(copy.sqrSearchDist_), 
     signedDist_(copy.signedDist_), 
     signedDist0_(copy.signedDist0_), 
-    lambda_(copy.lambda_),
+    //lambda_(copy.lambda_),
     triSurfPtr_(new triSurface(copy.triSurfPtr_())), // Deep copy. 
     cellNearestTriangle_(copy.cellNearestTriangle_), 
     sqrDistFactor_(copy.sqrDistFactor_), 
@@ -189,9 +176,18 @@ void geomSurfaceCellMeshIntersection::calcSignedDist(
     // equation for a single iteration for the signed distance field. 
     fvScalarMatrix distEqn
     (
-        -fvm::laplacian(lambda_, signedDist_)
+        -fvm::laplacian(signedDist_)
     );
+    //fvScalarMatrix distEqn
+    //(
+        //fvm::laplacian(signedDist_) == fvc::div(fvc::grad(signedDist0_))
+    //);
+
     distEqn.solve(); 
+
+    // TODO: Remove, debugging.
+    signedDist0_.write();
+    signedDist_.write();
 }
 
 void geomSurfaceCellMeshIntersection::calcSignedDist()
@@ -237,14 +233,16 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
     Nx_ = 0; 
     forAll(cellNearestTriangle_, cellI)
     {
-        if (signedDist_[cellI] > 0)
+        if (signedDist_[cellI] < 0)
             alpha[cellI] = 1; 
+        else 
+            alpha[cellI] = 0;
 
         // Correct boundary oscillation using the octree distance field.
         if (signedDist0_[cellI] < 0)
-            alpha[cellI] = 0; 
-        else if (signedDist0_[cellI] > 0)
             alpha[cellI] = 1; 
+        else if (signedDist0_[cellI] > 0)
+            alpha[cellI] = 0; 
 
         const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
 
@@ -277,7 +275,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
                     cellIntersection = intersect<triangulationIntersection>(
                         cellIntersection, 
                         //halfspace(triPoints[triangles[triLabel][0]], triNormals[triLabel])
-                        halfspace(triPoints[tri[triLabel][0]], triNormals[triLabel])
+                        halfspace(triPoints[tri[triLabel][0]], -triNormals[triLabel])
                     );  
                     Nx_++; 
                 }
@@ -338,7 +336,7 @@ void geomSurfaceCellMeshIntersection::operator=(const geomSurfaceCellMeshInterse
     sqrSearchDist_ = rhs.sqrSearchDist_; 
     signedDist_ = rhs.signedDist_; 
     signedDist0_ = rhs.signedDist0_; 
-    lambda_ = rhs.lambda_; 
+    //lambda_ = rhs.lambda_; 
     // Deep copy on assignment.
     triSurfPtr_ = autoPtr<triSurface>(new triSurface(rhs.triSurfPtr_())); 
     cellNearestTriangle_ = rhs.cellNearestTriangle_;
