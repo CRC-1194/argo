@@ -1,7 +1,7 @@
 #!/bin/bash
 cd ${0%/*} || exit 1    # run from this directory
 
-git submodule init third-party/two-phase-validation && git submodule update --remote
+#git submodule init third-party/two-phase-validation && git submodule update --remote
 
 source etc/bashrc 
 
@@ -13,13 +13,13 @@ fi
 
 # Build the two-phase-validation submodule
 
-echo Building two-phase validation.
-
-cd third-party/two-phase-validation 
-./Allwmake 
-cd ../..
-
-echo "Done building two-phase validation."
+#echo Building two-phase validation.
+#
+#cd third-party/two-phase-validation 
+#./Allwmake 
+#cd ../..
+#
+#echo "Done building two-phase validation."
 
 echo "Building geomtransport."
 
@@ -27,35 +27,35 @@ if [ "$GEOMTRANSPORT" != "" ];
 then
 
     # Build gtest
-    if [ ! -d $GEOMTRANSPORT_THIRD_PARTY ]; 
-    then
-        mkdir -p $GEOMTRANSPORT_THIRD_PARTY
-    fi
+    #if [ ! -d $GEOMTRANSPORT_THIRD_PARTY ]; 
+    #then
+    #    mkdir -p $GEOMTRANSPORT_THIRD_PARTY
+    #fi
 
-    if [ ! -d $GEOMTRANSPORT_GTEST ];
-    then
-        echo "Cloning Google Test..." 
-        git clone https://github.com/google/googletest.git $GEOMTRANSPORT_GTEST && \
-        echo "Done cloning Google Test."
-    else
-        echo "Updating Google Test..."
-        cd $GEOMTRANSPORT_GTEST && \
-        git pull && \
-        echo "Done updating Google Test." && \
-        cd - 
-    fi
+    #if [ ! -d $GEOMTRANSPORT_GTEST ];
+    #then
+    #    echo "Cloning Google Test..." 
+    #    git clone https://github.com/google/googletest.git $GEOMTRANSPORT_GTEST && \
+    #    echo "Done cloning Google Test."
+    #else
+    #    echo "Updating Google Test..."
+    #    cd $GEOMTRANSPORT_GTEST && \
+    #    git pull && \
+    #    echo "Done updating Google Test." && \
+    #    cd - 
+    #fi
 
-    if [ ! -d $GEOMTRANSPORT_GTEST_BUILD ]; 
-    then
-        mkdir -p $GEOMTRANSPORT_GTEST_BUILD
-    fi
+    #if [ ! -d $GEOMTRANSPORT_GTEST_BUILD ]; 
+    #then
+    #    mkdir -p $GEOMTRANSPORT_GTEST_BUILD
+    #fi
 
-    cd $GEOMTRANSPORT_GTEST_BUILD && \
-    cmake -DBUILD_SHARED_LIBS=ON -Dgtest_build_samples=ON -G"Unix Makefiles" \
-          $GEOMTRANSPORT_GTEST_SRC && \
-    make  && \
-    cd $GEOMTRANSPORT && \
-    echo "Done building Google Test."
+    #cd $GEOMTRANSPORT_GTEST_BUILD && \
+    #cmake -DBUILD_SHARED_LIBS=ON -Dgtest_build_samples=ON -G"Unix Makefiles" \
+    #      $GEOMTRANSPORT_GTEST_SRC && \
+    #make  && \
+    #cd $GEOMTRANSPORT && \
+    #echo "Done building Google Test."
 
     echo "Building GEOMTRANSPORT..."
     if [ "$WM_PROJECT_DIR" != "" ]; 
@@ -64,10 +64,7 @@ then
 
         wmakeLnInclude .
 
-        wmake volSurfaceInterpolation 
-        wmake fieldCorrection
         wmake geomMeshIntersection
-        wmake geomTemporalIntegration
 
         cd ..
 

@@ -22,4 +22,4 @@ export GEOM_VOF_INIT_GTEST_BUILD=$GEOM_VOF_INIT_GTEST/build
 
 export LD_LIBRARY_PATH="$GEOM_VOF_INIT_GTEST_BUILD":$LD_LIBRARY_PATH
 
-source $GEOM_VOF_INIT/third-party/two-phase-validation/etc/bashrc
+#source $GEOM_VOF_INIT/third-party/two-phase-validation/etc/bashrc
