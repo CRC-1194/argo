@@ -2,24 +2,24 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-export GEOMTRANSPORT=${DIR%%/etc*}
+export GEOM_VOF_INIT=${DIR%%/etc*}
 
-export GEOMTRANSPORT_THIRD_PARTY=$GEOMTRANSPORT/third-party
+export GEOM_VOF_INIT_THIRD_PARTY=$GEOM_VOF_INIT/third-party
 
-export PATH=$GEOMTRANSPORT/src/scripts/:$PATH
-export PYTHONPATH=$GEOMTRANSPORT/src/scripts/:$PYTHONPATH
+export PATH=$GEOM_VOF_INIT/src/scripts/:$PATH
+export PYTHONPATH=$GEOM_VOF_INIT/src/scripts/:$PYTHONPATH
 
 export CXXFLAGS=$WM_CXXFLAGS
 
-export GEOMTRANSPORT_CPP_DIRECTIVE='-std=c++1y' 
+export GEOM_VOF_INIT_CPP_DIRECTIVE='-std=c++1y' 
 
 
 # Third party libraries 
-export GEOMTRANSPORT_GTEST=$GEOMTRANSPORT_THIRD_PARTY/googletest
-export GEOMTRANSPORT_GTEST_SRC=$GEOMTRANSPORT_GTEST/googletest
-export GEOMTRANSPORT_GTEST_INCLUDE=$GEOMTRANSPORT_GTEST_SRC/include/gtest
-export GEOMTRANSPORT_GTEST_BUILD=$GEOMTRANSPORT_GTEST/build
+export GEOM_VOF_INIT_GTEST=$GEOM_VOF_INIT_THIRD_PARTY/googletest
+export GEOM_VOF_INIT_GTEST_SRC=$GEOM_VOF_INIT_GTEST/googletest
+export GEOM_VOF_INIT_GTEST_INCLUDE=$GEOM_VOF_INIT_GTEST_SRC/include/gtest
+export GEOM_VOF_INIT_GTEST_BUILD=$GEOM_VOF_INIT_GTEST/build
 
-export LD_LIBRARY_PATH="$GEOMTRANSPORT_GTEST_BUILD":$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH="$GEOM_VOF_INIT_GTEST_BUILD":$LD_LIBRARY_PATH
 
-source $GEOMTRANSPORT/third-party/two-phase-validation/etc/bashrc
+source $GEOM_VOF_INIT/third-party/two-phase-validation/etc/bashrc
