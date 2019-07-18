@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+
+# Run all the SMCI cases 
+for case in *smciDomain*00* 
+do
+    cd $case
+    sbatch ../SMCI-intersect.sbatch 
+    cd ..
+done 

@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+
+TEMPLATE=$1
+PARAMETERS=$2
+
+if [ \( "$TEMPLATE" == "" \) -o \( "$PARAMETERS" == "" \) -o \( ! -d "$TEMPLATE" \) -o \( ! -f "$PARAMETERS" \) ]; 
+then 
+    echo Provide two arguments to this script in the following order: the template case *directory* and the PyFoam parameter *file*.  
+    exit 1
+fi
+
+voFoamParameterInit $1 $2 &&
+
+# Mesh all parameterized domain cases.
+for case in *${2/.parameter/}*00*
+do
+    cd $case  
+    sbatch ../blockMesh.sbatch
+    cd ..
+done

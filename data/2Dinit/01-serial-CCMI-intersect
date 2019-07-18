@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+
+voFoamParameterInit cciDomain 
+
+for case in *00*cciDomain*
+do
+    blockMesh -case $case
+done 
+
+for case in *00*cciDomain*
+do
+    for i in {1..10}
+    do
+        # Create and mesh a randomly positioned cylinder.
+        cd toolCase  &&
+        ./makeMesh &&
+        cd .. && 
+        # Intersect the domain mesh with the cylinder mesh.
+        cd $case &&
+            geomIntersectMeshes &&
+        cd ..
+    done
+done

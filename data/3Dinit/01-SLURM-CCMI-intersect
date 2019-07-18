@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+
+for case in ccmiDomain*00*
+do
+    cd $case \ 
+    sbatch ../CCMI-intersect.sbatch && \
+    cd ..
+done 

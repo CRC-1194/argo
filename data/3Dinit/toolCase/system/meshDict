@@ -1,0 +1,53 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+|    _ _ _ _    |                                                             |
+| //         \\ | Creative Fields Mesher                                      |
+| |  cfMesh  | |                                                              |
+| \\ _ _ _ _ // | Version: 1.1.1                                              |
+|               | Web: www.cfmesh.com e-mail: support@c-fields.com          |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version	2;
+    format	ascii;
+    class	dictionary;
+    location	"system";
+    object	meshDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+surfaceFile	"sphere.stl";
+
+maxCellSize	0.5;
+
+boundaryLayers
+{
+    // Local settings applied to patches.
+    patchBoundaryLayers
+    {
+        // Patch name. Supports regular expressions.
+        "ascii"
+        {
+            // Number of boundary layers at walls.
+            nLayers	1;
+            
+            // Thickness ratio between consecutive layers.
+            thicknessRatio 100;	
+        }
+    }
+}
+
+
+localRefinement
+{
+    // Local refinement regions
+    "ascii"
+    {
+        // Arc length for the ParaView sphere source (from create-sphere.py): 
+        // Arc length = Radius * 2 * pi / PhiResolution 
+        //              Radius * 2 * pi / ThetaResolution
+        cellSize 0.01472621556370215;
+    }
+}
+
+// ************************************************************************* //

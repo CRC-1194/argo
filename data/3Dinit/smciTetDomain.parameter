@@ -1,0 +1,10 @@
+values
+{
+    solver (voFoamSetSurfaceFraction);
+
+    N
+    (
+        3 7 13 27 55 
+    );
+
+}
