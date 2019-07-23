@@ -34,6 +34,7 @@ Author
 
 #include "geomMeshIntersection.H"
 #include "argList.H"
+#include "Time.H"
 
 namespace Foam
 {

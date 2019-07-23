@@ -50,6 +50,7 @@ SourceFiles
 #include "boundBox.H"
 #include "volFields.H"
 #include "Ostream.H"
+#include "Switch.H"
 //#include "Geometry.H"
 //#include "geomTransportControl.H"
 

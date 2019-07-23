@@ -21,10 +21,10 @@ fi
 #
 #echo "Done building two-phase validation."
 
-echo "Building geomtransport."
+#echo "Building geomtransport."
 
-if [ "$GEOMTRANSPORT" != "" ]; 
-then
+#if [ "$GEOMTRANSPORT" != "" ]; 
+#then
 
     # Build gtest
     #if [ ! -d $GEOMTRANSPORT_THIRD_PARTY ]; 
@@ -77,4 +77,4 @@ then
 
         echo "Done building geomtransport."
     fi
-fi
+#fi
