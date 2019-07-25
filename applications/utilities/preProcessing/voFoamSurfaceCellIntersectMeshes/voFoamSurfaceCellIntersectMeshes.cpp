@@ -54,7 +54,7 @@ using namespace GeometricalTransport;
 
 int main(int argc, char *argv[])
 {
-    #include "createOptions.H"
+    #include "createOptions.hpp"
     #include "setRootCase.H"
     #include "createTime.H"
     #include "createMesh.H"
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     if (args.optionFound("surfaceFile"))
         triFile = args.optionRead<fileName>("surfaceFile");
 
-    #include "createFields.H"
+    #include "createFields.hpp"
 
     geomSurfaceCellMeshIntersection meshIntersection(mesh, triFile, sqrDistFactor); 
 

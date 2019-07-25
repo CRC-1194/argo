@@ -30,6 +30,13 @@ set(wm_label_size "$ENV{WM_LABEL_SIZE}" CACHE STRING "Size in bit to use as labe
 # Gather macro options required for OpenFOAM source files
 add_compile_definitions(WM_LABEL_SIZE=${wm_label_size})
 add_compile_definitions(WM_DP)
+add_compile_definitions(NoRepository)
+add_compile_definitions(OPENFOAM=1806)
+add_compile_definitions(linux64)
+add_compile_definitions(WM_ARCH_OPTION=64)
+
+# Experimental
+set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --add-needed -Xlinker --no-as-needed")
 
 if(MSVC)
     add_compile_options(/W4 /WX)
@@ -72,20 +79,16 @@ endif(MSVC)
 #find_package(Eigen3 REQUIRED)
 find_library(OF_FINITE_VOLUME finiteVolume PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
 find_library(OF_MESH_TOOLS meshTools PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
-find_library(OF_EDGE_MESH edgeMesh PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
 find_library(OF_OPEN_FOAM OpenFOAM PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
-find_library(OF_SYSTEM_CALL systemCall PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
-find_library(OF_JOB_CONTROL jobControl PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
-find_library(OF_FV_OPTIONS fvOptions PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
-find_library(OF_PSTREAM Pstream PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib/openmpi-system")
-#find_library(OF_OSSPECIFIC OSspecific PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
-set(OF_OSSPECIFIC "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib/libOSspecific.o")
-#message(STATUS "Found OpenFOAM library object ${OF_OPEN_FOAM}")
 
 # Build the library
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which time is required / reasonable for this project (TT)
-    add_library(geometricalMeshIntersection SHARED src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.C)
+    add_library(geometricalMeshIntersection SHARED
+        src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.C
+        src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.C
+        src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.C
+    )
     target_include_directories(geometricalMeshIntersection PUBLIC # TODO: check if PRIVATE is possible as flag
         src/geomMeshIntersection/geomMeshIntersection
         src/geomMeshIntersection/geomReconstructError
@@ -93,7 +96,6 @@ set(OF_OSSPECIFIC "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib/libOS
         src/geomMeshIntersection/geomTriSurfaceTools
     )
     target_include_directories(geometricalMeshIntersection PUBLIC
-        # TODO: add paths to OpenFOAM headers
         ${ofpath}/src/OSspecific/POSIX/lnInclude
         ${ofpath}/src/OpenFOAM/lnInclude
         ${ofpath}/src/finiteVolume/lnInclude
@@ -105,38 +107,80 @@ set(OF_OSSPECIFIC "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib/libOS
 
     # Tests
     add_executable(voFoamTestCellCellIntersectMeshes applications/test/transport/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
-    target_include_directories(voFoamTestCellCellIntersectMeshes PUBLIC
+    target_include_directories(voFoamTestCellCellIntersectMeshes PUBLIC #TODO: determine if PUBLIC is required or if PRIVTE is possible
         src/geomMeshIntersection/geomMeshIntersection
         src/include
-        ${ofpath}/src/OpenFOAM/lnInclude
-        ${ofpath}/src/OSspecific/POSIX/lnInclude
         ${ofpath}/src/finiteVolume/lnInclude
         ${ofpath}/src/meshTools/lnInclude
+        ${ofpath}/src/OpenFOAM/lnInclude
+        ${ofpath}/src/OSspecific/POSIX/lnInclude
     )
+    # NOTE: the last three entries($Open_foam, dl, m) must be present
     target_link_libraries(voFoamTestCellCellIntersectMeshes
         geometricalMeshIntersection
-        ${OF_OPEN_FOAM}
-        #${OF_JOB_CONTROL}
-        #${OF_SYSTEM_CALL}
-        ${OF_PSTREAM}
-        ${OF_FV_OPTIONS}
-        #${OF_OSSPECIFIC}
         ${OF_FINITE_VOLUME}
         ${OF_MESH_TOOLS}
-        ${OF_EDGE_MESH}
+        ${OF_OPEN_FOAM}
         dl
+        m
     )
-    # Probably OpenFOAM libraries? What key word can be used? PRIVATE or PUBLIC?
 
-    #add_executable(voFoamTestSurfaceCellIntersectMeshes applications/test/transport/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
-    #target_link_libraries(geometricalMeshIntersection) # Probably OpenFOAM libraries?
+    add_executable(voFoamTestSurfaceCellIntersectMeshes applications/test/transport/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
+    target_include_directories(voFoamTestSurfaceCellIntersectMeshes PUBLIC
+        src/geomMeshIntersection/geomSurfaceCellMeshIntersection
+        src/geomMeshIntersection/geomTriSurfaceTools
+        ${ofpath}/src/finiteVolume/lnInclude
+        ${ofpath}/src/meshTools/lnInclude
+        ${ofpath}/src/surfMesh/lnInclude
+        ${ofpath}/src/OpenFOAM/lnInclude
+        ${ofpath}/src/OSspecific/POSIX/lnInclude
+    )
+    target_link_libraries(voFoamTestSurfaceCellIntersectMeshes
+        geometricalMeshIntersection
+        ${OF_FINITE_VOLUME}
+        ${OF_MESH_TOOLS}
+        ${OF_OPEN_FOAM}
+        dl
+        m
+    )
 
-    ## Preprocessing
-    #add_executable(voFoamCellCellIntersectMeshes applications/utilities/preProcessing/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
-    #target_link_libraries(geometricalMeshIntersection) # Probably OpenFOAM libraries?
+    # Preprocessing
+    add_executable(voFoamCellCellIntersectMeshes applications/utilities/preProcessing/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
+    target_include_directories(voFoamCellCellIntersectMeshes PUBLIC
+        src/include
+        src/geomMeshIntersection/geomMeshIntersection
+        ${ofpath}/src/finiteVolume/lnInclude
+        ${ofpath}/src/meshTools/lnInclude
+        ${ofpath}/src/OpenFOAM/lnInclude
+        ${ofpath}/src/OSspecific/POSIX/lnInclude
+    )
+    target_link_libraries(voFoamCellCellIntersectMeshes
+        geometricalMeshIntersection
+        ${OF_FINITE_VOLUME}
+        ${OF_MESH_TOOLS}
+        ${OF_OPEN_FOAM}
+        dl
+        m
+    )
 
-    #add_executable(voFoamSurfaceCellIntersectMeshes applications/utilities/preProcessing/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
-    #target_link_libraries(geometricalMeshIntersection) # Probably OpenFOAM libraries?
+    add_executable(voFoamSurfaceCellIntersectMeshes applications/utilities/preProcessing/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
+    target_include_directories(voFoamSurfaceCellIntersectMeshes PUBLIC
+        src/geomMeshIntersection/geomSurfaceCellMeshIntersection
+        src/geomMeshIntersection/geomTriSurfaceTools
+        ${ofpath}/src/finiteVolume/lnInclude
+        ${ofpath}/src/meshTools/lnInclude
+        ${ofpath}/src/surfMesh/lnInclude
+        ${ofpath}/src/OpenFOAM/lnInclude
+        ${ofpath}/src/OSspecific/POSIX/lnInclude
+    )
+    target_link_libraries(voFoamSurfaceCellIntersectMeshes
+        geometricalMeshIntersection
+        ${OF_FINITE_VOLUME}
+        ${OF_MESH_TOOLS}
+        ${OF_OPEN_FOAM}
+        dl
+        m
+    )
 
     ## Configure the INTERFACE library 
     #    add_library(geophase INTERFACE) 

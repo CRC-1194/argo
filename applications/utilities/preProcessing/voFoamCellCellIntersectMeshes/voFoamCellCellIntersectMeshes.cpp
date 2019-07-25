@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 
     argList args(argc, argv);
 
-    #include "createMeshes.H"
+    #include "createMeshes.hpp"
 
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
     const word dataFile = args.optionLookupOrDefault<word>("dataFile", "geomIntersectMeshes.dat"); 
