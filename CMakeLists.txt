@@ -110,13 +110,16 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
         src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.C
         src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.C
     )
-    target_include_directories(geometricalMeshIntersection PUBLIC # TODO: check if PRIVATE is possible as flag
+    target_include_directories(geometricalMeshIntersection PUBLIC
         src/geomMeshIntersection/geomMeshIntersection
         src/geomMeshIntersection/geomReconstructError
         src/geomMeshIntersection/geomSurfaceCellMeshIntersection
         src/geomMeshIntersection/geomTriSurfaceTools
+        src/include
     )
-    target_include_directories(geometricalMeshIntersection PUBLIC
+    # Using PUBLIC here removes the to specify again the required include directories
+    # for the applications.
+    target_include_directories(geometricalMeshIntersection SYSTEM PUBLIC
         ${of_src_path}/finiteVolume/lnInclude
         ${of_src_path}/surfMesh/lnInclude
         ${of_src_path}/meshTools/lnInclude
@@ -128,15 +131,6 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
 
     # Tests
     add_executable(voFoamTestCellCellIntersectMeshes applications/test/transport/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
-    target_include_directories(voFoamTestCellCellIntersectMeshes PUBLIC #TODO: determine if PUBLIC is required or if PRIVTE is possible
-        src/geomMeshIntersection/geomMeshIntersection
-        src/include
-        ${of_src_path}/finiteVolume/lnInclude
-        ${of_src_path}/meshTools/lnInclude
-        ${of_src_path}/OpenFOAM/lnInclude
-        ${of_src_path}/OSspecific/POSIX/lnInclude
-    )
-    # NOTE: the last three entries($Open_foam, dl, m) must be present
     target_link_libraries(voFoamTestCellCellIntersectMeshes
         geometricalMeshIntersection
         ${OF_FINITEVOLUME}
@@ -147,15 +141,6 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
     )
 
     add_executable(voFoamTestSurfaceCellIntersectMeshes applications/test/transport/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
-    target_include_directories(voFoamTestSurfaceCellIntersectMeshes PUBLIC
-        src/geomMeshIntersection/geomSurfaceCellMeshIntersection
-        src/geomMeshIntersection/geomTriSurfaceTools
-        ${of_src_path}/finiteVolume/lnInclude
-        ${of_src_path}/meshTools/lnInclude
-        ${of_src_path}/surfMesh/lnInclude
-        ${of_src_path}/OpenFOAM/lnInclude
-        ${of_src_path}/OSspecific/POSIX/lnInclude
-    )
     target_link_libraries(voFoamTestSurfaceCellIntersectMeshes
         geometricalMeshIntersection
         ${OF_FINITEVOLUME}
@@ -167,14 +152,6 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
 
     # Preprocessing
     add_executable(voFoamCellCellIntersectMeshes applications/utilities/preProcessing/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
-    target_include_directories(voFoamCellCellIntersectMeshes PUBLIC
-        src/include
-        src/geomMeshIntersection/geomMeshIntersection
-        ${of_src_path}/finiteVolume/lnInclude
-        ${of_src_path}/meshTools/lnInclude
-        ${of_src_path}/OpenFOAM/lnInclude
-        ${of_src_path}/OSspecific/POSIX/lnInclude
-    )
     target_link_libraries(voFoamCellCellIntersectMeshes
         geometricalMeshIntersection
         ${OF_FINITEVOLUME}
@@ -185,15 +162,6 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
     )
 
     add_executable(voFoamSurfaceCellIntersectMeshes applications/utilities/preProcessing/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
-    target_include_directories(voFoamSurfaceCellIntersectMeshes PUBLIC
-        src/geomMeshIntersection/geomSurfaceCellMeshIntersection
-        src/geomMeshIntersection/geomTriSurfaceTools
-        ${of_src_path}/finiteVolume/lnInclude
-        ${of_src_path}/meshTools/lnInclude
-        ${of_src_path}/surfMesh/lnInclude
-        ${of_src_path}/OpenFOAM/lnInclude
-        ${of_src_path}/OSspecific/POSIX/lnInclude
-    )
     target_link_libraries(voFoamSurfaceCellIntersectMeshes
         geometricalMeshIntersection
         ${OF_FINITEVOLUME}
