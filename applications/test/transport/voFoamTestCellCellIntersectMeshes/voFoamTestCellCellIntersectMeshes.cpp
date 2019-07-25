@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     ); 
 
     #include "setRootCase.H"
-    #include "createMeshes.H"
+    #include "createMeshes.hpp"
 
     // Read user-defined options.
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 

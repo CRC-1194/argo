@@ -70,6 +70,17 @@ endif(MSVC)
 
 # Require Eigen 
 #find_package(Eigen3 REQUIRED)
+find_library(OF_FINITE_VOLUME finiteVolume PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+find_library(OF_MESH_TOOLS meshTools PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+find_library(OF_EDGE_MESH edgeMesh PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+find_library(OF_OPEN_FOAM OpenFOAM PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+find_library(OF_SYSTEM_CALL systemCall PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+find_library(OF_JOB_CONTROL jobControl PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+find_library(OF_FV_OPTIONS fvOptions PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+find_library(OF_PSTREAM Pstream PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib/openmpi-system")
+#find_library(OF_OSSPECIFIC OSspecific PATHS "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib")
+set(OF_OSSPECIFIC "$ENV{WM_PROJECT_DIR}/platforms/linux64GccDPInt32Opt/lib/libOSspecific.o")
+#message(STATUS "Found OpenFOAM library object ${OF_OPEN_FOAM}")
 
 # Build the library
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
@@ -81,7 +92,7 @@ endif(MSVC)
         src/geomMeshIntersection/geomSurfaceCellMeshIntersection
         src/geomMeshIntersection/geomTriSurfaceTools
     )
-    target_include_directories(geometricalMeshIntersection PRIVATE
+    target_include_directories(geometricalMeshIntersection PUBLIC
         # TODO: add paths to OpenFOAM headers
         ${ofpath}/src/OSspecific/POSIX/lnInclude
         ${ofpath}/src/OpenFOAM/lnInclude
@@ -93,8 +104,29 @@ endif(MSVC)
 # Executables
 
     # Tests
-    #add_executable(voFoamTestCellCellIntersectMeshes applications/test/transport/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
-    #target_link_libraries(geometricalMeshIntersection) # Probably OpenFOAM libraries? What key word can be used? PRIVATE or PUBLIC?
+    add_executable(voFoamTestCellCellIntersectMeshes applications/test/transport/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
+    target_include_directories(voFoamTestCellCellIntersectMeshes PUBLIC
+        src/geomMeshIntersection/geomMeshIntersection
+        src/include
+        ${ofpath}/src/OpenFOAM/lnInclude
+        ${ofpath}/src/OSspecific/POSIX/lnInclude
+        ${ofpath}/src/finiteVolume/lnInclude
+        ${ofpath}/src/meshTools/lnInclude
+    )
+    target_link_libraries(voFoamTestCellCellIntersectMeshes
+        geometricalMeshIntersection
+        ${OF_OPEN_FOAM}
+        #${OF_JOB_CONTROL}
+        #${OF_SYSTEM_CALL}
+        ${OF_PSTREAM}
+        ${OF_FV_OPTIONS}
+        #${OF_OSSPECIFIC}
+        ${OF_FINITE_VOLUME}
+        ${OF_MESH_TOOLS}
+        ${OF_EDGE_MESH}
+        dl
+    )
+    # Probably OpenFOAM libraries? What key word can be used? PRIVATE or PUBLIC?
 
     #add_executable(voFoamTestSurfaceCellIntersectMeshes applications/test/transport/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
     #target_link_libraries(geometricalMeshIntersection) # Probably OpenFOAM libraries?
