@@ -106,9 +106,9 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
     add_library(geometricalMeshIntersection SHARED
-        src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.C
-        src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.C
-        src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.C
+        src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
+        src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
+        src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
     )
     target_include_directories(geometricalMeshIntersection PUBLIC
         src/geomMeshIntersection/geomMeshIntersection

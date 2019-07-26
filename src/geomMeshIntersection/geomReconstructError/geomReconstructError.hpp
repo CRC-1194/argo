@@ -46,7 +46,7 @@ SourceFiles
 #ifndef geomReconstructError_H
 #define geomReconstructError_H
 
-#include "geomMeshIntersection.H"
+#include "geomMeshIntersection.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -66,7 +66,7 @@ namespace GeometricalTransport {
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "geomReconstructError.C"
+#include "geomReconstructError.cpp"
 
 #endif
 

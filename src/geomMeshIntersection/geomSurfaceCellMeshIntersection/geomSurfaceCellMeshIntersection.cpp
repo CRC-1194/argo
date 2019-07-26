@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "geomSurfaceCellMeshIntersection.H"
+#include "geomSurfaceCellMeshIntersection.hpp"
 #include "calculatedFvPatchField.H"
 #include "fvcAverage.H"
 #include "fvScalarMatrix.H"

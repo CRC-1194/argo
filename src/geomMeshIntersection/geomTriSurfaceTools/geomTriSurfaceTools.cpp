@@ -39,7 +39,7 @@ Author
 
 \*---------------------------------------------------------------------------*/
 
-#include "geomTriSurfaceTools.H"
+#include "geomTriSurfaceTools.hpp"
 #include "boundBox.H"
 #include <random>
 //#include "Build.H"

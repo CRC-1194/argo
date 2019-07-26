@@ -179,7 +179,7 @@ public:
         void operator=(const geomSurfaceCellMeshIntersection& rhs);
 };
 
-#include "geomSurfaceCellMeshIntersectionI.H"
+#include "geomSurfaceCellMeshIntersectionI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

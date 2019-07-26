@@ -32,7 +32,7 @@ Author
 
 \*---------------------------------------------------------------------------*/
 
-#include "geomMeshIntersection.H"
+#include "geomMeshIntersection.hpp"
 #include "argList.H"
 #include "Time.H"
 

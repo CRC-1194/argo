@@ -50,7 +50,7 @@ Author
 #include "Random.H"
 #include "OFstream.H"
 
-#include "geomMeshIntersection.H"
+#include "geomMeshIntersection.hpp"
 
 using namespace Foam;
 using namespace GeometricalTransport;

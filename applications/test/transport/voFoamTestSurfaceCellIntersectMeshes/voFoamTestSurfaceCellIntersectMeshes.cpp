@@ -50,11 +50,12 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
+#include "OFstream.H"
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
-#include "geomSurfaceCellMeshIntersection.H"
-#include "geomTriSurfaceTools.H"
-#include "OFstream.H"
+
+#include "geomSurfaceCellMeshIntersection.hpp"
+#include "geomTriSurfaceTools.hpp"
 
 // Time measurement
 #include <chrono>

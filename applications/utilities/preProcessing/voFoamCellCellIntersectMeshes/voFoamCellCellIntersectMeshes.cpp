@@ -40,7 +40,7 @@ Author
 #include "fvMesh.H"
 #include "volFields.H"
 
-#include "geomMeshIntersection.H"
+#include "geomMeshIntersection.hpp"
 
 using namespace Foam;
 using namespace GeometricalTransport;

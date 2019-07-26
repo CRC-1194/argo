@@ -43,9 +43,10 @@ Author
 
 #include "fvCFD.H"
 #include "triSurface.H"
-#include "geomSurfaceCellMeshIntersection.H"
-#include "geomTriSurfaceTools.H"
 #include "OFstream.H"
+
+#include "geomSurfaceCellMeshIntersection.hpp"
+#include "geomTriSurfaceTools.hpp"
 
 using namespace GeometricalTransport;
 
