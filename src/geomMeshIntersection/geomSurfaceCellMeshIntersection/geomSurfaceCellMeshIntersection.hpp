@@ -44,7 +44,7 @@ SourceFiles
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "autoPtr.H" 
-#include "Geometry.H"
+//#include "Geometry.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -96,8 +96,8 @@ class geomSurfaceCellMeshIntersection
         // Average number of triangles (intersections) per intersected cell. 
 
 public:
-
-    typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangulationIntersection;
+    // ADDGEOM
+    //typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangulationIntersection;
 
     TypeName ("surfaceCellMeshIntersection"); 
 
@@ -179,7 +179,7 @@ public:
         void operator=(const geomSurfaceCellMeshIntersection& rhs);
 };
 
-#include "geomSurfaceCellMeshIntersectionI.H"
+#include "geomSurfaceCellMeshIntersectionI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

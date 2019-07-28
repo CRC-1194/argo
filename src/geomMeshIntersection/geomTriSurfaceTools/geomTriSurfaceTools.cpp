@@ -39,11 +39,11 @@ Author
 
 \*---------------------------------------------------------------------------*/
 
-#include "geomTriSurfaceTools.H"
+#include "geomTriSurfaceTools.hpp"
 #include "boundBox.H"
 #include <random>
-#include "Build.H"
-#include "WriteVtkPolydata.H"
+//#include "Build.H"
+//#include "WriteVtkPolydata.H"
 
 namespace Foam { namespace GeometricalTransport { 
 
@@ -88,6 +88,7 @@ scalar starSurfaceVolume(const triSurface& tri, const Vector<label>& solutionVec
 
         if (deltaV < 0) 
         {
+            /* ADDGEOM
             write_vtk_polydata(build<arrayTriangle>(p0,p1,p2), "bad-triangle.vtk");
             Perr << "Negative mesh volume contribution!\n" 
                 << "This volume computation assumes the surface mesh is star-shaped:\n" 
@@ -98,6 +99,7 @@ scalar starSurfaceVolume(const triSurface& tri, const Vector<label>& solutionVec
                 << "p1 = " << p1 << endl
                 << "p2 = " << p2 << endl
                 << Foam::abort(FatalError);
+            */
         }
         else 
             Vs += deltaV;

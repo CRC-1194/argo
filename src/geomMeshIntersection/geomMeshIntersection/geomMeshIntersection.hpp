@@ -50,11 +50,13 @@ SourceFiles
 #include "boundBox.H"
 #include "volFields.H"
 #include "Ostream.H"
-#include "Geometry.H"
-#include "geomTransportControl.H"
+#include "Switch.H"
+//#include "Geometry.H"
+//#include "geomTransportControl.H"
 
 #include <list>
 #include <memory>
+#include <vector>
 
 #ifndef geomMeshIntersection_H
 #define geomMeshIntersection_H
@@ -80,10 +82,12 @@ class geomMeshIntersection
         typedef std::vector<label> labelSeq;
         typedef std::vector<labelSeq> labelSeqSeq; 
 
+        /* ADDGEOM
         typedef pointVectorVector polyhedron; 
         typedef PolygonSequenceIntersection<polyhedron> polyhedronIntersection; 
         typedef std::vector<polyhedron> polyhedronSeq;
         typedef std::vector<polyhedronSeq> polyhedronSeqSeq;
+        */
 
     private:
 
@@ -105,7 +109,9 @@ class geomMeshIntersection
         labelSeqSeq AABBintersects_;
 
         //- List of polyhedron sets 
+        /* ADDGEOM
         polyhedronSeqSeq cellPolyhedra_;
+        */
 
         //- Enable/disable VTK IO for the intersection result. 
         Switch writeGeometry_; 
@@ -135,10 +141,12 @@ public:
 
         // Access
 
+        /* ADDGEOM
         const polyhedronSeqSeq& cellPolyhedra() const
         {
             return cellPolyhedra_;
         };
+        */
 
         const Time& baseTime() const
         {

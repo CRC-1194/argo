@@ -50,11 +50,12 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
+#include "OFstream.H"
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
-#include "geomSurfaceCellMeshIntersection.H"
-#include "geomTriSurfaceTools.H"
-#include "OFstream.H"
+
+#include "geomSurfaceCellMeshIntersection.hpp"
+#include "geomTriSurfaceTools.hpp"
 
 // Time measurement
 #include <chrono>
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
     // Timing point 
     high_resolution_clock::time_point p0 = high_resolution_clock::now();
 
-    #include "createOptions.H"
+    #include "createOptions.hpp"
     #include "setRootCase.H"
     #include "createTime.H"
     #include "createMesh.H"
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
     // Triangle surface
     triSurface tri(triFile);
 
-    #include "createFields.H"
+    #include "createFields.hpp"
 
     // Timing point 
     high_resolution_clock::time_point p1 = high_resolution_clock::now();

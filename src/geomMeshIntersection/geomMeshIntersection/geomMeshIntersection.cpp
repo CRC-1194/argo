@@ -32,8 +32,9 @@ Author
 
 \*---------------------------------------------------------------------------*/
 
-#include "geomMeshIntersection.H"
+#include "geomMeshIntersection.hpp"
 #include "argList.H"
+#include "Time.H"
 
 namespace Foam
 {
@@ -55,7 +56,8 @@ geomMeshIntersection::geomMeshIntersection
     baseAABBs_(baseMesh.nCells()), 
     toolAABBs_(toolMesh.nCells()), 
     AABBintersects_(baseMesh.nCells()),
-    cellPolyhedra_(baseMesh.nCells()), 
+    // ADDGEOM
+    //cellPolyhedra_(baseMesh.nCells()), 
     writeGeometry_(writeGeo),
     Nx_(0)
 {}
@@ -107,6 +109,7 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
 
     // Intersecting cells whose AABBs intersect
     // FIXME: Set volume directly, do not store the cell intersects, better efficiency. TM.
+    /* AGGGEOM
     for(decltype(AABBintersects_.size()) i = 0; i < AABBintersects_.size(); ++i)
     {
         auto baseCellHspaces = build<halfspaceVector>(i, baseMesh_);
@@ -171,6 +174,7 @@ void geomMeshIntersection::setVolFraction(volScalarField& volFraction)
 
     // Correct BC field values after processing cell values.  
     volFraction.correctBoundaryConditions(); 
+    */
 }
 
 
@@ -205,6 +209,7 @@ Ostream& geomMeshIntersection::report (Ostream& os, const volScalarField& volFra
     ).value();
     os << "Maximal boundedness error: " << boundednessError << "\nDone.\n";
 
+    /* ADDGEOM
     if (writeGeometry_)
     {
         Info << "Writing the intersection polyhedra to VTK. " << endl;
@@ -223,6 +228,7 @@ Ostream& geomMeshIntersection::report (Ostream& os, const volScalarField& volFra
         }
         Info << "Done." << endl;
     }
+    */
 
     return os;
 }

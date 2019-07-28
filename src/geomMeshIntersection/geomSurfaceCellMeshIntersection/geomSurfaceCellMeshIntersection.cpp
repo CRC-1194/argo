@@ -23,13 +23,13 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "geomSurfaceCellMeshIntersection.H"
+#include "geomSurfaceCellMeshIntersection.hpp"
 #include "calculatedFvPatchField.H"
 #include "fvcAverage.H"
 #include "fvScalarMatrix.H"
 #include "fvm.H"
 #include "fvc.H"
-#include "Geometry.H"
+//#include "Geometry.H"
 
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -254,6 +254,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
             // Find all the triangles in the bounding box of a cell in a narrow band. 
             labelList cellTriangles = octree.findBox(treeBoundBox(cellPoints)); 
 
+            /* ADDGEOM
             // If there are triangles in the cell.
             if (!cellTriangles.empty())
             {
@@ -305,6 +306,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
                 );
 #endif
             }
+            */
         }
     }
 }

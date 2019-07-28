@@ -50,7 +50,7 @@ Author
 #include "Random.H"
 #include "OFstream.H"
 
-#include "geomMeshIntersection.H"
+#include "geomMeshIntersection.hpp"
 
 using namespace Foam;
 using namespace GeometricalTransport;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     ); 
 
     #include "setRootCase.H"
-    #include "createMeshes.H"
+    #include "createMeshes.hpp"
 
     // Read user-defined options.
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
