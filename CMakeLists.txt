@@ -1,11 +1,5 @@
-# For now only copied from geophase. READ Cmake book before adopting (TT)
-# From the WMake build process:
-# - generate a shared library (geometricalMeshIntersection)
-# - build several executables:
-#       * voFoamTestCellCellIntersectMeshes
-#       * voFoamTestSurfaceCellIntersectMeshes
-#       * voFoamCellCellIntersectMeshes
-#       * voFoamSurfaceCellIntersectMeshes
+include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+include(FetchContent)
 
 cmake_minimum_required(VERSION 3.13)
 
@@ -17,8 +11,23 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# TODO: read in the relevant environment variables used by the OpenFOAM build process.
-# Store them by using CACHE variables.
+# Build dependencies
+FetchContent_Declare(geometricLibrary_source
+    GIT_REPOSITORY          git@git.rwth-aachen.de:leia/geophase.git
+    GIT_TAG                 9360ddb7fa9951978f6236fc818ce979290c8e01
+    GIT_SHALLOW             YES
+    GIT_PROGRESS            YES
+    USES_TERMINAL_DOWNLOAD  YES
+    USES_TERMINAL_UPDATE    YES
+)
+
+FetchContent_GetProperties(geometricLibrary_source)
+if(NOT geometricLibrary_source_POPULATED)
+    FetchContent_Populate(geometricLibrary_source)
+    add_subdirectory(${geometriclibrary_source_SOURCE_DIR})
+endif()
+
+# Read build relevant OpenFOAM environment variables and cache them
 set(of_wm_project_dir "$ENV{WM_PROJECT_DIR}" CACHE PATH "Path to OpenFOAM project folder.")
 set(of_wm_arch "$ENV{WM_ARCH}" CACHE STRING "Architecture. Usually linux64.")
 set(of_wm_arch_option "$ENV{WM_ARCH_OPTION}" CACHE STRING "Information if 32 or 64 bit operating system.")
@@ -45,7 +54,7 @@ message(STATUS "OpenFOAM lib path: ${of_lib_path}")
 message(STATUS "OpenFOAM src path: ${of_src_path}")
 
 # TODO:
-# Check that those variables are set. Optional: check for reasonable values
+# Check that those variables are set. Optional: check for reasonable values (TT)
 
 # Compile definitions required for OpenFOAM
 add_compile_definitions(
@@ -68,36 +77,7 @@ else(MSVC)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -ggdb3 -O3 -Wall -Wextra -pedantic -DDEBUG -D_USE_MATH_DEFINES")
 endif(MSVC)
 
-# TODO: Re-enable GoogleTest once it is required (TT)
-# GoogleTest integration by Craig Scott 
-# https://crascit.com/2015/07/25/cmake-gtest/
-#
-#    # Download and unpack googletest at configure time
-#    configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
-#    execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
-#        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
-#    execute_process(COMMAND "${CMAKE_COMMAND}" --build .
-#        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download" )
-#
-#    # Prevent GoogleTest from overriding our compiler/linker options
-#    # when building with Visual Studio
-#    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-#
-#    # Add googletest directly to our build. This adds
-#    # the following targets: gtest, gtest_main, gmock
-#    # and gmock_main
-#    add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
-#                     "${CMAKE_BINARY_DIR}/googletest-build")
-#
-#    # The gtest/gmock targets carry header search path
-#    # dependencies automatically when using CMake 2.8.11 or
-#    # later. Otherwise we have to add them here ourselves.
-#    if(CMAKE_VERSION VERSION_LESS 2.8.11)
-#        include_directories("${gtest_SOURCE_DIR}/include"
-#                            "${gmock_SOURCE_DIR}/include")
-#    endif()
-
-# Required OepnFOAM libraries
+# Required OpenFOAM libraries
 find_library(OF_FINITEVOLUME finiteVolume PATHS ${of_lib_path})
 find_library(OF_MESHTOOLS meshTools PATHS ${of_lib_path})
 find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
@@ -117,7 +97,7 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
         src/geomMeshIntersection/geomTriSurfaceTools
         src/include
     )
-    # Using PUBLIC here removes the to specify again the required include directories
+    # Using PUBLIC here removes the need to specify again the required include directories
     # for the applications.
     target_include_directories(geometricalMeshIntersection SYSTEM PUBLIC
         ${of_src_path}/finiteVolume/lnInclude
@@ -125,6 +105,9 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
         ${of_src_path}/meshTools/lnInclude
         ${of_src_path}/OSspecific/POSIX/lnInclude
         ${of_src_path}/OpenFOAM/lnInclude
+    )
+    target_link_libraries(geometricalMeshIntersection
+        geophase
     )
 
 # Executables
