@@ -1,4 +1,4 @@
-# geovof-init
+# geom-vof-init
 
 Implementation of the Surface-Cell Mesh Intersection (SMCI) and Cell-Cell Mesh Intersection (CCMI) algorithms for computing volume fractions by intersecting unstructured meshes. The SCMI algorithm computes volume fractions by intersecting a surface mesh with a volume mesh. The CCMI algorithm intersects cells of two volume meshes with each other.  
 
@@ -16,7 +16,7 @@ This project is licensed under the GPL3.0 License - see the [LICENSE.md](LICENSE
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
 
-`geovof-init` is a project that is used together with OpenFOAM. It compiles on its own and links against OpenFOAM libraries. It consists of a library for geometrical intersections between mesh data structures in OpenFOAM: triSurfaceMesh (triangle surface mesh) and fvMesh (polyhedral volume mesh). 
+`geom-vof-init` is a project that is used together with OpenFOAM. It compiles on its own and links against OpenFOAM libraries. It consists of a library for geometrical intersections between mesh data structures in OpenFOAM: triSurfaceMesh (triangle surface mesh) and fvMesh (polyhedral volume mesh). 
 
 ### Prerequisites
 
@@ -33,11 +33,11 @@ To install OpenFOAM-plus, tag (version) v1906 follow the [instructions on instal
 
 ### Installing
 
-`geovof-init` is using the [CMake](https://cmake.org) build system.  
+`geom-vof-init` is using the [CMake](https://cmake.org) build system.  
 
-Execute following commands to build `geovof-init`, once you have installed OpenFOAM-plus (v1906). 
+Execute following commands to build `geom-vof-init`, once you have installed OpenFOAM-plus (v1906). 
 
-Inside the `geovof-init` directory
+Inside the `geom-vof-init` directory
 
 
 ```
@@ -46,13 +46,13 @@ Inside the `geovof-init` directory
 ?>  make && make install
 ```
 
-Unlike OpenFOAM, CMake will save the `geovof-init` executable and library files in the `build` folder.
+Unlike OpenFOAM, CMake will save the `geom-vof-init` executable and library files in the `build` folder.
 
 The next step is to expand the `PATH` variabe so that the executables are found. Add something along the lines of 
 
 
 ```
-export PATH="/path/to/your/own/geovof-init/build/bin":$PATH
+export PATH="/path/to/your/own/geom-vof-init/build/bin":$PATH
 
 ``  
 
@@ -62,7 +62,7 @@ to your `.bashrc` file, then execute
 ?> source $HOME/.bashrc
 ```
 
-and `geovof-init` is set to be used.  
+and `geom-vof-init` is set to be used.  
 
 ## Running the tests
 
