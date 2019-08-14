@@ -3,9 +3,9 @@ include(FetchContent)
 
 cmake_minimum_required(VERSION 3.13)
 
-project(geo-vof-initialization VERSION 0.8
-                DESCRIPTION "Initialization of volume fraction fields by surface/volume mesh intersection or volume/volume mesh intersection."
-                LANGUAGES CXX)
+project(geom-vof-init VERSION 1.0
+        DESCRIPTION "Computing volume fractions by intersecting unstructured meshes"
+        LANGUAGES CXX)
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
