@@ -11,10 +11,27 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Use lib instead of lib64 for libraries.
+set(CMAKE_INSTALL_LIBDIR "lib")
+set(PROJECT_BUILD_TYPE "")
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    message ("Using 'Release' CMAKE_BUILD_TYPE.")
+elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    message ("Using 'Debug' CMAKE_BUILD_TYPE.")
+    set(PROJECT_BUILD_TYPE "Debug")
+elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+    message ("Using 'RelWithDebInfo' CMAKE_BUILD_TYPE.")
+    set(PROJECT_BUILD_TYPE "RelWithDebInfo")
+else()
+    message ("ERROR: Use '-DCMAKE_BUILD_TYPE=' to define a build type. 'Release', 'Debug' and 'RelWithDebInfo' are supported.")
+    return(1)
+endif()
+
 # Build dependencies
 FetchContent_Declare(geometricLibrary_source
     GIT_REPOSITORY          git@git.rwth-aachen.de:leia/geophase.git
-    GIT_TAG                 9360ddb7fa9951978f6236fc818ce979290c8e01
+    GIT_TAG                 v1.0 
     GIT_SHALLOW             YES
     GIT_PROGRESS            YES
     USES_TERMINAL_DOWNLOAD  YES
@@ -24,7 +41,7 @@ FetchContent_Declare(geometricLibrary_source
 FetchContent_GetProperties(geometricLibrary_source)
 if(NOT geometricLibrary_source_POPULATED)
     FetchContent_Populate(geometricLibrary_source)
-    add_subdirectory(${geometriclibrary_source_SOURCE_DIR})
+    #add_subdirectory(${geometriclibrary_source_SOURCE_DIR}) # Do we want to build geophase tests?
 endif()
 
 # Read build relevant OpenFOAM environment variables and cache them
@@ -44,7 +61,7 @@ set(of_wm_options "${of_wm_arch}${of_wm_compiler}${of_wm_precision_option}${of_w
 if(IS_DIRECTORY "${of_wm_project_dir}/platforms/${of_wm_options}${of_wm_compile_option}")
     set(of_wm_options "${of_wm_options}${of_wm_compile_option}")
 else()
-    message(FATAL_ERROR "Path ${of_wm_project_dir}/platforms/${of_wm_options}${of_wm_compile_option} does not exist.")
+    message(FATAL_ERROR "Path ${of_wm_project_dir}/platforms/${of_wm_options}${of_wm_compile_option} does not exist. Make sure OpenFOAM environment is set.")
 endif()
 
 set(of_lib_path "${of_wm_project_dir}/platforms/${of_wm_options}/lib" CACHE PATH "Path to compiled OpenFOAM libraries.")
@@ -62,7 +79,7 @@ add_compile_definitions(
     WM_${of_wm_precision_option}
     WM_ARCH_OPTION=${of_wm_arch_option}
     ${of_wm_arch}
-    OPENFOAM=1806 # Change when moving to other OpenFOAM version
+    OPENFOAM="$ENV{WM_PROJECT_VERSION}" # Figures out OF version. TM. 
     NoRepository
 )
 
@@ -85,71 +102,79 @@ find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
 # Build the library
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
-    add_library(geometricalMeshIntersection SHARED
-        src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
-        src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
-        src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
-    )
-    target_include_directories(geometricalMeshIntersection PUBLIC
-        src/geomMeshIntersection/geomMeshIntersection
-        src/geomMeshIntersection/geomReconstructError
-        src/geomMeshIntersection/geomSurfaceCellMeshIntersection
-        src/geomMeshIntersection/geomTriSurfaceTools
-        src/include
-    )
-    # Using PUBLIC here removes the need to specify again the required include directories
-    # for the applications.
-    target_include_directories(geometricalMeshIntersection SYSTEM PUBLIC
-        ${of_src_path}/finiteVolume/lnInclude
-        ${of_src_path}/surfMesh/lnInclude
-        ${of_src_path}/meshTools/lnInclude
-        ${of_src_path}/OSspecific/POSIX/lnInclude
-        ${of_src_path}/OpenFOAM/lnInclude
-    )
-    target_link_libraries(geometricalMeshIntersection
-        geophase
-    )
+add_library("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SHARED
+    src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
+    src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
+    src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
+)
+target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" PUBLIC
+    src/geomMeshIntersection/geomMeshIntersection
+    src/geomMeshIntersection/geomReconstructError
+    src/geomMeshIntersection/geomSurfaceCellMeshIntersection
+    src/geomMeshIntersection/geomTriSurfaceTools
+    src/include
+)
+# Using PUBLIC here removes the need to specify again the required include directories
+# for the applications.
+target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
 
-# Executables
+# There is nothing to link, it is a header library: check what CMake link does in this case. TM.
+#target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
 
-    # Tests
-    add_executable(voFoamTestCellCellIntersectMeshes applications/test/transport/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
-    target_link_libraries(voFoamTestCellCellIntersectMeshes
-        geometricalMeshIntersection
-        ${OF_FINITEVOLUME}
-        ${OF_MESHTOOLS}
-        ${OF_OPENFOAM}
-        dl
-        m
-    )
+# Install the library
 
-    add_executable(voFoamTestSurfaceCellIntersectMeshes applications/test/transport/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
-    target_link_libraries(voFoamTestSurfaceCellIntersectMeshes
-        geometricalMeshIntersection
-        ${OF_FINITEVOLUME}
-        ${OF_MESHTOOLS}
-        ${OF_OPENFOAM}
-        dl
-        m
-    )
+# Build executables
 
-    # Preprocessing
-    add_executable(voFoamCellCellIntersectMeshes applications/utilities/preProcessing/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
-    target_link_libraries(voFoamCellCellIntersectMeshes
-        geometricalMeshIntersection
-        ${OF_FINITEVOLUME}
-        ${OF_MESHTOOLS}
-        ${OF_OPENFOAM}
-        dl
-        m
-    )
+# Tests
+add_executable("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+               applications/test/transport/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
+target_link_libraries("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
 
-    add_executable(voFoamSurfaceCellIntersectMeshes applications/utilities/preProcessing/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
-    target_link_libraries(voFoamSurfaceCellIntersectMeshes
-        geometricalMeshIntersection
-        ${OF_FINITEVOLUME}
-        ${OF_MESHTOOLS}
-        ${OF_OPENFOAM}
-        dl
-        m
-    )
+add_executable("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}" 
+               applications/test/transport/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
+target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
+# Preprocessing
+add_executable("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+               applications/utilities/preProcessing/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
+target_link_libraries("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
+add_executable("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+               applications/utilities/preProcessing/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
+target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
+# Install executables
