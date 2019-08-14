@@ -13,8 +13,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Use lib instead of lib64 for libraries.
 set(CMAKE_INSTALL_LIBDIR "lib")
-set(PROJECT_BUILD_TYPE "")
 
+# Set the build type suffix based on the build type.
+set(PROJECT_BUILD_TYPE "")
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     message ("Using 'Release' CMAKE_BUILD_TYPE.")
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -128,6 +129,7 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
 #target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
 
 # Install the library
+install(TARGETS "geometricalMeshIntersection${PROJECT_BUILD_TYPE}" LIBRARY)
 
 # Build executables
 
@@ -178,3 +180,8 @@ target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
 )
 
 # Install executables
+install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+        "voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+        "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
+        "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+        RUNTIME)

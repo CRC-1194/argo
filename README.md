@@ -1,36 +1,68 @@
-# Project Title
+# geovof-init
 
-One Paragraph of project description goes here
+Implementation of the Surface-Cell Mesh Intersection (SMCI) and Cell-Cell Mesh Intersection (CCMI) algorithms for computing volume fractions by intersecting unstructured meshes. The SCMI algorithm computes volume fractions by intersecting a surface mesh with a volume mesh. The CCMI algorithm intersects cells of two volume meshes with each other.  
+
+## Authors
+
+* **Tomislav Maric** - *Development* - [MMA, TU Darmstadt](https://www.mma.tu-darmstadt.de/index/mitarbeiter_3/mitarbeiter_details_mma_43648.en.jsp)
+
+* **Tobias Tolle** - *Development* - [MMA, TU Darmstadt](https://www.mathematik.tu-darmstadt.de/fb/personal/details/tobias_tolle.de.jsp)
+
+## License
+
+This project is licensed under the GPL3.0 License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
+
+`geovof-init` is a project that is used together with OpenFOAM. It compiles on its own and links against OpenFOAM libraries. It consists of a library for geometrical intersections between mesh data structures in OpenFOAM: triSurfaceMesh (triangle surface mesh) and fvMesh (polyhedral volume mesh). 
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+List of prerequisites with tested versions in brackets:
 
-```
-Give examples
-```
+* g++   (9.1.0)
+* CMake (3.13) 
+
+These you can install on your system using a package manager.
+
+* OpenFOAM-plus (v1906)
+
+To install OpenFOAM-plus, tag (version) v1906 follow the [instructions on installing OpenFOAM v1906 from sources](https://develop.openfoam.com/Development/OpenFOAM-plus).
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
+`geovof-init` is using the [CMake](https://cmake.org) build system.  
 
-Say what the step will be
+Execute following commands to build `geovof-init`, once you have installed OpenFOAM-plus (v1906). 
 
-```
-Give the example
-```
+Inside the `geovof-init` directory
 
-And repeat
 
 ```
-until finished
+?>  mkdir build && cd build 
+?>  cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release ..
+?>  make && make install
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
+Unlike OpenFOAM, CMake will save the `geovof-init` executable and library files in the `build` folder.
+
+The next step is to expand the `PATH` variabe so that the executables are found. Add something along the lines of 
+
+
+```
+export PATH="/path/to/your/own/geovof-init/build/bin":$PATH
+
+``  
+
+to your `.bashrc` file, then execute
+
+```
+?> source $HOME/.bashrc
+```
+
+and `geovof-init` is set to be used.  
 
 ## Running the tests
 
