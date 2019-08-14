@@ -48,11 +48,14 @@ Inside the `geom-vof-init` directory
 
 Unlike OpenFOAM, CMake will save the `geom-vof-init` executable and library files in the `build` folder.
 
-The next step is to expand the `PATH` variabe so that the executables are found. Add something along the lines of 
+The next step is to expand the `PATH` variabe so that the executables are found and to expand the `LD_LIBRARY_PATH` so that the linker can find the mesh intersection library. 
+
+Add something along the lines of 
 
 
 ```
 export PATH="/path/to/your/own/geom-vof-init/build/bin":$PATH
+export LD_LIBRARY_PATH="/path/to/your/own/geom-vof-init/build/lib":$LD_LIBRARY_PATH
 
 ```  
 
@@ -62,22 +65,16 @@ to your `.bashrc` file, then execute
 ?> source $HOME/.bashrc
 ```
 
-and `geom-vof-init` is set to be used.  
+to finish installing `geom-vof-init`. 
 
-## Running the tests
+## Running the tests 
 
-Explain how to run the automated tests for this system
+TODO.
 
-### Break down into end to end tests
+## Running the applications 
 
-Explain what these tests test and why
-
-```
-Give an example
-```
+TODO.
 
 ## Contributing
 
-The code is maintained at [TU-GitLab](https://git.rwth-aachen.de/leia/geophase). 
-
-Feedback (contributions, bug reports) is expected there. Users external to the German TU-GitLab network can login using their github.com credentials. 
+The code is maintained at [TU-GitLab](https://git.rwth-aachen.de/leia/geom-vof-init). Feedback in the form of contributions, bug reports or feature requests is handled there. Users external to the German TU-GitLab network can login using their github.com credentials. 
