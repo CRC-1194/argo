@@ -54,7 +54,7 @@ The next step is to expand the `PATH` variabe so that the executables are found.
 ```
 export PATH="/path/to/your/own/geom-vof-init/build/bin":$PATH
 
-``  
+```  
 
 to your `.bashrc` file, then execute
 
