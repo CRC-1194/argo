@@ -17,8 +17,6 @@ FoamFile
 
 application     voFoamTestAdvection;
 
-libs            ( "libvolSurfaceInterpolation.so" "libtwoPhaseValidation.so" );
-
 startFrom       latestTime;
 
 startTime       0;
@@ -39,7 +37,7 @@ writeFormat     ascii;
 
 writePrecision  15;
 
-writeCompression uncompressed;
+writeCompression no;
 
 timeFormat      general;
 
