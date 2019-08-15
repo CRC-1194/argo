@@ -25,7 +25,7 @@ elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
     message ("Using 'RelWithDebInfo' CMAKE_BUILD_TYPE.")
     set(PROJECT_BUILD_TYPE "RelWithDebInfo")
 else()
-    message ("ERROR: Use '-DCMAKE_BUILD_TYPE=' to define a build type. 'Release', 'Debug' and 'RelWithDebInfo' are supported.")
+    message (FATAL_ERROR "Use '-DCMAKE_BUILD_TYPE=' to define a build type. 'Release', 'Debug' and 'RelWithDebInfo' are supported.")
     return(1)
 endif()
 
@@ -135,7 +135,7 @@ install(TARGETS "geometricalMeshIntersection${PROJECT_BUILD_TYPE}" LIBRARY)
 
 # Tests
 add_executable("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-               applications/test/transport/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
+               applications/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
 target_link_libraries("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
     ${OF_FINITEVOLUME}
@@ -146,7 +146,7 @@ target_link_libraries("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
 )
 
 add_executable("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}" 
-               applications/test/transport/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
+               applications/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
 target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
     ${OF_FINITEVOLUME}
@@ -158,7 +158,7 @@ target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}
 
 # Preprocessing
 add_executable("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-               applications/utilities/preProcessing/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
+               applications/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
 target_link_libraries("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
     ${OF_FINITEVOLUME}
@@ -169,7 +169,7 @@ target_link_libraries("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
 )
 
 add_executable("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-               applications/utilities/preProcessing/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
+               applications/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
 target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
     ${OF_FINITEVOLUME}
