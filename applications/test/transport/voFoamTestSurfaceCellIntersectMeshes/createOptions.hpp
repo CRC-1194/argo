@@ -20,7 +20,7 @@
     argList::addBoolOption
     (
         "fixNormals",
-        "Make the normals consistent. Assumes that the surfaceMeshCentroid of the surface mesh is its Stern point: use only with convex or weakly non-convex surfaces." 
+        "Make the normals consistent. Assumes that the centroid of the surface mesh is its Stern point: use only with star-shaped surfaces." 
     );
 
     argList::addOption
