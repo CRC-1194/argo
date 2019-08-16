@@ -36,6 +36,7 @@ SourceFiles
 #ifndef geomSurfaceCellMeshIntersection_H
 #define geomSurfaceCellMeshIntersection_H
 
+// OpenFOAM 
 #include "fvMesh.H"
 #include "volMesh.H"
 #include "Time.H"
@@ -44,7 +45,7 @@ SourceFiles
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "autoPtr.H" 
-//#include "Geometry.H"
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -96,8 +97,6 @@ class geomSurfaceCellMeshIntersection
         // Average number of triangles (intersections) per intersected cell. 
 
 public:
-    // ADDGEOM
-    //typedef TriangulationIntersection<tetrahedronVector,pointVectorVector> triangulationIntersection;
 
     TypeName ("surfaceCellMeshIntersection"); 
 

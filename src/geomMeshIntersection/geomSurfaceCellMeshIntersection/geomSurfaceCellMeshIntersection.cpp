@@ -23,14 +23,17 @@ License
 
 \*---------------------------------------------------------------------------*/
 
+// OpenFOAM 
+
 #include "geomSurfaceCellMeshIntersection.hpp"
 #include "calculatedFvPatchField.H"
 #include "fvcAverage.H"
 #include "fvScalarMatrix.H"
 #include "fvm.H"
 #include "fvc.H"
-//#include "Geometry.H"
 
+// geophase 
+#include "Polyhedron.hpp"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -258,15 +261,17 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(
             // If there are triangles in the cell.
             if (!cellTriangles.empty())
             {
-                // Initialize the cell intersection as the barycentri triangulation of
+                // Initialize the cell intersection as the centroid volume triangulation of
                 // a cell: necessary for non-convex polyhedral cells.
-                triangulationIntersection cellIntersection
-                (
-                    barycentric_triangulate<tetrahedronVector>
-                    (
-                        build<pointVectorVector>(cellI, mesh_)
-                    )
-                );
+                //cellIntersection = make<triangulationIntersection>(cellI, mesh_); 
+
+                //triangulationIntersection cellIntersection
+                //(
+                    //barycentric_triangulate<tetrahedronVector>
+                    //(
+                        //make<pointVectorVector>(cellI, mesh_)
+                    //)
+                //);
 
 
                 // For all triangles in a cell
