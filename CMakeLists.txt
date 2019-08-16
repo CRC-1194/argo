@@ -30,20 +30,36 @@ else()
 endif()
 
 # Build dependencies
-FetchContent_Declare(geometricLibrary_source
+
+# - Dependency: geophase
+FetchContent_Declare(geophase
     GIT_REPOSITORY          git@git.rwth-aachen.de:leia/geophase.git
-    GIT_TAG                 v1.0 
+    # TODO: Replace the branch with a new GIT_TAG for geophase as soon as everything runs.  
+    #       geophase modifications are needed to make geometrical init work, so the geom-vof-init 
+    #       branch is used. 
+    #GIT_TAG                 v1.0 
+    GIT_TAG                 feature/geom-vof-init  
     GIT_SHALLOW             YES
     GIT_PROGRESS            YES
     USES_TERMINAL_DOWNLOAD  YES
     USES_TERMINAL_UPDATE    YES
 )
 
-FetchContent_GetProperties(geometricLibrary_source)
-if(NOT geometricLibrary_source_POPULATED)
-    FetchContent_Populate(geometricLibrary_source)
-    #add_subdirectory(${geometriclibrary_source_SOURCE_DIR}) # Do we want to build geophase tests?
+FetchContent_GetProperties(geophase)
+if(NOT geophase_POPULATED)
+    FetchContent_Populate(geophase)
 endif()
+
+add_library(geophase INTERFACE) 
+target_include_directories(geophase INTERFACE 
+    ${geophase_SOURCE_DIR}/include/ 
+    ${geophase_SOURCE_DIR}/include/core/
+    ${geophase_SOURCE_DIR}/include/io/
+    ${geophase_SOURCE_DIR}/include/io/vtk/
+    ${geophase_SOURCE_DIR}/include/testing/
+    ${geophase_SOURCE_DIR}/include/geometrical_algorithm/
+    ${geophase_SOURCE_DIR}/include/geometrical_model/
+)
 
 # Read build relevant OpenFOAM environment variables and cache them
 set(of_wm_project_dir "$ENV{WM_PROJECT_DIR}" CACHE PATH "Path to OpenFOAM project folder.")
@@ -90,8 +106,8 @@ set(CMAKE_EXE_LINKER_FLAGS "-Xlinker --add-needed -Xlinker --no-as-needed")
 if(MSVC)
     add_compile_options(/W4 /WX)
 else(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wno-deprecated -Wno-attributes -Wno-unused-variable -Wno-unused-parameter -D_USE_MATH_DEFINES")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -ggdb3 -O0 -Wall -Wextra -DDEBUG -pedantic -D_USE_MATH_DEFINES -DBOOST_MATH_INSTRUMENT")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -Wall -Wextra -pedantic -Wno-deprecated -D_USE_MATH_DEFINES")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -ggdb3 -O3 -Wall -Wextra -pedantic -DDEBUG -D_USE_MATH_DEFINES")
 endif(MSVC)
 
@@ -108,6 +124,9 @@ add_library("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SHARED
     src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
     src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
 )
+
+target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
+
 target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" PUBLIC
     src/geomMeshIntersection/geomMeshIntersection
     src/geomMeshIntersection/geomReconstructError
@@ -156,6 +175,25 @@ target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}
     m
 )
 
+add_executable("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
+               applications/test/voFoamTestGeophaseMake.cpp)
+target_include_directories("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" PRIVATE 
+    src/include
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" 
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    geophase
+    dl
+    m
+)
+
 # Preprocessing
 add_executable("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
                applications/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
@@ -182,6 +220,7 @@ target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
 # Install executables
 install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+        "voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
         "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
         "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         RUNTIME)
