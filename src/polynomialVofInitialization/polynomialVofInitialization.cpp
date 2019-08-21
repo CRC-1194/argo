@@ -15,6 +15,51 @@ void polynomialVofInitialization::setBulkFractions(volScalarField& alpha) const
     }
 }
 
+void polynomialVofInitialization::identifyInterfaceCells()
+{
+    const auto& cell_vertices = mesh_.points();
+    const auto& map_cell_to_vertices = mesh_.cellPoints();
+    const auto& cell_centres = mesh_.C();
+
+    forAll(cellNearestTriangle_, idx)
+    {
+        if (cellNearestTriangle_[idx].hit())
+        {
+            if (intersectionPossible(cell_centres[idx],
+                                     signedDistance0_[idx]*signedDistance0_[idx],
+                                     map_cell_to_vertices[idx],
+                                     cell_vertices
+                                     )
+            )
+            {
+                interfaceCells_.push_back(idx);
+            }
+        }
+    }
+}
+
+bool polynomialVofInitialization::intersectionPossible
+     (
+        const point& centre,
+        const scalar distSqr,
+        const labelList& point_IDs,
+        const pointList& points
+     ) const
+{
+    // Idea: if all vertices of a cell have a distance less than the signed distance
+    // of the centre to the interface, then there is no intersection possible (TT)
+    for(const auto p_id : point_IDs)
+    {
+        auto v = points[p_id] - centre;
+        if ((v & v) >= distSqr)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Constructors
 polynomialVofInitialization::polynomialVofInitialization
 (
@@ -148,6 +193,7 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     calcSqrSearchDist();
     calcSignedDist();
     setBulkFractions(alpha);
+    identifyInterfaceCells();
 }
 
 //- Write
@@ -158,7 +204,6 @@ void polynomialVofInitialization::writeFields() const
     signedDistance0_.write();
 
     // Write identified interface cells as field
-    /*
     volScalarField interfaceCells{"interface_cells", signedDistance_};
     interfaceCells = dimensionedScalar{"interface_cells", dimLength, 0};
 
@@ -168,7 +213,6 @@ void polynomialVofInitialization::writeFields() const
     }
 
     interfaceCells.write();
-    */
 }
 
 // End namespace PolynomialVof

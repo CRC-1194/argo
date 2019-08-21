@@ -4,6 +4,7 @@
 
 // OpenFOAM includes
 #include "fvMesh.H"
+#include "pointList.H"
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "volFields.H"
@@ -37,6 +38,14 @@ class polynomialVofInitialization
 
         // Member functions
         void setBulkFractions(volScalarField&) const;
+        void identifyInterfaceCells();
+        bool intersectionPossible
+             (
+                const point& centre,
+                const scalar distSqr,
+                const labelList& point_IDs,
+                const pointList& points
+             ) const;
 
     public:
 
@@ -64,17 +73,14 @@ class polynomialVofInitialization
         // Squared search distance calculation function. 
         void calcSqrSearchDist();  
 
-        // Signed distance computation using triSurfaceSearch and an external triSurface.
-        void calcSignedDist(const triSurface& tri, const triSurfaceSearch& triSearch);  
-
         // Signed distance computation using triSurfaceSearch and the internal triSurface.
         void calcSignedDist();  
 
         // Volume fraction calculation.
-        virtual void calcVolFraction(volScalarField& alpha);
+        void calcVolFraction(volScalarField& alpha);
 
         //- Write 
-        virtual void writeFields() const;
+        void writeFields() const;
 };
 
 // End namespace PolynomialVof
