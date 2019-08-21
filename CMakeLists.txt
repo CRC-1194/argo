@@ -125,11 +125,23 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
     ${of_src_path}/OpenFOAM/lnInclude
 )
 
+add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
+    src/polynomialVofInitialization/polynomialVofInitialization.cpp
+)
+target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+
 # There is nothing to link, it is a header library: check what CMake link does in this case. TM.
 #target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
 
 # Install the library
 install(TARGETS "geometricalMeshIntersection${PROJECT_BUILD_TYPE}" LIBRARY)
+install(TARGETS "polynomialVofInitialization${PROJECT_BUILD_TYPE}" LIBRARY)
 
 # Build executables
 
@@ -179,9 +191,22 @@ target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     m
 )
 
+add_executable("polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
+               applications/polynomialApproximateVofInitialization/polynomialApproximateVofInitialization.cpp)
+target_link_libraries("polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
+    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 # Install executables
 install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
         "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+        "polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
         RUNTIME)
