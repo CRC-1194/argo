@@ -45,12 +45,36 @@ class polynomialVofInitialization
         (
             const fvMesh&,
             const triSurface&,
-            const volScalarField&,
-            const volScalarField&
+            const scalar,
+            const IOobject::writeOption&
         );
         
         // Member functions
-        void computeVolumeFractions(volScalarField&);
+
+        //- Access
+        const fvMesh& mesh() const;
+        const Time& time() const;
+        const triSurface& surface() const;
+        const volScalarField& sqrSearchDist() const; 
+        const volScalarField& signedDistance() const; 
+        const volScalarField& signedDistance0() const; 
+
+        //- Computation
+
+        // Squared search distance calculation function. 
+        void calcSqrSearchDist();  
+
+        // Signed distance computation using triSurfaceSearch and an external triSurface.
+        void calcSignedDist(const triSurface& tri, const triSurfaceSearch& triSearch);  
+
+        // Signed distance computation using triSurfaceSearch and the internal triSurface.
+        void calcSignedDist();  
+
+        // Volume fraction calculation.
+        virtual void calcVolFraction(volScalarField& alpha);
+
+        //- Write 
+        virtual void writeFields() const;
 };
 
 // End namespace PolynomialVof

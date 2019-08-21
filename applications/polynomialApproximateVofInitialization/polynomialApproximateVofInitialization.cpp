@@ -45,10 +45,10 @@ Author
 #include "triSurface.H"
 #include "OFstream.H"
 
-#include "geomSurfaceCellMeshIntersection.hpp"
+#include "polynomialVofInitialization.hpp"
 #include "geomTriSurfaceTools.hpp"
 
-using namespace GeometricalTransport;
+using namespace Foam::PolynomialVof;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // Main program:
@@ -66,38 +66,44 @@ int main(int argc, char *argv[])
 
     fileName triFile = args.path() + "/surface.stl";
     if (args.optionFound("surfaceFile"))
+    {
         triFile = args.optionRead<fileName>("surfaceFile");
+    }
 
     #include "createFields.hpp"
 
-    geomSurfaceCellMeshIntersection meshIntersection(mesh, triFile, sqrDistFactor); 
+    triSurface surface{triFile};
+
+    polynomialVofInitialization polyVofInit(mesh, surface, sqrDistFactor, IOobject::AUTO_WRITE); 
 
     // TODO: Remove fix normals, this needs to be done externally, by picking an outside point 
     // and using surfaceOrient or another program. The STL must have consistent normals. TM. 
     const Switch fixNormals = args.optionFound("fixNormals");
 
     if (fixNormals)
-        orientNormalsInward(meshIntersection.surfaceRef()); 
+    {
+        Foam::GeometricalTransport::orientNormalsInward(surface);
+    }
 
     // Compute the search distances once: the mesh is not moving, nor is it
     // topologically changed. 
-    meshIntersection.calcSqrSearchDist(); 
+    polyVofInit.calcSqrSearchDist(); 
 
     // Zero the volume fraction and signed distance for each test.
     alpha = dimensionedScalar("alpha", dimless, 0); 
     signedDist = dimensionedScalar("signedDist", dimLength,0);
 
     // Compute the signed distance field based on the surface octree.
-    meshIntersection.calcSignedDist(); 
+    polyVofInit.calcSignedDist(); 
 
     // Compute the volume fraction field.
-    //meshIntersection.calcVolFraction(alpha); 
+    polyVofInit.calcVolFraction(alpha); 
 
-    //alpha.write(); 
+    alpha.write(); 
 
     // FIXME: Make a runtime option -testing out of this. 
 //#ifdef TESTING
-    meshIntersection.writeFields(); 
+    polyVofInit.writeFields(); 
 //#endif
 
     // TODO: Make a runtime option out of this. 
@@ -114,7 +120,7 @@ int main(int argc, char *argv[])
     //}
         
     Info<< "End" << endl;
+
+    return 0;
 }
-
-
 // ************************************************************************* //

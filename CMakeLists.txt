@@ -128,6 +128,9 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
 add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
     src/polynomialVofInitialization/polynomialVofInitialization.cpp
 )
+target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
+    src/polynomialVofInitialization
+)
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
