@@ -2,6 +2,7 @@
 
 #include "fvc.H"
 #include "fvm.H"
+#include "pointFields.H"
 
 namespace Foam {
 namespace PolynomialVof {
@@ -60,6 +61,35 @@ bool polynomialVofInitialization::intersectionPossible
     return false;
 }
 
+void polynomialVofInitialization::calcVertexSignedDistance()
+{
+    // Compute the signed distance at mesh vertices. Only vertices of cells,
+    // which previously have been identified as interface cells, are considered.
+    const auto& points = pMesh_.mesh().points();
+    const auto& map_cell_to_vertex = mesh_.cellPoints();
+    const pointField& triPoints = surface_.points();  
+    const vectorField& triNormals = surface_.faceNormals(); 
+
+    for (const auto cell_id : interfaceCells_)
+    {
+        const auto& vertex_ids = map_cell_to_vertex[cell_id];
+
+        for (const auto v_id : vertex_ids)
+        {
+            // Avoid duplicate computation (TT)
+            if (vertexSignedDistance_[v_id] == 0.0)
+            {
+                // Vertices are guaranteed to be close to the interface.
+                // So the search distance can be large (TT)
+                auto hit_info = triSearch_.nearest(points[v_id], vector{1.0e8, 1.0e8, 1.0e8});
+                vertexSignedDistance_[v_id] = 
+                    (points[v_id] - triPoints[surface_[hit_info.index()][0]]) & 
+                    triNormals[hit_info.index()];
+            }
+        }
+    }
+}
+
 // Constructors
 polynomialVofInitialization::polynomialVofInitialization
 (
@@ -72,6 +102,8 @@ polynomialVofInitialization::polynomialVofInitialization
     mesh_{mesh},
     runTime_{mesh_.time()},
     surface_{surface},
+    pMesh_{mesh},
+    triSearch_{surface},
     sqrDistFactor_{max(3.0, sqrDistFactor)},
     cellNearestTriangle_{},
     sqrSearchDist_
@@ -97,10 +129,24 @@ polynomialVofInitialization::polynomialVofInitialization
             wo 
         ),
         mesh,
-        dimensionedScalar("signedDist", dimLength,0),
+        dimensionedScalar("signedDist", dimLength, 0.0),
         "zeroGradient"
     ),
     signedDistance0_("signedDistance0", signedDistance_), 
+    vertexSignedDistance_   
+    (
+        IOobject
+        (
+            "vertexSignedDistance",
+            runTime_.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            wo
+        ),
+        pMesh_,
+        dimensionedScalar{"signedDistance", dimLength, 0.0},
+        "zeroGradient"
+    ),
     interfaceCells_{}
 {
     cellNearestTriangle_.reserve(signedDistance_.size());
@@ -149,11 +195,9 @@ void polynomialVofInitialization::calcSignedDist()
     // Zero the signed distance.
     signedDistance_ = dimensionedScalar{"signedDist", dimLength, 0};
 
-    triSurfaceSearch triSearch{surface_};
-
     // Use the octree and the square search distance multiplied by a distance factor 
     // to build the surface mesh / volume mesh proximity information list. 
-    triSearch.findNearest(
+    triSearch_.findNearest(
         mesh_.C(),
         sqrDistFactor_ * sqrDistFactor_ * sqrSearchDist_,
         cellNearestTriangle_
@@ -190,10 +234,25 @@ void polynomialVofInitialization::calcSignedDist()
 
 void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
 {
+    Info << "Computing signed distance in narrow band..." << endl;
     calcSqrSearchDist();
     calcSignedDist();
     setBulkFractions(alpha);
+
+    Info << "Identifiying interface cells..." << endl;
     identifyInterfaceCells();
+
+    Info << "Computing vertex signed distance for interface cells..." << endl;
+    calcVertexSignedDistance();
+
+    Info << "Computing volume fraction for interface cells..." << endl;
+    const auto& C = mesh_.C();
+    const auto& map_cell_to_vertex = mesh_.cellPoints();
+
+    for (const auto cell_id : interfaceCells_)
+    {
+        // TODO: continue here
+    }
 }
 
 //- Write
@@ -202,6 +261,7 @@ void polynomialVofInitialization::writeFields() const
     sqrSearchDist_.write();
     signedDistance_.write();
     signedDistance0_.write();
+    vertexSignedDistance_.write();
 
     // Write identified interface cells as field
     volScalarField interfaceCells{"interface_cells", signedDistance_};

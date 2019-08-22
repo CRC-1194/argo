@@ -42,6 +42,7 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
+#include "pointFields.H"
 #include "triSurface.H"
 #include "OFstream.H"
 

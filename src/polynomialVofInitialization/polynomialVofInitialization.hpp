@@ -5,6 +5,7 @@
 // OpenFOAM includes
 #include "fvMesh.H"
 #include "pointList.H"
+#include "pointMesh.H"
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "volFields.H"
@@ -23,6 +24,8 @@ class polynomialVofInitialization
         const fvMesh& mesh_;
         const Time& runTime_;
         const triSurface& surface_;
+        pointMesh pMesh_;
+        triSurfaceSearch triSearch_;
         
         // Factor used to extend the narrow band by N cells. 
         // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
@@ -33,6 +36,7 @@ class polynomialVofInitialization
         volScalarField sqrSearchDist_;  
         volScalarField signedDistance_;
         volScalarField signedDistance0_;
+        pointScalarField vertexSignedDistance_;
 
         std::vector<label> interfaceCells_;
 
@@ -46,6 +50,7 @@ class polynomialVofInitialization
                 const labelList& point_IDs,
                 const pointList& points
              ) const;
+        void calcVertexSignedDistance();
 
     public:
 
