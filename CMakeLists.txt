@@ -126,10 +126,15 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
 )
 
 add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
-    src/polynomialVofInitialization/polynomialVofInitialization.cpp
+    src/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
+    src/polynomialVofInitialization/adaptiveTetCellRefinement/adaptiveTetCellRefinement.cpp
 )
+#target_compile_features("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
+#    cxx_std_20
+#)
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
-    src/polynomialVofInitialization
+    src/polynomialVofInitialization/polynomialVofInitialization
+    src/polynomialVofInitialization/adaptiveTetCellRefinement
 )
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude
