@@ -82,7 +82,8 @@ void save_to_vtk
     }
 
     // Write tets
-    out_file << "CELLS " << std::to_string(tets.size()) << " 5\n";
+    out_file << "CELLS " << std::to_string(tets.size()) << " "
+             << std::to_string(5*tets.size()) << "\n";
     for (const auto& tet : tets)
     {
         out_file << "4 "
@@ -97,6 +98,15 @@ void save_to_vtk
         out_file << "10\n";
     }
 
+    // Write signed distance
+    out_file << "POINT_DATA " << std::to_string(points.size()) << "\n";
+    out_file << "Scalars signed_distance double 1\n";
+    out_file << "LOOKUP_TABLE default\n";
+    for (const auto phi : signed_distance)
+    {
+        out_file << std::to_string(phi) << "\n";
+    }
+
     out_file.close();
 }
 
@@ -106,11 +116,19 @@ int main(int argc, char *argv[])
     #include "createOptions.hpp"
     #include "setRootCase.H"
 
-    const point ref_point = args.optionLookupOrDefault<point>("refpoint", point{0.5, 0.5, 0.5});
-    const vector normal = args.optionLookupOrDefault<vector>("normal", vector{0, 0, 1});
+    const point ref_point = args.optionLookupOrDefault<point>("refpoint", point{0.5, 0.5, 0.3});
+    vector normal = args.optionLookupOrDefault<vector>("normal", vector{0, 0, 1});
     const label refinement_level = args.optionLookupOrDefault<label>("reflevel", 1);
 
     // Define plane as interface
+    if (mag(normal) > SMALL)
+    {
+        normal = normal/(mag(normal));
+    }
+    else
+    {
+        exit(1);
+    }
     orientedPlane plane{ref_point, normal, 1.0};
 
     // Define unit tet in positive quadrant
@@ -127,7 +145,9 @@ int main(int argc, char *argv[])
 
     auto refined_tets = tet_refiner.resulting_tets();
 
-    Info << "Number of tets after refinement: " << refined_tets.size() << endl;
+    tet_refiner.print_level_infos();
+    //tet_refiner.print_tets();
+    //tet_refiner.print_points();
 
     save_to_vtk(refined_tets, tet_refiner.points(), tet_refiner.signed_distance());
 

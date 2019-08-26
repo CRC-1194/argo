@@ -291,10 +291,50 @@ std::vector<indexedTet> adaptiveTetCellRefinement::resulting_tets()
          if (refinement_required_[idx] == false)
          {
              final_tets[count] = tets_[idx];
+             ++count;
          }
     }
 
     return final_tets;
+}
+
+void adaptiveTetCellRefinement::print_level_infos() const
+{
+    Info << "Number of tets and points per level\n";
+    for (auto level = 0; level <= max_refinement_level_; ++level)
+    {
+        auto [tstart, tend] = level_to_tetid_range_[level];
+        auto [pstart, pend] = level_to_pointid_range_[level];
+        Info << "Level = " << level << ":\n"
+             << "\tn_tets = " << (tend - tstart) << "\n"
+             << "\tn_points = " << (pend - pstart) << "\n";
+
+    }
+}
+
+void adaptiveTetCellRefinement::print_tets() const
+{
+    Info << "Indexed tets (n = " << tets_.size() << " in total):\n";
+
+    for (uint idx = 0; idx != tets_.size(); ++idx)
+    {
+        const auto& tet = tets_[idx];
+        Info << "tet_id = " << idx << ": "
+             << tet[0] << "\t" << tet[1] << "\t"
+             << tet[2] << "\t" << tet[3] << "\n";
+    }
+}
+
+void adaptiveTetCellRefinement::print_points() const
+{
+    Info << "Points:\n";
+
+    for (uint idx = 0; idx != points_.size(); ++idx)
+    {
+        const auto& p = points_[idx];
+
+        Info << "p_id = " << idx << ": " << p << "\n";
+    }
 }
 
 

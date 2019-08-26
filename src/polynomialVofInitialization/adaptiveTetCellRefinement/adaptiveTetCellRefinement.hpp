@@ -125,6 +125,10 @@ public:
     const std::vector<point>& points();
     const std::vector<scalar>& signed_distance();
     std::vector<indexedTet> resulting_tets();
+
+    void print_level_infos() const;
+    void print_tets() const;
+    void print_points() const;
 };
 
 
