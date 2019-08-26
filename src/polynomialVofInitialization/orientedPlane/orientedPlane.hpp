@@ -24,19 +24,19 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::orientedSurface
+    Foam::orientedPlane
 
 Description
 
 SourceFiles
-    orientedSurfaceI.H
-    orientedSurface.C
-    orientedSurfaceIO.C
+    orientedPlaneI.H
+    orientedPlane.C
+    orientedPlaneIO.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef orientedSurface_H
-#define orientedSurface_H
+#ifndef orientedPlane_H
+#define orientedPlane_H
 
 #include "fvCFD.H"
 
@@ -47,18 +47,18 @@ namespace PolynomialVof {
 
 
 /*---------------------------------------------------------------------------*\
-                         Class orientedSurface Declaration
+                         Class orientedPlane Declaration
 \*---------------------------------------------------------------------------*/
 
-class orientedSurface
+class orientedPlane
 {
     // Private data
-    point refPoint_;
-    vector unitNormal_;
+    point ref_point_;
+    vector unit_normal_;
     scalar ref_length_; // This is required for the automatic determination of
                         // the refinement level (TT)
 
-    scalar distanceOrigin_;
+    scalar distance_origin_;
 
 
     // Private Member Functions
@@ -68,7 +68,7 @@ class orientedSurface
 public:
 
     // Constructors
-    orientedSurface(const point& refPoint, const vector& unitNormal, scalar refLength);
+    orientedPlane(const point& refPoint, const vector& unitNormal, scalar refLength);
 
 
     // Member Functions

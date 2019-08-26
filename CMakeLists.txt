@@ -128,6 +128,7 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
 add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
     src/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
     src/polynomialVofInitialization/adaptiveTetCellRefinement/adaptiveTetCellRefinement.cpp
+    src/polynomialVofInitialization/orientedPlane/orientedPlane.cpp
 )
 #target_compile_features("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
 #    cxx_std_20
@@ -135,6 +136,7 @@ add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
     src/polynomialVofInitialization/polynomialVofInitialization
     src/polynomialVofInitialization/adaptiveTetCellRefinement
+    src/polynomialVofInitialization/orientedPlane
 )
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude
@@ -169,6 +171,17 @@ add_executable("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
                applications/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
 target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
+add_executable("polynomialVofTest${PROJECT_BUILD_TYPE}"
+               applications/polynomialVofTest/polynomialVofTest.cpp)
+target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
+    "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -217,4 +230,5 @@ install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
         "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
+        "polynomialVofTest${PROJECT_BUILD_TYPE}"
         RUNTIME)

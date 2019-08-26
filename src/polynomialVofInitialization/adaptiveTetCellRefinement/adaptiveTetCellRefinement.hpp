@@ -38,12 +38,13 @@ SourceFiles
 #ifndef adaptiveTetCellRefinement_H
 #define adaptiveTetCellRefinement_H
 
-#include "orientedSurface.H"
+#include "orientedPlane.hpp"
 
 #include "fvCFD.H"
 
 #include <array>
-#include <unordered_map>
+#include <map>
+//#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -52,18 +53,22 @@ SourceFiles
 namespace Foam {
 namespace PolynomialVof {
 
-using indexedTet = std::array<label, 4>;
-using indexTuple = std::pair<label, label>;
-using edge = indexTuple;
-
 /*---------------------------------------------------------------------------*\
                          Class adaptiveTetCellRefinement Declaration
 \*---------------------------------------------------------------------------*/
 
+using indexedTet = std::array<label, 4>;
+
 class adaptiveTetCellRefinement
 {
+private:
+
+    // Typedefs
+    using indexTuple = std::tuple<label, label>;
+    using edge = indexTuple;
+
     // Private data
-    orientedSurface surface_;
+    orientedPlane surface_;
 
     std::vector<point> points_;
     std::vector<scalar> signed_distance_;
@@ -71,7 +76,7 @@ class adaptiveTetCellRefinement
     std::vector<indexedTet> tets_;
     std::vector<bool> refinement_required_;
 
-    std::unordered_map<edge, label> edge_to_point_id_;
+    std::map<edge, label> edge_to_point_id_;
 
     // NOTE: the second entry in the tuple denotes the index of the first element
     // which is NOT part of the level, aka "[begin, end)" (TT)
@@ -79,21 +84,40 @@ class adaptiveTetCellRefinement
     std::vector<indexTuple> level_to_tetid_range_;
 
     label max_refinement_level_;
+    bool decomposition_performed_ = false;
+    const label n_tets_from_decomposition = 8;
 
 
     // Private Member Functions
-    void compute_decomposition();
     label compute_max_refinement_level();
+
+    void compute_decomposition();
+    label flag_tets_for_refinement(int level);
+    bool has_to_be_refined(const indexedTet& tet) const;
+    std::tuple<scalar, label> maxiumum_distance_sqr_and_pointid(const indexedTet& tet) const;
+    scalar distance_squared(const point& p_a, const point& p_b) const;
+    void update_tet_container_sizes(int level, int n_new_tets);
+
+    void update_edge_to_point_map(int level);
+    void add_to_map(std::array<edge, 6> tet_edges);
+    std::array<edge, 6> edges(const indexedTet& tet) const;
+
+    void create_refined_tets(int level);
+    void decompose_and_add_new_tets(const indexedTet& tet, label start_id);
+
+    void compute_signed_distances(int level);
+
 
 public:
 
     // Constructors
     adaptiveTetCellRefinement
     (
-        const orientedSurface& surface,
+        const orientedPlane& surface,
         const std::vector<point> points,
         const std::vector<scalar> signed_distance,
-        const std::vector<indexedTet> tets
+        const std::vector<indexedTet> tets,
+        const label max_refine_level
     );
     
 

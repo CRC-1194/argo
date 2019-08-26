@@ -26,38 +26,38 @@ License
 \*---------------------------------------------------------------------------*/
 
 
+#include "orientedPlane.hpp"
+
 namespace Foam {
 namespace PolynomialVof {
 
-#include "orientedSurface.H"
-
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-void orientedSurface::updateDistanceToOrigin()
+void orientedPlane::updateDistanceToOrigin()
 {
-    distanceOrigin_ = unitNormal_ & refPoint_;
+    distance_origin_ = unit_normal_ & ref_point_;
 }
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-orientedSurface::orientedSurface(const point& refPoint, const vector& normal, scalar refLength)
+orientedPlane::orientedPlane(const point& refPoint, const vector& normal, scalar refLength)
 :
-    refPoint_{refPoint},
-    unitNormal_{unitNormal},
-    refLength_{refLength}
+    ref_point_{refPoint},
+    unit_normal_{normal},
+    ref_length_{refLength}
 {
     updateDistanceToOrigin();
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-scalar orientedSurface::signedDistance(const point& trialPoint) const
+scalar orientedPlane::signedDistance(const point& trialPoint) const
 {
-    return (trialPoint & unitNormal_) - distanceOrigin_;
+    return (trialPoint & unit_normal_) - distance_origin_;
 }
 
-scalar orientedSurface::referenceLength() const
+scalar orientedPlane::referenceLength() const
 {
-    return refLength_;
+    return ref_length_;
 }
 
 
