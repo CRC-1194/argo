@@ -44,13 +44,63 @@ Author
 #include "adaptiveTetCellRefinement.hpp"
 #include "orientedPlane.hpp"
 
+#include <iostream>
+#include <fstream>
+#include <string>
 #include <vector>
 
 using namespace Foam::PolynomialVof;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-// Main program:
 
+void save_to_vtk
+(
+    const std::vector<indexedTet>& tets,
+    const std::vector<point>& points,
+    const std::vector<scalar>& signed_distance,
+    std::string file_name = "decomposed_tet.vtk"
+)
+{
+    // Use VTK legacy format for now for the sak of simplicity (TT)
+    std::ofstream out_file;
+    out_file.open(file_name);
+
+    // Header
+    out_file << "# vtk DataFile Version 3.0\n";
+
+    out_file << "Decomposition of a single tetragedron.\n";
+    out_file << "ASCII\n";
+    out_file << "DATASET UNSTRUCTURED_GRID\n";
+
+    // Write points
+    out_file << "POINTS " << std::to_string(points.size()) << " double\n";
+    for (const auto& p : points)
+    {
+        out_file << std::to_string(p[0]) << " "
+                 << std::to_string(p[1]) << " "
+                 << std::to_string(p[2]) << "\n";
+    }
+
+    // Write tets
+    out_file << "CELLS " << std::to_string(tets.size()) << " 5\n";
+    for (const auto& tet : tets)
+    {
+        out_file << "4 "
+                 << std::to_string(tet[0]) << " "
+                 << std::to_string(tet[1]) << " "
+                 << std::to_string(tet[2]) << " "
+                 << std::to_string(tet[3]) << "\n";
+    }
+    out_file << "CELL_TYPES " << std::to_string(tets.size()) << "\n";
+    for (uint idx = 0; idx != tets.size(); ++idx)
+    {
+        out_file << "10\n";
+    }
+
+    out_file.close();
+}
+
+// Main program:
 int main(int argc, char *argv[])
 {
     #include "createOptions.hpp"
@@ -78,6 +128,8 @@ int main(int argc, char *argv[])
     auto refined_tets = tet_refiner.resulting_tets();
 
     Info << "Number of tets after refinement: " << refined_tets.size() << endl;
+
+    save_to_vtk(refined_tets, tet_refiner.points(), tet_refiner.signed_distance());
 
     Info<< "End" << endl;
 
