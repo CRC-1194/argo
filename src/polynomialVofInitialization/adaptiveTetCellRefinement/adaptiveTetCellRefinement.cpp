@@ -64,7 +64,11 @@ label adaptiveTetCellRefinement::flag_tets_for_refinement(int level)
     for (auto idx = start; idx != end; ++idx)
     {
         refinement_required_[idx] = has_to_be_refined(tets_[idx]);
-        ++n_tets_to_refine;
+
+        if (refinement_required_[idx])
+        {
+            ++n_tets_to_refine;
+        }
     }
 
     return n_tets_to_refine; 
@@ -209,11 +213,37 @@ void adaptiveTetCellRefinement::decompose_and_add_new_tets(const indexedTet& tet
     tets_[start_id + 2] = indexedTet{tet[2], pids[1], pids[3], pids[5]};
     tets_[start_id + 3] = indexedTet{tet[3], pids[2], pids[4], pids[5]};
 
+    // Decomposition of the octaeder has to be done carefully to avoid
+    // overly warped tets (TT)
+    // TODO: Not clear if taking the minimal distance results in more regular
+    // tets. Needs testing. (TT)
+    // NOTE: first tests look promosing (TT)
+    auto d0 = distance_squared(points_[pids[0]], points_[pids[5]]);
+    auto d1 = distance_squared(points_[pids[1]], points_[pids[4]]);
+    auto d2 = distance_squared(points_[pids[2]], points_[pids[3]]);
+
     // Tets solely constituted by by points from refinement
-    tets_[start_id + 4] = indexedTet{pids[0], pids[1], pids[2], pids[5]};
-    tets_[start_id + 5] = indexedTet{pids[0], pids[1], pids[3], pids[5]};
-    tets_[start_id + 6] = indexedTet{pids[0], pids[2], pids[4], pids[5]};
-    tets_[start_id + 7] = indexedTet{pids[0], pids[3], pids[4], pids[5]};
+    if (d0 < d1 && d0 < d2)
+    {
+        tets_[start_id + 4] = indexedTet{pids[0], pids[1], pids[2], pids[5]};
+        tets_[start_id + 5] = indexedTet{pids[0], pids[1], pids[3], pids[5]};
+        tets_[start_id + 6] = indexedTet{pids[0], pids[2], pids[4], pids[5]};
+        tets_[start_id + 7] = indexedTet{pids[0], pids[3], pids[4], pids[5]};
+    }
+    else if (d1 < d0 && d1 < d2)
+    {
+        tets_[start_id + 4] = indexedTet{pids[1], pids[0], pids[2], pids[4]};
+        tets_[start_id + 5] = indexedTet{pids[1], pids[2], pids[5], pids[4]};
+        tets_[start_id + 6] = indexedTet{pids[1], pids[5], pids[3], pids[4]};
+        tets_[start_id + 7] = indexedTet{pids[1], pids[3], pids[0], pids[4]};
+    }
+    else
+    {
+        tets_[start_id + 4] = indexedTet{pids[2], pids[0], pids[1], pids[3]};
+        tets_[start_id + 5] = indexedTet{pids[2], pids[1], pids[5], pids[3]};
+        tets_[start_id + 6] = indexedTet{pids[2], pids[5], pids[4], pids[3]};
+        tets_[start_id + 7] = indexedTet{pids[2], pids[4], pids[0], pids[3]};
+    }
 }
 
 void adaptiveTetCellRefinement::compute_signed_distances(int level)
@@ -286,7 +316,7 @@ std::vector<indexedTet> adaptiveTetCellRefinement::resulting_tets()
     final_tets.resize(n_tets);
 
     int count = 0;
-    for (uint idx = 0; idx != refinement_required_.size(); ++idx)
+    for (int idx(refinement_required_.size()-1); idx != -1; --idx)
     {
          if (refinement_required_[idx] == false)
          {

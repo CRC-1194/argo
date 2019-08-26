@@ -110,6 +110,11 @@ void save_to_vtk
     out_file.close();
 }
 
+scalar tet_volume(const indexedTet& t, const std::vector<point>& p)
+{
+    return mag((p[t[1]] - p[t[0]]) & ((p[t[2]] - p[t[0]])^(p[t[3]] - p[t[0]])))/6.0;
+}
+
 // Main program:
 int main(int argc, char *argv[])
 {
@@ -146,10 +151,21 @@ int main(int argc, char *argv[])
     auto refined_tets = tet_refiner.resulting_tets();
 
     tet_refiner.print_level_infos();
-    //tet_refiner.print_tets();
-    //tet_refiner.print_points();
 
     save_to_vtk(refined_tets, tet_refiner.points(), tet_refiner.signed_distance());
+
+    Info << "Volume plausibility check" << endl;
+    auto vol_exact = tet_volume(tets[0], points);
+    scalar vol_added = 0;
+
+    for (const auto& tet : refined_tets)
+    {
+        vol_added += tet_volume(tet, tet_refiner.points());
+    }
+
+    Info << "Volume exact: " << vol_exact << "; volume added up = "
+         << vol_added << "\n"
+         << "Relative difference: " << mag(vol_added - vol_exact)/vol_exact << endl;
 
     Info<< "End" << endl;
 
