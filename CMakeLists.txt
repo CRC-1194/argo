@@ -129,6 +129,7 @@ add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
     src/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
     src/polynomialVofInitialization/adaptiveTetCellRefinement/adaptiveTetCellRefinement.cpp
     src/polynomialVofInitialization/orientedPlane/orientedPlane.cpp
+    src/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
 )
 #target_compile_features("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
 #    cxx_std_20
@@ -137,6 +138,7 @@ target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PU
     src/polynomialVofInitialization/polynomialVofInitialization
     src/polynomialVofInitialization/adaptiveTetCellRefinement
     src/polynomialVofInitialization/orientedPlane
+    src/polynomialVofInitialization/tetVofCalculator
 )
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude

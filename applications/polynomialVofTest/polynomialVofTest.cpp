@@ -43,6 +43,7 @@ Author
 
 #include "adaptiveTetCellRefinement.hpp"
 #include "orientedPlane.hpp"
+#include "tetVofCalculator.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -58,6 +59,7 @@ void save_to_vtk
     const std::vector<indexedTet>& tets,
     const std::vector<point>& points,
     const std::vector<scalar>& signed_distance,
+    const std::vector<scalar>& vof,
     std::string file_name = "decomposed_tet.vtk"
 )
 {
@@ -107,6 +109,15 @@ void save_to_vtk
         out_file << std::to_string(phi) << "\n";
     }
 
+    // Write volume fraction as cell data
+    out_file << "CELL_DATA " << std::to_string(tets.size()) << "\n";
+    out_file << "Scalars vof double 1\n";
+    out_file << "LOOKUP_TABLE default\n";
+    for (const auto alpha : vof)
+    {
+        out_file << std::to_string(alpha) << "\n";
+    }
+
     out_file.close();
 }
 
@@ -121,9 +132,9 @@ int main(int argc, char *argv[])
     #include "createOptions.hpp"
     #include "setRootCase.H"
 
-    const point ref_point = args.optionLookupOrDefault<point>("refpoint", point{0.5, 0.5, 0.3});
-    vector normal = args.optionLookupOrDefault<vector>("normal", vector{0, 0, 1});
-    const label refinement_level = args.optionLookupOrDefault<label>("reflevel", 1);
+    const point ref_point = args.getOrDefault<point>("refpoint", point{0.5, 0.5, 0.3});
+    vector normal = args.getOrDefault<vector>("normal", vector{0, 0, 1});
+    const label refinement_level = args.getOrDefault<label>("reflevel", 1);
 
     // Define plane as interface
     if (mag(normal) > SMALL)
@@ -152,7 +163,6 @@ int main(int argc, char *argv[])
 
     tet_refiner.print_level_infos();
 
-    save_to_vtk(refined_tets, tet_refiner.points(), tet_refiner.signed_distance());
 
     Info << "Volume plausibility check" << endl;
     auto vol_exact = tet_volume(tets[0], points);
@@ -166,6 +176,17 @@ int main(int argc, char *argv[])
     Info << "Volume exact: " << vol_exact << "; volume added up = "
          << vol_added << "\n"
          << "Relative difference: " << mag(vol_added - vol_exact)/vol_exact << endl;
+
+    // VoF calculation
+    tetVofCalculator vof_calc{};
+
+    auto volume_fractions = vof_calc.vof(refined_tets, tet_refiner.signed_distance());
+
+    auto plus_volume = vof_calc.accumulated_omega_plus_volume(refined_tets, tet_refiner.signed_distance(), tet_refiner.points());
+
+    Info << "Plus volume fraction = " << plus_volume/vol_exact << endl;
+
+    save_to_vtk(refined_tets, tet_refiner.points(), tet_refiner.signed_distance(), volume_fractions);
 
     Info<< "End" << endl;
 
