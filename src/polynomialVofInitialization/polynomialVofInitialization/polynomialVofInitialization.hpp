@@ -1,11 +1,14 @@
 #ifndef polynomialVofInitialization_hpp
 #define polynomialVofInitialization_hpp
 
+#include "adaptiveTetCellRefinement.hpp"
+#include "tetVofCalculator.hpp"
 
 // OpenFOAM includes
 #include "fvMesh.H"
 #include "pointList.H"
 #include "pointMesh.H"
+#include "surfaceFields.H"
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "volFields.H"
@@ -19,6 +22,9 @@ namespace PolynomialVof {
 class polynomialVofInitialization
 {
     private:
+        using cellDecompositionTuple = std::tuple<std::vector<indexedTet>,
+                                                  std::vector<point>,
+                                                  std::vector<scalar>>;
         
         // Data
         const fvMesh& mesh_;
@@ -26,6 +32,7 @@ class polynomialVofInitialization
         const triSurface& surface_;
         pointMesh pMesh_;
         triSurfaceSearch triSearch_;
+        tetVofCalculator vofCalc_;
         
         // Factor used to extend the narrow band by N cells. 
         // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
@@ -36,6 +43,7 @@ class polynomialVofInitialization
         volScalarField sqrSearchDist_;  
         volScalarField signedDistance_;
         volScalarField signedDistance0_;
+        surfaceScalarField faceSignedDistance_;
         pointScalarField vertexSignedDistance_;
 
         std::vector<label> interfaceCells_;
@@ -51,6 +59,10 @@ class polynomialVofInitialization
                 const pointList& points
              ) const;
         void calcVertexSignedDistance();
+        void calcFaceSignedDistance();
+        cellDecompositionTuple decomposeCell(const label cell_id) const;
+        label n_tets(const label cell_id) const;
+
 
     public:
 

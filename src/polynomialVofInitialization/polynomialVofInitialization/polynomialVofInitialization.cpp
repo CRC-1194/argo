@@ -1,8 +1,12 @@
 #include "polynomialVofInitialization.hpp"
 
+#include "orientedPlane.hpp"
+
 #include "fvc.H"
 #include "fvm.H"
 #include "pointFields.H"
+
+#include <map>
 
 namespace Foam {
 namespace PolynomialVof {
@@ -90,6 +94,90 @@ void polynomialVofInitialization::calcVertexSignedDistance()
     }
 }
 
+void polynomialVofInitialization::calcFaceSignedDistance()
+{
+    const auto& points = mesh_.Cf();
+    const auto& cells = mesh_.cells();
+    const pointField& triPoints = surface_.points();  
+    const vectorField& triNormals = surface_.faceNormals(); 
+
+    for (const auto cell_id : interfaceCells_)
+    {
+        for (const auto face_id : cells[cell_id])
+        {
+            if (faceSignedDistance_[face_id] == 0.0)
+            {
+                auto hit_info = triSearch_.nearest(points[face_id], vector{1.0e8, 1.0e8, 1.0e8});
+                faceSignedDistance_[face_id] = 
+                    (points[face_id] - triPoints[surface_[hit_info.index()][0]]) & 
+                    triNormals[hit_info.index()];
+            }
+        }
+    }
+}
+
+polynomialVofInitialization::cellDecompositionTuple polynomialVofInitialization::decomposeCell(const label cell_id) const
+{
+    const auto& thisCell = mesh_.cells()[cell_id];
+    const auto& cellVertexIDs = mesh_.cellPoints()[cell_id];
+    const auto& vertices = mesh_.points();
+
+    std::vector<indexedTet> tets(n_tets(cell_id));
+    // Using a barycentric decomposition, the number of unique points
+    // is the sum of n_cell_vertices + n_cell_faces + 1 (the cell centre) (TT).
+    std::vector<point> points(cellVertexIDs.size() + thisCell.size() + 1);
+    std::vector<scalar> sd(points.size());
+    std::map<label, label> globalToLocal{};
+    
+    // Add vertices to points and their signed distance
+    forAll(cellVertexIDs, idx)
+    {
+        points[idx] = vertices[cellVertexIDs[idx]];
+        sd[idx] = vertexSignedDistance_[cellVertexIDs[idx]];
+        globalToLocal[cellVertexIDs[idx]] = idx;
+    }
+
+    // Add the cell centre
+    label centre_id = cellVertexIDs.size();
+    points[centre_id] = mesh_.C()[cell_id];
+    sd[centre_id] = signedDistance0_[cell_id];
+
+    // Add face centres and build the indexed tets
+    const auto& faces = mesh_.faces();
+    label face_centre_id = centre_id + 1;
+    label idx_tet = 0;
+    for (const auto face_id : thisCell)
+    {
+        points[face_centre_id] = mesh_.Cf()[face_id];
+        sd[face_centre_id] = faceSignedDistance_[face_id];
+
+        for (const auto& anEdge : faces[face_id].edges())
+        {
+            tets[idx_tet] = indexedTet{centre_id, face_centre_id,
+                             globalToLocal[anEdge[0]], globalToLocal[anEdge[1]]};
+            ++idx_tet;
+        }
+        ++face_centre_id;
+    }
+
+    return std::make_tuple(tets, points, sd);
+}
+
+label polynomialVofInitialization::n_tets(const label cell_id) const
+{
+    label n_tet = 0;
+
+    const auto& thisCell = mesh_.cells()[cell_id];
+    const auto& faces = mesh_.faces();
+
+    for (const auto face_id : thisCell)
+    {
+        n_tet += faces[face_id].nEdges();
+    }
+
+    return n_tet;
+}
+
 // Constructors
 polynomialVofInitialization::polynomialVofInitialization
 (
@@ -104,6 +192,7 @@ polynomialVofInitialization::polynomialVofInitialization
     surface_{surface},
     pMesh_{mesh},
     triSearch_{surface},
+    vofCalc_{},
     sqrDistFactor_{max(3.0, sqrDistFactor)},
     cellNearestTriangle_{},
     sqrSearchDist_
@@ -133,6 +222,20 @@ polynomialVofInitialization::polynomialVofInitialization
         "zeroGradient"
     ),
     signedDistance0_("signedDistance0", signedDistance_), 
+    faceSignedDistance_
+    (
+        IOobject
+        (
+            "vertexSignedDistance",
+            runTime_.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            wo
+        ),
+        mesh,
+        dimensionedScalar("signedDist", dimLength, 0.0),
+        "empty"
+    ),
     vertexSignedDistance_   
     (
         IOobject
@@ -245,13 +348,42 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     Info << "Computing vertex signed distance for interface cells..." << endl;
     calcVertexSignedDistance();
 
-    Info << "Computing volume fraction for interface cells..." << endl;
-    const auto& C = mesh_.C();
-    const auto& map_cell_to_vertex = mesh_.cellPoints();
+    Info << "Computing face signed distance for interface cells..." << endl;
+    calcFaceSignedDistance();
 
+    Info << "Computing volume fraction for interface cells..." << endl;
+    const auto& V = mesh_.V();
     for (const auto cell_id : interfaceCells_)
     {
-        // TODO: continue here
+        auto [tets, points, signed_dist] = decomposeCell(cell_id);
+        // Decomposition check: sumed of volume of decomposition must match
+        // the original cell volume
+        scalar vol = 0.0;
+        for (const auto& tet : tets)
+        {
+            vol += vofCalc_.volume(tet, points);
+        }
+        Info << "V_cell = " << V[cell_id] << "; V_tets = " << vol
+             << "\n\tRelative difference: " << mag(V[cell_id] - vol)/V[cell_id]
+             << endl;
+
+        Info << "--- Tets ---\n";
+        for (const auto& tet : tets)
+        {
+            Info << tet[0] << "\t" << tet[1] << "\t"
+                 << tet[2] << "\t" << tet[3] << "\n";
+        }
+        Info << "Points:" << "\n";
+        for (uint idx = 0; idx != points.size(); ++idx)
+        {
+            Info << "ID = " << idx << "; p = " << points[idx] << "\n";
+        }
+
+        // TODO: remove once interface of refiner has been adapted (TT)
+        //orientedPlane aPlane{point(0,0,0), vector(1,0,0), 1.0};
+        // TODO: change max refinement level to auto once implemented (TT)
+        //adaptiveTetCellRefinement refiner{aPlane, points, signed_dist, tets, 1};
+        //alpha[cell_id] = vofCalc_.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
     }
 }
 
