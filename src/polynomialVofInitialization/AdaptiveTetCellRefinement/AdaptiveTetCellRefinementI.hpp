@@ -25,20 +25,16 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "adaptiveTetCellRefinement.hpp"
-
-#include <algorithm>
-
-namespace Foam {
-namespace PolynomialVof {
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-label adaptiveTetCellRefinement::compute_max_refinement_level()
+template<class T>
+label adaptiveTetCellRefinement<T>::compute_max_refinement_level()
 {
     return 1;
 }
 
-void adaptiveTetCellRefinement::compute_decomposition()
+template<class T>
+void adaptiveTetCellRefinement<T>::compute_decomposition()
 {
     if (decomposition_performed_)
     {
@@ -55,7 +51,8 @@ void adaptiveTetCellRefinement::compute_decomposition()
     }
 }
 
-label adaptiveTetCellRefinement::flag_tets_for_refinement(int level) 
+template<class T>
+label adaptiveTetCellRefinement<T>::flag_tets_for_refinement(int level) 
 {
     auto [start, end] = level_to_tetid_range_[level];
 
@@ -74,7 +71,8 @@ label adaptiveTetCellRefinement::flag_tets_for_refinement(int level)
     return n_tets_to_refine; 
 }
 
-bool adaptiveTetCellRefinement::has_to_be_refined(const indexedTet& tet) const
+template<class T>
+bool adaptiveTetCellRefinement<T>::has_to_be_refined(const indexedTet& tet) const
 {
     auto [max_dist_sqr, max_p_id] = maxiumum_distance_sqr_and_pointid(tet);
 
@@ -90,7 +88,8 @@ bool adaptiveTetCellRefinement::has_to_be_refined(const indexedTet& tet) const
     return false;
 }
 
-std::tuple<scalar, label> adaptiveTetCellRefinement::maxiumum_distance_sqr_and_pointid(const indexedTet& tet) const
+template<class T>
+std::tuple<scalar, label> adaptiveTetCellRefinement<T>::maxiumum_distance_sqr_and_pointid(const indexedTet& tet) const
 {
     scalar max_dist_sqr{0.0};
     label max_p_id{tet[0]};
@@ -107,12 +106,14 @@ std::tuple<scalar, label> adaptiveTetCellRefinement::maxiumum_distance_sqr_and_p
     return std::make_tuple(max_dist_sqr, max_p_id);
 }
 
-scalar adaptiveTetCellRefinement::distance_squared(const point& p_a, const point& p_b) const
+template<class T>
+scalar adaptiveTetCellRefinement<T>::distance_squared(const point& p_a, const point& p_b) const
 {
     return ((p_a - p_b)&(p_a - p_b));
 }
 
-void adaptiveTetCellRefinement::update_tet_container_sizes(int level, int n_new_tets)
+template<class T>
+void adaptiveTetCellRefinement<T>::update_tet_container_sizes(int level, int n_new_tets)
 {
     // Update vector sizes related to the number of tets
     level_to_tetid_range_[level + 1] = indexTuple{tets_.size(), tets_.size() + n_new_tets};
@@ -129,7 +130,8 @@ void adaptiveTetCellRefinement::update_tet_container_sizes(int level, int n_new_
     }
 }
 
-void adaptiveTetCellRefinement::add_to_map(std::array<edge, 6> tet_edges)
+template<class T>
+void adaptiveTetCellRefinement<T>::add_to_map(std::array<edge, 6> tet_edges)
 {
     for (const auto tet_edge : tet_edges)
     {
@@ -137,7 +139,8 @@ void adaptiveTetCellRefinement::add_to_map(std::array<edge, 6> tet_edges)
     }
 }
 
-void adaptiveTetCellRefinement::update_edge_to_point_map(int level)
+template<class T>
+void adaptiveTetCellRefinement<T>::update_edge_to_point_map(int level)
 {
     edge_to_point_id_.clear();
 
@@ -170,7 +173,8 @@ void adaptiveTetCellRefinement::update_edge_to_point_map(int level)
     }
 }
 
-std::array<adaptiveTetCellRefinement::edge, 6> adaptiveTetCellRefinement::edges(const indexedTet& tet) const
+template<class T>
+std::array<std::tuple<label, label>, 6> adaptiveTetCellRefinement<T>::edges(const indexedTet& tet) const
 {
     return std::array<edge, 6>{
         edge{tet[0], tet[1]}, edge{tet[0], tet[2]}, edge{tet[0], tet[3]},
@@ -179,7 +183,8 @@ std::array<adaptiveTetCellRefinement::edge, 6> adaptiveTetCellRefinement::edges(
     };
 }
 
-void adaptiveTetCellRefinement::create_refined_tets(int level)
+template<class T>
+void adaptiveTetCellRefinement<T>::create_refined_tets(int level)
 {
     auto [start, end] = level_to_tetid_range_[level];
     auto refined_tet_id = end;
@@ -194,7 +199,8 @@ void adaptiveTetCellRefinement::create_refined_tets(int level)
     }
 }
 
-void adaptiveTetCellRefinement::decompose_and_add_new_tets(const indexedTet& tet, label start_id)
+template<class T>
+void adaptiveTetCellRefinement<T>::decompose_and_add_new_tets(const indexedTet& tet, label start_id)
 {
     auto tet_edges = edges(tet);
 
@@ -246,7 +252,8 @@ void adaptiveTetCellRefinement::decompose_and_add_new_tets(const indexedTet& tet
     }
 }
 
-void adaptiveTetCellRefinement::compute_signed_distances(int level)
+template<class T>
+void adaptiveTetCellRefinement<T>::compute_signed_distances(int level)
 {
     auto [start, end] = level_to_pointid_range_[level + 1];
 
@@ -258,13 +265,14 @@ void adaptiveTetCellRefinement::compute_signed_distances(int level)
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-adaptiveTetCellRefinement::adaptiveTetCellRefinement
+template<class T>
+adaptiveTetCellRefinement<T>::adaptiveTetCellRefinement
 (
-    const orientedPlane& surface,
+    const T& surface,
     const std::vector<point> points,
     const std::vector<scalar> signed_distance,
     const std::vector<indexedTet> tets,
-    const label max_refine_level = -1
+    const label max_refine_level
 )
     :
     surface_{surface},
@@ -291,21 +299,24 @@ adaptiveTetCellRefinement::adaptiveTetCellRefinement
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-const std::vector<point>& adaptiveTetCellRefinement::points()
+template<class T>
+const std::vector<point>& adaptiveTetCellRefinement<T>::points()
 {
     compute_decomposition();
 
     return points_;
 }
 
-const std::vector<scalar>& adaptiveTetCellRefinement::signed_distance()
+template<class T>
+const std::vector<scalar>& adaptiveTetCellRefinement<T>::signed_distance()
 {
     compute_decomposition();
 
     return signed_distance_;
 }
 
-std::vector<indexedTet> adaptiveTetCellRefinement::resulting_tets()
+template<class T>
+std::vector<indexedTet> adaptiveTetCellRefinement<T>::resulting_tets()
 {
     compute_decomposition();
 
@@ -328,7 +339,8 @@ std::vector<indexedTet> adaptiveTetCellRefinement::resulting_tets()
     return final_tets;
 }
 
-void adaptiveTetCellRefinement::print_level_infos() const
+template<class T>
+void adaptiveTetCellRefinement<T>::print_level_infos() const
 {
     Info << "Number of tets and points per level\n";
     for (auto level = 0; level <= max_refinement_level_; ++level)
@@ -342,7 +354,8 @@ void adaptiveTetCellRefinement::print_level_infos() const
     }
 }
 
-void adaptiveTetCellRefinement::print_tets() const
+template<class T>
+void adaptiveTetCellRefinement<T>::print_tets() const
 {
     Info << "Indexed tets (n = " << tets_.size() << " in total):\n";
 
@@ -355,7 +368,8 @@ void adaptiveTetCellRefinement::print_tets() const
     }
 }
 
-void adaptiveTetCellRefinement::print_points() const
+template<class T>
+void adaptiveTetCellRefinement<T>::print_points() const
 {
     Info << "Points:\n";
 
@@ -366,15 +380,4 @@ void adaptiveTetCellRefinement::print_points() const
         Info << "p_id = " << idx << ": " << p << "\n";
     }
 }
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace PolynomialVof
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // ************************************************************************* //

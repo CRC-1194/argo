@@ -40,7 +40,7 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "adaptiveTetCellRefinement.hpp"
+#include "AdaptiveTetCellRefinement.hpp"
 
 #include <array>
 

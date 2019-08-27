@@ -127,7 +127,6 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
 
 add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
     src/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
-    src/polynomialVofInitialization/adaptiveTetCellRefinement/adaptiveTetCellRefinement.cpp
     src/polynomialVofInitialization/orientedPlane/orientedPlane.cpp
     src/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
 )
@@ -136,7 +135,7 @@ add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
 #)
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
     src/polynomialVofInitialization/polynomialVofInitialization
-    src/polynomialVofInitialization/adaptiveTetCellRefinement
+    src/polynomialVofInitialization/AdaptiveTetCellRefinement
     src/polynomialVofInitialization/orientedPlane
     src/polynomialVofInitialization/tetVofCalculator
 )

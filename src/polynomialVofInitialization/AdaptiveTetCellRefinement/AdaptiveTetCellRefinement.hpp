@@ -42,9 +42,9 @@ SourceFiles
 
 #include "fvCFD.H"
 
+#include <algorithm>
 #include <array>
 #include <map>
-//#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -59,6 +59,7 @@ namespace PolynomialVof {
 
 using indexedTet = std::array<label, 4>;
 
+template<class T>
 class adaptiveTetCellRefinement
 {
 private:
@@ -68,7 +69,7 @@ private:
     using edge = indexTuple;
 
     // Private data
-    orientedPlane surface_;
+    const T& surface_;
 
     std::vector<point> points_;
     std::vector<scalar> signed_distance_;
@@ -113,11 +114,11 @@ public:
     // Constructors
     adaptiveTetCellRefinement
     (
-        const orientedPlane& surface,
+        const T& surface,
         const std::vector<point> points,
         const std::vector<scalar> signed_distance,
         const std::vector<indexedTet> tets,
-        const label max_refine_level
+        const label max_refine_level = -1
     );
     
 
@@ -131,6 +132,10 @@ public:
     void print_points() const;
 };
 
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "AdaptiveTetCellRefinementI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

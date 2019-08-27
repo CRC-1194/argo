@@ -41,7 +41,7 @@ Author
 #include "fvCFD.H"
 #include "OFstream.H"
 
-#include "adaptiveTetCellRefinement.hpp"
+#include "AdaptiveTetCellRefinement.hpp"
 #include "orientedPlane.hpp"
 #include "tetVofCalculator.hpp"
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
         signed_distance.push_back(plane.signedDistance(vertex));
     }
 
-    adaptiveTetCellRefinement tet_refiner{plane, points, signed_distance, tets, refinement_level};
+    adaptiveTetCellRefinement<orientedPlane> tet_refiner{plane, points, signed_distance, tets, refinement_level};
 
     auto refined_tets = tet_refiner.resulting_tets();
 

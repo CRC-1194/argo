@@ -1,7 +1,7 @@
 #ifndef polynomialVofInitialization_hpp
 #define polynomialVofInitialization_hpp
 
-#include "adaptiveTetCellRefinement.hpp"
+#include "AdaptiveTetCellRefinement.hpp"
 #include "tetVofCalculator.hpp"
 
 // OpenFOAM includes
