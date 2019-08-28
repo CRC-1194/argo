@@ -127,8 +127,9 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
 
 add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
     src/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
-    src/polynomialVofInitialization/orientedPlane/orientedPlane.cpp
     src/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
+    src/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
+    src/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
 )
 #target_compile_features("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
 #    cxx_std_20
@@ -136,8 +137,8 @@ add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
     src/polynomialVofInitialization/polynomialVofInitialization
     src/polynomialVofInitialization/AdaptiveTetCellRefinement
-    src/polynomialVofInitialization/orientedPlane
     src/polynomialVofInitialization/tetVofCalculator
+    src/polynomialVofInitialization/orientedSurfaces
 )
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude

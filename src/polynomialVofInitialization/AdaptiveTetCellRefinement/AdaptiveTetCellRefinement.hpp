@@ -90,6 +90,7 @@ private:
 
 
     // Private Member Functions
+    std::array<scalar, 6> edge_lengths(const indexedTet& tet) const;
     label compute_max_refinement_level();
 
     void compute_decomposition();

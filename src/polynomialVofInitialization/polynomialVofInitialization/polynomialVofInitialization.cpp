@@ -1,6 +1,7 @@
 #include "polynomialVofInitialization.hpp"
 
 #include "orientedPlane.hpp"
+#include "triSurfaceAdapter.hpp"
 
 #include "fvc.H"
 #include "fvm.H"
@@ -14,9 +15,19 @@ namespace PolynomialVof {
 // Private member functions
 void polynomialVofInitialization::setBulkFractions(volScalarField& alpha) const
 {
+    // NOTE: the diffused signed distance field should only be used
+    // where the original signed distance has not been computed.
+    // Diffusion may cause cells in interface proximity to change sign (TT).
     forAll(alpha, idx)
     {
-        alpha[idx] = 0.5*(sign(signedDistance_[idx]) + 1.0);
+        if (signedDistance0_[idx] != 0.0)
+        {
+            alpha[idx] = 0.5*(sign(signedDistance0_[idx]) + 1.0);
+        }
+        else
+        {
+            alpha[idx] = 0.5*(sign(signedDistance_[idx]) + 1.0);
+        }
     }
 }
 
@@ -184,7 +195,8 @@ polynomialVofInitialization::polynomialVofInitialization
     const fvMesh& mesh, 
     const triSurface& surface,
     const scalar sqrDistFactor,
-    const IOobject::writeOption& wo  // Allows output for testing purposes.
+    const IOobject::writeOption& wo,  // Allows output for testing purposes.
+    const label max_refine = -1
 )
 :
     mesh_{mesh},
@@ -250,7 +262,8 @@ polynomialVofInitialization::polynomialVofInitialization
         dimensionedScalar{"signedDistance", dimLength, 0.0},
         "zeroGradient"
     ),
-    interfaceCells_{}
+    interfaceCells_{},
+    max_refinement_level_{max_refine}
 {
     cellNearestTriangle_.reserve(signedDistance_.size());
 }
@@ -358,6 +371,7 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
         // Decomposition check: sumed of volume of decomposition must match
         // the original cell volume
+        /*
         scalar vol = 0.0;
         for (const auto& tet : tets)
         {
@@ -378,13 +392,15 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
         {
             Info << "ID = " << idx << "; p = " << points[idx] << "\n";
         }
+        */
 
-        // TODO: remove once interface of refiner has been adapted (TT)
-        //orientedPlane aPlane{point(0,0,0), vector(1,0,0), 1.0};
-        // TODO: change max refinement level to auto once implemented (TT)
-        //adaptiveTetCellRefinement refiner{aPlane, points, signed_dist, tets, 1};
-        //alpha[cell_id] = vofCalc_.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
+        // TODO: relate the span vector to the cell size (TT)
+        triSurfaceAdapter adapter{surface_, triSearch_, vector{1e2, 1e2, 1e2}};
+        adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
+        alpha[cell_id] = vofCalc_.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
     }
+
+    Info << "Finished volume fraction calculation" << endl;
 }
 
 //- Write
@@ -393,6 +409,8 @@ void polynomialVofInitialization::writeFields() const
     sqrSearchDist_.write();
     signedDistance_.write();
     signedDistance0_.write();
+    // TODO: for reasons I haven't found yet this causes problems for
+    // coarse resolutions (e.g. 4x4x4), so it's disbaled for now (TT)
     vertexSignedDistance_.write();
 
     // Write identified interface cells as field

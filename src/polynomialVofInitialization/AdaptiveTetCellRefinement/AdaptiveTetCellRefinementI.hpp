@@ -28,9 +28,46 @@ License
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 template<class T>
+std::array<scalar, 6> adaptiveTetCellRefinement<T>::edge_lengths(const indexedTet& tet) const
+{
+    std::array<scalar, 6> lengths{};
+    auto tet_edges = edges(tet);
+
+    for (int idx = 0; idx != 6; ++idx)
+    {
+        auto [p_id, q_id] = tet_edges[idx];
+        lengths[idx] = sqrt(distance_squared(points_[p_id], points_[q_id]));
+    }
+
+    return lengths;
+}
+
+template<class T>
 label adaptiveTetCellRefinement<T>::compute_max_refinement_level()
 {
-    return 1;
+    // TODO: use average edge length of tets for now and see, how
+    // it works.
+    scalar avg_length = 0.0;
+
+    for (const auto& tet : tets_)
+    {
+        auto lengths = edge_lengths(tet);
+        avg_length += std::accumulate(lengths.begin(), lengths.end(), 0.0);
+    }
+
+    avg_length /= 6*tets_.size();
+    auto ref_length = surface_.referenceLength();
+    label level = 0;
+
+    while (avg_length > ref_length)
+    {
+        avg_length /= 2.0;
+        ++level;
+    }
+
+    Info << "Computed refinement level: " << level << endl;
+
+    return level;
 }
 
 template<class T>

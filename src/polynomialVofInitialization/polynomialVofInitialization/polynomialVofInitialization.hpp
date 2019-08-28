@@ -47,6 +47,7 @@ class polynomialVofInitialization
         pointScalarField vertexSignedDistance_;
 
         std::vector<label> interfaceCells_;
+        const label max_refinement_level_;
 
         // Member functions
         void setBulkFractions(volScalarField&) const;
@@ -72,7 +73,8 @@ class polynomialVofInitialization
             const fvMesh&,
             const triSurface&,
             const scalar,
-            const IOobject::writeOption&
+            const IOobject::writeOption&,
+            const label
         );
         
         // Member functions

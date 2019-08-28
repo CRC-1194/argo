@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
     triSurface surface{triFile};
 
-    polynomialVofInitialization polyVofInit(mesh, surface, sqrDistFactor, IOobject::AUTO_WRITE); 
+    polynomialVofInitialization polyVofInit(mesh, surface, sqrDistFactor, IOobject::AUTO_WRITE, -1); 
 
     // TODO: Remove fix normals, this needs to be done externally, by picking an outside point 
     // and using surfaceOrient or another program. The STL must have consistent normals. TM. 
