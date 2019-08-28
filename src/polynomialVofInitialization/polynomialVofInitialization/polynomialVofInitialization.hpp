@@ -7,8 +7,6 @@
 // OpenFOAM includes
 #include "fvMesh.H"
 #include "pointList.H"
-#include "pointMesh.H"
-#include "surfaceFields.H"
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "volFields.H"
@@ -30,7 +28,6 @@ class polynomialVofInitialization
         const fvMesh& mesh_;
         const Time& runTime_;
         const triSurface& surface_;
-        pointMesh pMesh_;
         triSurfaceSearch triSearch_;
         tetVofCalculator vofCalc_;
         
@@ -43,8 +40,8 @@ class polynomialVofInitialization
         volScalarField sqrSearchDist_;  
         volScalarField signedDistance_;
         volScalarField signedDistance0_;
-        surfaceScalarField faceSignedDistance_;
-        pointScalarField vertexSignedDistance_;
+        Field<scalar> faceSignedDistance_;
+        Field<scalar> vertexSignedDistance_;
 
         std::vector<label> interfaceCells_;
         const label max_refinement_level_;

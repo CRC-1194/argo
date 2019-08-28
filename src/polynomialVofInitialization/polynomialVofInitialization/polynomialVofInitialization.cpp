@@ -5,8 +5,8 @@
 
 #include "fvc.H"
 #include "fvm.H"
-#include "pointFields.H"
 
+#include <cassert>
 #include <map>
 
 namespace Foam {
@@ -80,7 +80,7 @@ void polynomialVofInitialization::calcVertexSignedDistance()
 {
     // Compute the signed distance at mesh vertices. Only vertices of cells,
     // which previously have been identified as interface cells, are considered.
-    const auto& points = pMesh_.mesh().points();
+    const auto& points = mesh_.points();
     const auto& map_cell_to_vertex = mesh_.cellPoints();
     const pointField& triPoints = surface_.points();  
     const vectorField& triNormals = surface_.faceNormals(); 
@@ -92,7 +92,7 @@ void polynomialVofInitialization::calcVertexSignedDistance()
         for (const auto v_id : vertex_ids)
         {
             // Avoid duplicate computation (TT)
-            if (vertexSignedDistance_[v_id] == 0.0)
+            if (vertexSignedDistance_[v_id] == 1.0e15)
             {
                 // Vertices are guaranteed to be close to the interface.
                 // So the search distance can be large (TT)
@@ -116,7 +116,7 @@ void polynomialVofInitialization::calcFaceSignedDistance()
     {
         for (const auto face_id : cells[cell_id])
         {
-            if (faceSignedDistance_[face_id] == 0.0)
+            if (faceSignedDistance_[face_id] == 1.0e15)
             {
                 auto hit_info = triSearch_.nearest(points[face_id], vector{1.0e8, 1.0e8, 1.0e8});
                 faceSignedDistance_[face_id] = 
@@ -171,6 +171,12 @@ polynomialVofInitialization::cellDecompositionTuple polynomialVofInitialization:
         ++face_centre_id;
     }
 
+    // Signed distance plausibility check
+    for (uint idx = 0; idx != points.size(); ++idx)
+    {
+        assert(mag(sd[idx]) < mesh_.bounds().mag());
+    }
+
     return std::make_tuple(tets, points, sd);
 }
 
@@ -202,7 +208,6 @@ polynomialVofInitialization::polynomialVofInitialization
     mesh_{mesh},
     runTime_{mesh_.time()},
     surface_{surface},
-    pMesh_{mesh},
     triSearch_{surface},
     vofCalc_{},
     sqrDistFactor_{max(3.0, sqrDistFactor)},
@@ -234,34 +239,8 @@ polynomialVofInitialization::polynomialVofInitialization
         "zeroGradient"
     ),
     signedDistance0_("signedDistance0", signedDistance_), 
-    faceSignedDistance_
-    (
-        IOobject
-        (
-            "vertexSignedDistance",
-            runTime_.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            wo
-        ),
-        mesh,
-        dimensionedScalar("signedDist", dimLength, 0.0),
-        "empty"
-    ),
-    vertexSignedDistance_   
-    (
-        IOobject
-        (
-            "vertexSignedDistance",
-            runTime_.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            wo
-        ),
-        pMesh_,
-        dimensionedScalar{"signedDistance", dimLength, 0.0},
-        "zeroGradient"
-    ),
+    faceSignedDistance_{mesh_.faces().size(), 1.0e15},
+    vertexSignedDistance_{mesh_.points().size(), 1.0e15},
     interfaceCells_{},
     max_refinement_level_{max_refine}
 {
@@ -409,9 +388,6 @@ void polynomialVofInitialization::writeFields() const
     sqrSearchDist_.write();
     signedDistance_.write();
     signedDistance0_.write();
-    // TODO: for reasons I haven't found yet this causes problems for
-    // coarse resolutions (e.g. 4x4x4), so it's disbaled for now (TT)
-    vertexSignedDistance_.write();
 
     // Write identified interface cells as field
     volScalarField interfaceCells{"interface_cells", signedDistance_};
