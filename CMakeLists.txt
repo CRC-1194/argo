@@ -40,6 +40,11 @@ FetchContent_Declare(geometricLibrary_source
 )
 
 FetchContent_GetProperties(geometricLibrary_source)
+# This is required to specify the source directory of the geometric library,
+# e.g. for target_include_directories. 
+# See https://cmake.org/cmake/help/v3.15/module/FetchContent.html#id4 for
+# Details (TT)
+string(TOLOWER "geometricLibrary_source" geolib)
 if(NOT geometricLibrary_source_POPULATED)
     FetchContent_Populate(geometricLibrary_source)
     #add_subdirectory(${geometriclibrary_source_SOURCE_DIR}) # Do we want to build geophase tests?
@@ -191,6 +196,21 @@ target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
     m
 )
 
+add_executable("poFoamTestVofInit${PROJECT_BUILD_TYPE}"
+               applications/poFoamTestVofInit/poFoamTestVofInit.cpp)
+target_include_directories("poFoamTestVofInit${PROJECT_BUILD_TYPE}" PRIVATE
+    ${${geolib}_SOURCE_DIR}/include/io
+)
+target_link_libraries("poFoamTestVofInit${PROJECT_BUILD_TYPE}"
+    "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
+    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 # Preprocessing
 add_executable("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
                applications/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
@@ -231,6 +251,7 @@ install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
         "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+        "poFoamTestVofInit${PROJECT_BUILD_TYPE}"
         "polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
         "polynomialVofTest${PROJECT_BUILD_TYPE}"
         RUNTIME)

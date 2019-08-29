@@ -61,14 +61,14 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
-    const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const label sqrDistFactor = args.optionLookupOrDefault<scalar>("sqrDistFactor", 3); 
-    const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
+    const word fieldName = args.getOrDefault<word>("fieldName", "alpha.water"); 
+    const label sqrDistFactor = args.getOrDefault<scalar>("sqrDistFactor", 3); 
+    const word dataFileName = args.getOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
 
     fileName triFile = args.path() + "/surface.stl";
-    if (args.optionFound("surfaceFile"))
+    if (args.found("surfaceFile"))
     {
-        triFile = args.optionRead<fileName>("surfaceFile");
+        triFile = args.opt<fileName>("surfaceFile");
     }
 
     #include "createFields.hpp"
@@ -77,25 +77,9 @@ int main(int argc, char *argv[])
 
     polynomialVofInitialization polyVofInit(mesh, surface, sqrDistFactor, IOobject::AUTO_WRITE, -1); 
 
-    // TODO: Remove fix normals, this needs to be done externally, by picking an outside point 
-    // and using surfaceOrient or another program. The STL must have consistent normals. TM. 
-    const Switch fixNormals = args.optionFound("fixNormals");
-
-    if (fixNormals)
-    {
-        Foam::GeometricalTransport::orientNormalsInward(surface);
-    }
-
-    // Compute the search distances once: the mesh is not moving, nor is it
-    // topologically changed. 
-    polyVofInit.calcSqrSearchDist(); 
-
     // Zero the volume fraction and signed distance for each test.
     alpha = dimensionedScalar("alpha", dimless, 0); 
     signedDist = dimensionedScalar("signedDist", dimLength,0);
-
-    // Compute the signed distance field based on the surface octree.
-    polyVofInit.calcSignedDist(); 
 
     // Compute the volume fraction field.
     polyVofInit.calcVolFraction(alpha); 
@@ -104,7 +88,7 @@ int main(int argc, char *argv[])
 
     // FIXME: Make a runtime option -testing out of this. 
 //#ifdef TESTING
-    polyVofInit.writeFields(); 
+    //polyVofInit.writeFields(); 
 //#endif
 
     // TODO: Make a runtime option out of this. 

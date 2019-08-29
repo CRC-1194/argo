@@ -195,6 +195,16 @@ label polynomialVofInitialization::n_tets(const label cell_id) const
     return n_tet;
 }
 
+void polynomialVofInitialization::printProgress(label idx) const
+{
+    label tenPercent = interfaceCells_.size()/10;
+
+    if (idx%tenPercent == 0)
+    {
+        Info << "Progress: " << idx/tenPercent*10 << "%" << endl;
+    }
+}
+
 // Constructors
 polynomialVofInitialization::polynomialVofInitialization
 (
@@ -242,7 +252,8 @@ polynomialVofInitialization::polynomialVofInitialization
     faceSignedDistance_{mesh_.faces().size(), 1.0e15},
     vertexSignedDistance_{mesh_.points().size(), 1.0e15},
     interfaceCells_{},
-    max_refinement_level_{max_refine}
+    max_refinement_level_{max_refine},
+    distances_initialized_{false}
 {
     cellNearestTriangle_.reserve(signedDistance_.size());
 }
@@ -327,24 +338,35 @@ void polynomialVofInitialization::calcSignedDist()
     distEqn.solve(); 
 }
 
-void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
+void polynomialVofInitialization::initializeDistances()
 {
+    if (distances_initialized_) return;
+
     Info << "Computing signed distance in narrow band..." << endl;
+
     calcSqrSearchDist();
     calcSignedDist();
-    setBulkFractions(alpha);
-
-    Info << "Identifiying interface cells..." << endl;
     identifyInterfaceCells();
-
-    Info << "Computing vertex signed distance for interface cells..." << endl;
     calcVertexSignedDistance();
-
-    Info << "Computing face signed distance for interface cells..." << endl;
     calcFaceSignedDistance();
 
+    distances_initialized_ = true;
+}
+
+void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
+{
+    initializeDistances();
+
+    setBulkFractions(alpha);
+
     Info << "Computing volume fraction for interface cells..." << endl;
+    Info << "Number of cells flagged as interface cells: "
+         << interfaceCells_.size() << endl;
+    // TODO: relate the span vector to the cell size (TT). Move this
+    // inside the loop when triSurface subsets are used. (TT)
+    triSurfaceAdapter adapter{surface_, triSearch_, vector{1e2, 1e2, 1e2}};
     const auto& V = mesh_.V();
+    label count = 1;
     for (const auto cell_id : interfaceCells_)
     {
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
@@ -373,10 +395,11 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
         }
         */
 
-        // TODO: relate the span vector to the cell size (TT)
-        triSurfaceAdapter adapter{surface_, triSearch_, vector{1e2, 1e2, 1e2}};
         adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
         alpha[cell_id] = vofCalc_.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
+
+        printProgress(count);
+        ++count;
     }
 
     Info << "Finished volume fraction calculation" << endl;

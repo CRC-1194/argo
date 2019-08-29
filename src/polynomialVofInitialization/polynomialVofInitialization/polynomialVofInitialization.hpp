@@ -45,6 +45,7 @@ class polynomialVofInitialization
 
         std::vector<label> interfaceCells_;
         const label max_refinement_level_;
+        bool distances_initialized_;
 
         // Member functions
         void setBulkFractions(volScalarField&) const;
@@ -60,6 +61,7 @@ class polynomialVofInitialization
         void calcFaceSignedDistance();
         cellDecompositionTuple decomposeCell(const label cell_id) const;
         label n_tets(const label cell_id) const;
+        void printProgress(label idx) const;
 
 
     public:
@@ -94,6 +96,10 @@ class polynomialVofInitialization
 
         // Volume fraction calculation.
         void calcVolFraction(volScalarField& alpha);
+
+        // For testing purposes: split initialization (aka distance computations)
+        // from the interface cell decomposition and VoF calculation (TT)
+        void initializeDistances();
 
         //- Write 
         void writeFields() const;
