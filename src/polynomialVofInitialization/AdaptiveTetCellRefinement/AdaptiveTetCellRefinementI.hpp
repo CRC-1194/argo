@@ -65,8 +65,6 @@ label adaptiveTetCellRefinement<T>::compute_max_refinement_level()
         ++level;
     }
 
-    Info << "Computed refinement level: " << level << endl;
-
     return level;
 }
 
@@ -374,6 +372,12 @@ std::vector<indexedTet> adaptiveTetCellRefinement<T>::resulting_tets()
     }
 
     return final_tets;
+}
+
+template<class T>
+label adaptiveTetCellRefinement<T>::refinementLevel() const
+{
+    return max_refinement_level_;
 }
 
 template<class T>

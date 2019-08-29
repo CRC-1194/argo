@@ -234,9 +234,9 @@ target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     m
 )
 
-add_executable("polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
-               applications/polynomialApproximateVofInitialization/polynomialApproximateVofInitialization.cpp)
-target_link_libraries("polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
+add_executable("poFoamVofInit${PROJECT_BUILD_TYPE}"
+               applications/poFoamVofInit/poFoamVofInit.cpp)
+target_link_libraries("poFoamVofInit${PROJECT_BUILD_TYPE}"
     "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
     "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
     ${OF_FINITEVOLUME}
@@ -252,6 +252,6 @@ install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
         "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "poFoamTestVofInit${PROJECT_BUILD_TYPE}"
-        "polynomialApproximateVofInitialization${PROJECT_BUILD_TYPE}"
+        "poFoamVofInit${PROJECT_BUILD_TYPE}"
         "polynomialVofTest${PROJECT_BUILD_TYPE}"
         RUNTIME)

@@ -127,6 +127,7 @@ public:
     const std::vector<point>& points();
     const std::vector<scalar>& signed_distance();
     std::vector<indexedTet> resulting_tets();
+    label refinementLevel() const;
 
     void print_level_infos() const;
     void print_tets() const;
