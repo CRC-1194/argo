@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 TEMPLATE=$1
 PARAMETERS=$2
@@ -9,7 +9,8 @@ then
     exit 1
 fi
 
-voFoamParameterInit $1 $2 &&
+#voFoamParameterInit $1 $2 &&
+pyFoamRunParameterVariation.py --every-variant-one-case-execution --create-database --no-server-process --no-execute-solver --no-mesh-create --no-case-setup $1 $2 &&
 
 # Mesh all parameterized domain cases.
 for case in *${2/.parameter/}*00*

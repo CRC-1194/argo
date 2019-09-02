@@ -1,2 +1,13 @@
 #!/bin/bash
-pvpython ./paraview-create-cylinder.py && cartesian2DMesh 
+
+# Create a cylinder
+pvpython ./paraview-create-cylinder.py
+
+# Set solid name to ascii for use with cfMesh
+sed -i "1s/.*/solid ascii/" cylinder.stl
+
+# Create volume mesh
+cartesian2DMesh
+
+# Orient normals inward
+surfaceOrient cylinder.stl "(0.5 0.5 0.0)" cylinder.stl

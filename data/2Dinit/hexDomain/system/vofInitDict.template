@@ -1,49 +1,25 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  dev                                   |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volScalarField;
-    object      p_rgh;
+    class       dictionary;
+    object      vofInitDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [1 -1 -2 0 0 0 0];
-
-internalField   uniform 0;
-
-boundaryField
-{
-    left 
-    {
-        type            zeroGradient;
-    }
-
-    right 
-    {
-        type            zeroGradient;
-    }
-
-    front 
-    {
-        type            zeroGradient;
-    }
-
-    back 
-    {
-        type            zeroGradient;
-    }
-
-    emptyPatch 
-    {
-        type            empty;
-    }
-}
+fieldName       "alpha.water";
+refinementLevel @!L!@;
+surfaceFile     "../toolCase/cylinder.stl";
+surfaceVolume   0.0070685834705770355; // This is the analytical volume of a
+                                       // cylinder with r=0.15 and h=0.1
+dataFile        "cylinderResults.csv";
+writeFields     off;
 
 // ************************************************************************* //

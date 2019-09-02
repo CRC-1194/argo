@@ -6,6 +6,7 @@
 #include "fvc.H"
 #include "fvm.H"
 
+#include <algorithm>
 #include <cassert>
 #include <map>
 
@@ -197,11 +198,12 @@ label polynomialVofInitialization::n_tets(const label cell_id) const
 
 void polynomialVofInitialization::printProgress(label idx) const
 {
-    label tenPercent = interfaceCells_.size()/10;
+    label threshold = std::max(1, int(interfaceCells_.size()/10));
 
-    if (idx%tenPercent == 0)
+    if (idx%threshold == 0)
     {
-        Info << "Progress: " << idx/tenPercent*10 << "%" << endl;
+        Info << "Progress: " << idx << "/" << interfaceCells_.size()
+             << " interface cells." << endl;
     }
 }
 

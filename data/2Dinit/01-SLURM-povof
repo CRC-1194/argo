@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+PARAMETERFILE=$1
+
+if [[ "$PARAMETERFILE" == "" ]]
+then
+    echo Provide the PyFoam Parameter *file* as argument. 
+    exit 1
+fi
+
+# Run all parameterized domain cases
+for case in *${1/.parameter/}*00*
+do
+    cd $case  
+    sbatch ../poFoamTestVofInit.sbatch
+    cd ..
+done
