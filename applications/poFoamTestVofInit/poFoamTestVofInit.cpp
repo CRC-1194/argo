@@ -60,6 +60,21 @@ using namespace Foam::GeometricalTransport;
 using namespace std::chrono;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+scalar volume(const triSurface& surface)
+{
+    scalar vol = 0.0;
+
+    const auto& p = surface.localPoints();
+    const auto& tris = surface.localFaces();
+    vector c = sum(p)/surface.nPoints();
+
+    for (const auto& t : tris)
+    {
+        vol += mag((p[t[0]] - c) & ((p[t[1]] - c)^(p[t[2]] - c)));
+    }
+
+    return vol/6.0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -100,7 +115,7 @@ int main(int argc, char *argv[])
     args.readIfPresent<label>("refinementLevel", refinementLevel);
     args.readIfPresent<fileName>("surfaceFile", surfaceFile);
     args.readIfPresent<word>("dataFile", dataFileName);
-    args.readIfPresent<Switch>("writeFields", writeFields);
+    writeFields = args.found("writeFields");
     args.readIfPresent<scalar>("surfaceVolume", reference_volume);
 
     // Print configuration
@@ -144,7 +159,8 @@ int main(int argc, char *argv[])
     // Ni : number of interface cells, 
     // Nk : number of bulk cells.
     // Va : volume as approximated by the VoF field
-    errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ni,Nk,Va\n"; 
+    // Ed : volume conservation error relative to discrete surface volume
+    errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ni,Nk,Va,Ed\n"; 
 
 
     while(runTime.run())
@@ -188,6 +204,9 @@ int main(int argc, char *argv[])
         const scalar Te = duration_cast<nanoseconds>(t1 - t0).count() / 1e09;
 
         scalar Vs = reference_volume;
+
+        // TODO: remove/replace one starSurfaceVolume is available again (TT)
+        scalar Vd = volume(surface);
         if (Vs == 0.0)
         {
             Vs = starSurfaceVolume(surface, mesh.solutionD()); 
@@ -200,6 +219,8 @@ int main(int argc, char *argv[])
         Info<< "Volume error = " << Ev << endl; 
         Info<< "Initialization time = " << Ti << " seconds"<< endl;
         Info<< "Calculation time = " << Te << " seconds" << endl;
+        Info<< "Discrete surface volume = " << Vd << endl;
+        Info<< "Relative volume difference = " << mag(Vd - Vs)/Vs << endl;
 
         label Nb = 0; 
         label Ni = 0; 
@@ -223,7 +244,8 @@ int main(int argc, char *argv[])
             << Nx << ","
             << Ni << ","
             << Nb << ","
-            << Valpha << endl;
+            << Valpha << ","
+            << mag(Valpha - Vd)/Vd << endl;
             
         // Move the surface back to its original position. 
         displaceSurface(surface, -randomDisplacement);

@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
     args.readIfPresent<word>("fieldName", fieldName);
     args.readIfPresent<label>("refinementLevel", refinementLevel);
     args.readIfPresent<fileName>("surfaceFile", surfaceFile);
-    args.readIfPresent<Switch>("writeFields", writeFields);
-    args.readIfPresent<Switch>("invert", invertVolumeFraction);
+    writeFields = args.found("writeFields");
+    invertVolumeFraction = args.found("invert");
 
     // Print configuration
     Info << "Configuration:"
