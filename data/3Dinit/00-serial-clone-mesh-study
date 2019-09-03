@@ -16,6 +16,6 @@ pyFoamRunParameterVariation.py --every-variant-one-case-execution --create-datab
 for case in *${2/.parameter/}*00*
 do
     cd $case  
-    sbatch ../blockMesh.sbatch
+    blockMesh
     cd ..
 done

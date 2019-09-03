@@ -17,8 +17,6 @@ FoamFile
 
 application     voFoamTestAdvection;
 
-libs            ( "libvolSurfaceInterpolation.so" "libtwoPhaseValidation.so" );
-
 startFrom       latestTime;
 
 startTime       0;
@@ -27,7 +25,7 @@ stopAt          endTime;
 
 deltaT          1; 
 
-endTime         1000; // Perform 1000 random intersection tests.
+endTime         10; // Perform 10 random intersection tests.
 
 writeControl    adjustableRunTime; // Do not write anything.
  
