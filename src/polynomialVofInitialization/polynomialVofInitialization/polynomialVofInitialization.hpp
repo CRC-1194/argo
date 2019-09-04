@@ -62,6 +62,7 @@ class polynomialVofInitialization
         cellDecompositionTuple decomposeCell(const label cell_id) const;
         label n_tets(const label cell_id) const;
         void printProgress(label idx) const;
+        triSurface surfaceSubset(const label cell_id) const;
 
 
     public:

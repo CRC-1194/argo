@@ -207,6 +207,22 @@ void polynomialVofInitialization::printProgress(label idx) const
     }
 }
 
+triSurface polynomialVofInitialization::surfaceSubset(const label cell_id) const
+{
+    const auto& C = mesh_.C();
+    // TODO: rethink search: bbox vs sphere, required box length / radius (TT)
+    auto trisInSphere = triSearch_.tree().findSphere(C[cell_id], 4*sqrSearchDist_[cell_id]);
+    boolList includeTri(surface_.size(), false);
+    labelList pointMap{};
+    labelList faceMap{};
+    for (const auto idx : trisInSphere)
+    {
+        includeTri[idx] = true;
+    }
+
+    return surface_.subsetMesh(includeTri, pointMap, faceMap);
+}
+
 // Constructors
 polynomialVofInitialization::polynomialVofInitialization
 (
@@ -366,36 +382,16 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
          << interfaceCells_.size() << endl;
     // TODO: relate the span vector to the cell size (TT). Move this
     // inside the loop when triSurface subsets are used. (TT)
-    triSurfaceAdapter adapter{surface_, triSearch_, vector{1e2, 1e2, 1e2}};
     const auto& V = mesh_.V();
     label count = 1;
     for (const auto cell_id : interfaceCells_)
     {
-        auto [tets, points, signed_dist] = decomposeCell(cell_id);
-        // Decomposition check: sumed of volume of decomposition must match
-        // the original cell volume
-        /*
-        scalar vol = 0.0;
-        for (const auto& tet : tets)
-        {
-            vol += vofCalc_.volume(tet, points);
-        }
-        Info << "V_cell = " << V[cell_id] << "; V_tets = " << vol
-             << "\n\tRelative difference: " << mag(V[cell_id] - vol)/V[cell_id]
-             << endl;
+        auto subsetSurface= surfaceSubset(cell_id);
+        triSurfaceSearch subsetSearch{subsetSurface};
+        scalar s = 3.0*Foam::sqrt(sqrSearchDist_[cell_id]);
+        triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
 
-        Info << "--- Tets ---\n";
-        for (const auto& tet : tets)
-        {
-            Info << tet[0] << "\t" << tet[1] << "\t"
-                 << tet[2] << "\t" << tet[3] << "\n";
-        }
-        Info << "Points:" << "\n";
-        for (uint idx = 0; idx != points.size(); ++idx)
-        {
-            Info << "ID = " << idx << "; p = " << points[idx] << "\n";
-        }
-        */
+        auto [tets, points, signed_dist] = decomposeCell(cell_id);
 
         adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
         alpha[cell_id] = vofCalc_.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
