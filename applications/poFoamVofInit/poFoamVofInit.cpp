@@ -119,8 +119,10 @@ int main(int argc, char *argv[])
 
     scalar Valpha = sum(alpha * mesh.V()).value();
 
-    Info << "Overall volume given by " << fieldName
+    Info << "\nOverall volume given by " << fieldName
          << ": " << Valpha << endl;
+    Info << "Relative fraction of overall mesh volume: "
+         << Valpha/sum(mesh.V()).value() << "\n" << endl;
 
     alpha.write(); 
         

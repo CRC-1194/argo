@@ -40,17 +40,25 @@ void polynomialVofInitialization::identifyInterfaceCells()
 
     forAll(cellNearestTriangle_, idx)
     {
-        if (cellNearestTriangle_[idx].hit())
+        if (
+                cellNearestTriangle_[idx].hit()
+                && 
+                intersectionPossible(cell_centres[idx],
+                 signedDistance0_[idx]*signedDistance0_[idx],
+                 map_cell_to_vertices[idx],
+                 cell_vertices
+                )
+                &&
+                // The conditions below are only valid for a piecewise planar
+                // interface (TT)
+                (
+                    signSwitches(idx)
+                    ||
+                    cellContainsVertex(idx)
+                )
+        )
         {
-            if (intersectionPossible(cell_centres[idx],
-                                     signedDistance0_[idx]*signedDistance0_[idx],
-                                     map_cell_to_vertices[idx],
-                                     cell_vertices
-                                     )
-            )
-            {
-                interfaceCells_.push_back(idx);
-            }
+            interfaceCells_.push_back(idx);
         }
     }
 }
@@ -77,17 +85,61 @@ bool polynomialVofInitialization::intersectionPossible
     return false;
 }
 
+bool polynomialVofInitialization::signSwitches(const label cell_id) const
+{
+    const auto& vertex_ids = mesh_.cellPoints()[cell_id];
+    scalar first_dist = vertexSignedDistance_[vertex_ids[0]];
+
+    for (const auto v_id : vertex_ids)
+    {
+        if (first_dist*vertexSignedDistance_[v_id] < 0.0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool polynomialVofInitialization::cellContainsVertex(const label cell_id) const
+{
+    const auto& tris = surface_.localFaces();
+    const auto& vertices = surface_.localPoints();
+
+    auto hitInfo = cellNearestTriangle_[cell_id];
+
+    if (hitInfo.hit())
+    {
+        const auto aTri = tris[hitInfo.index()];
+
+        for (const auto v_id : aTri)
+        {
+            if (mesh_.pointInCell(vertices[v_id], cell_id))
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 void polynomialVofInitialization::calcVertexSignedDistance()
 {
-    // Compute the signed distance at mesh vertices. Only vertices of cells,
-    // which previously have been identified as interface cells, are considered.
+    // Compute the signed distance at mesh vertices in the narrow band
     const auto& points = mesh_.points();
     const auto& map_cell_to_vertex = mesh_.cellPoints();
-    const pointField& triPoints = surface_.points();  
-    const vectorField& triNormals = surface_.faceNormals(); 
+    const auto& triPoints = surface_.points();  
+    const auto& triNormals = surface_.faceNormals(); 
 
-    for (const auto cell_id : interfaceCells_)
+    forAll (signedDistance0_, cell_id)
     {
+        // Skip cells outside of narrow band
+        if (signedDistance0_[cell_id] == 0.0)
+        {
+            continue;
+        }
+
         const auto& vertex_ids = map_cell_to_vertex[cell_id];
 
         for (const auto v_id : vertex_ids)
@@ -210,8 +262,9 @@ void polynomialVofInitialization::printProgress(label idx) const
 triSurface polynomialVofInitialization::surfaceSubset(const label cell_id) const
 {
     const auto& C = mesh_.C();
+
     // TODO: rethink search: bbox vs sphere, required box length / radius (TT)
-    auto trisInSphere = triSearch_.tree().findSphere(C[cell_id], 4*sqrSearchDist_[cell_id]);
+    auto trisInSphere = triSearch_.tree().findSphere(C[cell_id], 2.25*sqrSearchDist_[cell_id]);
     boolList includeTri(surface_.size(), false);
     labelList pointMap{};
     labelList faceMap{};
@@ -364,8 +417,8 @@ void polynomialVofInitialization::initializeDistances()
 
     calcSqrSearchDist();
     calcSignedDist();
-    identifyInterfaceCells();
     calcVertexSignedDistance();
+    identifyInterfaceCells();
     calcFaceSignedDistance();
 
     distances_initialized_ = true;
@@ -395,6 +448,9 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
 
         adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
         alpha[cell_id] = vofCalc_.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
+
+        // Limit volume fraction field
+        alpha[cell_id] = max(min(alpha[cell_id], 1.0), 0.0);
 
         printProgress(count);
         ++count;

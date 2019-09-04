@@ -57,6 +57,8 @@ class polynomialVofInitialization
                 const labelList& point_IDs,
                 const pointList& points
              ) const;
+        bool signSwitches(const label cell_id) const;
+        bool cellContainsVertex(const label cell_id) const;
         void calcVertexSignedDistance();
         void calcFaceSignedDistance();
         cellDecompositionTuple decomposeCell(const label cell_id) const;

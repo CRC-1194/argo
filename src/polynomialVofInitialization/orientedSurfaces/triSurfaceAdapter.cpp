@@ -33,17 +33,18 @@ namespace PolynomialVof {
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 scalar triSurfaceAdapter::compute_ref_length()
 {
+    // Use minimum edge length as reference length
     const auto& edges = surface_.edges();
     const auto& vertices = surface_.localPoints();
 
-    scalar avg_length = 0.0;
+    scalar min_length = 1.0e15;
 
     for (const auto& anEdge : edges)
     {
-        avg_length += mag(vertices[anEdge.start()] - vertices[anEdge.end()]);
+        min_length = min(min_length, mag(vertices[anEdge.start()] - vertices[anEdge.end()]));
     }
 
-    return avg_length/edges.size();
+    return min_length;
 }
 
 
