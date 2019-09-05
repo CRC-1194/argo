@@ -50,6 +50,9 @@ if(NOT geometricLibrary_source_POPULATED)
     #add_subdirectory(${geometriclibrary_source_SOURCE_DIR}) # Do we want to build geophase tests?
 endif()
 
+# OpenMP support
+find_package(OpenMP REQUIRED)
+
 # Read build relevant OpenFOAM environment variables and cache them
 set(of_wm_project_dir "$ENV{WM_PROJECT_DIR}" CACHE PATH "Path to OpenFOAM project folder.")
 set(of_wm_arch "$ENV{WM_ARCH}" CACHE STRING "Architecture. Usually linux64.")
@@ -136,9 +139,7 @@ add_library("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SHARED
     src/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
     src/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
 )
-#target_compile_features("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
-#    cxx_std_20
-#)
+target_compile_options("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PRIVATE "-fopenmp")
 target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" PUBLIC
     src/polynomialVofInitialization/polynomialVofInitialization
     src/polynomialVofInitialization/AdaptiveTetCellRefinement
@@ -151,6 +152,9 @@ target_include_directories("polynomialVofInitialization${PROJECT_BUILD_TYPE}" SY
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("polynomialVofInitialization${PROJECT_BUILD_TYPE}"
+    ${OpenMP_CXX_LIBRARIES}
 )
 
 # There is nothing to link, it is a header library: check what CMake link does in this case. TM.

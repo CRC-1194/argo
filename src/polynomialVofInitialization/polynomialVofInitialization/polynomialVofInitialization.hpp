@@ -2,7 +2,6 @@
 #define polynomialVofInitialization_hpp
 
 #include "AdaptiveTetCellRefinement.hpp"
-#include "tetVofCalculator.hpp"
 
 // OpenFOAM includes
 #include "fvMesh.H"
@@ -29,7 +28,6 @@ class polynomialVofInitialization
         const Time& runTime_;
         const triSurface& surface_;
         triSurfaceSearch triSearch_;
-        tetVofCalculator vofCalc_;
         
         // Factor used to extend the narrow band by N cells. 
         // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
@@ -63,7 +61,6 @@ class polynomialVofInitialization
         void calcFaceSignedDistance();
         cellDecompositionTuple decomposeCell(const label cell_id) const;
         label n_tets(const label cell_id) const;
-        void printProgress(label idx) const;
         triSurface surfaceSubset(const label cell_id) const;
 
 

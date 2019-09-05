@@ -1,6 +1,7 @@
 #include "polynomialVofInitialization.hpp"
 
 #include "orientedPlane.hpp"
+#include "tetVofCalculator.hpp"
 #include "triSurfaceAdapter.hpp"
 
 #include "fvc.H"
@@ -9,6 +10,7 @@
 #include <algorithm>
 #include <cassert>
 #include <map>
+#include <omp.h>
 
 namespace Foam {
 namespace PolynomialVof {
@@ -248,17 +250,6 @@ label polynomialVofInitialization::n_tets(const label cell_id) const
     return n_tet;
 }
 
-void polynomialVofInitialization::printProgress(label idx) const
-{
-    label threshold = std::max(1, int(interfaceCells_.size()/10));
-
-    if (idx%threshold == 0)
-    {
-        Info << "Progress: " << idx << "/" << interfaceCells_.size()
-             << " interface cells." << endl;
-    }
-}
-
 triSurface polynomialVofInitialization::surfaceSubset(const label cell_id) const
 {
     const auto& C = mesh_.C();
@@ -290,7 +281,6 @@ polynomialVofInitialization::polynomialVofInitialization
     runTime_{mesh_.time()},
     surface_{surface},
     triSearch_{surface},
-    vofCalc_{},
     sqrDistFactor_{max(3.0, sqrDistFactor)},
     cellNearestTriangle_{},
     sqrSearchDist_
@@ -433,10 +423,10 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     Info << "Computing volume fraction for interface cells..." << endl;
     Info << "Number of cells flagged as interface cells: "
          << interfaceCells_.size() << endl;
-    // TODO: relate the span vector to the cell size (TT). Move this
-    // inside the loop when triSurface subsets are used. (TT)
+
     const auto& V = mesh_.V();
-    label count = 1;
+
+    #pragma omp parallel for
     for (const auto cell_id : interfaceCells_)
     {
         auto subsetSurface= surfaceSubset(cell_id);
@@ -447,13 +437,11 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
 
         adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
-        alpha[cell_id] = vofCalc_.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
+        tetVofCalculator vofCalc{};
+        alpha[cell_id] = vofCalc.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
 
         // Limit volume fraction field
         alpha[cell_id] = max(min(alpha[cell_id], 1.0), 0.0);
-
-        printProgress(count);
-        ++count;
     }
 
     Info << "Finished volume fraction calculation" << endl;
