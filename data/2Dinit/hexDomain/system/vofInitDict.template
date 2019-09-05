@@ -19,7 +19,7 @@ refinementLevel @!L!@;
 surfaceFile     "../toolCase/cylinder.stl";
 surfaceVolume   0.0070685834705770355; // This is the analytical volume of a
                                        // cylinder with r=0.15 and h=0.1
-dataFile        "cylinderResults.csv";
+dataFile        "povof.csv";
 writeFields     off;
 
 // ************************************************************************* //
