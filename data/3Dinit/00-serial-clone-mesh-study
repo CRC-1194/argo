@@ -3,19 +3,19 @@
 TEMPLATE=$1
 PARAMETERS=$2
 
-if [ \( "$TEMPLATE" == "" \) -o \( "$PARAMETERS" == "" \) -o \( ! -d "$TEMPLATE" \) -o \( ! -f "$PARAMETERS" \) ]; 
+if [ \( "$TEMPLATE" == "" \) -o \( "$PARAMETERS" == "" \) -o \( ! -f "$PARAMETERS" \) ]; 
 then 
     echo Provide two arguments to this script in the following order: the template case *directory* and the PyFoam parameter *file*.  
     exit 1
 fi
 
 #voFoamParameterInit $1 $2 &&
-pyFoamRunParameterVariation.py --every-variant-one-case-execution --create-database --no-server-process --no-execute-solver --no-mesh-create --no-case-setup $1 $2 &&
+pyFoamRunParameterVariation.py --every-variant-one-case-execution --create-database --no-server-process --no-execute-solver --no-mesh-create --no-case-setup $1Domain $2 &&
 
 # Mesh all parameterized domain cases.
 for case in *${2/.parameter/}*00*
 do
     cd $case  
-    blockMesh
+    $1Mesh
     cd ..
 done
