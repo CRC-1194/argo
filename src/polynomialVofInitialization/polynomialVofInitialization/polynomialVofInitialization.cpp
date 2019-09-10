@@ -152,6 +152,7 @@ void polynomialVofInitialization::calcVertexSignedDistance()
                 // Vertices are guaranteed to be close to the interface.
                 // So the search distance can be large (TT)
                 auto hit_info = triSearch_.nearest(points[v_id], vector{1.0e8, 1.0e8, 1.0e8});
+                vertexNearestTriangle_[v_id] = hit_info;
                 vertexSignedDistance_[v_id] = 
                     (points[v_id] - triPoints[surface_[hit_info.index()][0]]) & 
                     triNormals[hit_info.index()];
@@ -250,12 +251,32 @@ label polynomialVofInitialization::n_tets(const label cell_id) const
     return n_tet;
 }
 
+polynomialVofInitialization::searchSphere polynomialVofInitialization::cellInterfaceSearchSphere(const label cell_id) const
+{
+    const auto& cellToVertex = mesh_.cellPoints()[cell_id];
+    std::vector<vector> closestPoints(cellToVertex.size());
+
+    for (auto idx = 0; idx != cellToVertex.size(); ++idx)
+    {
+        closestPoints[idx] = vertexNearestTriangle_[cellToVertex[idx]].hitPoint();
+    }
+
+    point centre = std::accumulate(closestPoints.begin(), closestPoints.end(), vector{0,0,0})/closestPoints.size();
+
+    scalar radiusSquared = 0.0;
+
+    for (const auto v : closestPoints)
+    {
+        radiusSquared = std::max(radiusSquared, (v - centre)&(v - centre)); 
+    }
+
+    return searchSphere{centre, radiusSquared};
+}
+
 triSurface polynomialVofInitialization::surfaceSubset(const label cell_id) const
 {
-    const auto& C = mesh_.C();
-
-    // TODO: rethink search: bbox vs sphere, required box length / radius (TT)
-    auto trisInSphere = triSearch_.tree().findSphere(C[cell_id], 2.25*sqrSearchDist_[cell_id]);
+    auto boundingSphere = cellInterfaceSearchSphere(cell_id);
+    auto trisInSphere = triSearch_.tree().findSphere(boundingSphere.centre, boundingSphere.radiusSquared);
     boolList includeTri(surface_.size(), false);
     labelList pointMap{};
     labelList faceMap{};
@@ -283,6 +304,7 @@ polynomialVofInitialization::polynomialVofInitialization
     triSearch_{surface},
     sqrDistFactor_{max(3.0, sqrDistFactor)},
     cellNearestTriangle_{},
+    vertexNearestTriangle_{},
     sqrSearchDist_
     (
         IOobject
@@ -317,6 +339,7 @@ polynomialVofInitialization::polynomialVofInitialization
     distances_initialized_{false}
 {
     cellNearestTriangle_.reserve(signedDistance_.size());
+    vertexNearestTriangle_.reserve(vertexSignedDistance_.size());
 }
 
 // Public member functions

@@ -22,6 +22,11 @@ class polynomialVofInitialization
         using cellDecompositionTuple = std::tuple<std::vector<indexedTet>,
                                                   std::vector<point>,
                                                   std::vector<scalar>>;
+        struct searchSphere
+        {
+            vector centre;
+            scalar radiusSquared;
+        };
         
         // Data
         const fvMesh& mesh_;
@@ -34,6 +39,7 @@ class polynomialVofInitialization
         const scalar sqrDistFactor_; 
 
         DynamicList<pointIndexHit> cellNearestTriangle_;
+        DynamicList<pointIndexHit> vertexNearestTriangle_;
 
         volScalarField sqrSearchDist_;  
         volScalarField signedDistance_;
@@ -61,6 +67,7 @@ class polynomialVofInitialization
         void calcFaceSignedDistance();
         cellDecompositionTuple decomposeCell(const label cell_id) const;
         label n_tets(const label cell_id) const;
+        searchSphere cellInterfaceSearchSphere(const label cell_id) const;
         triSurface surfaceSubset(const label cell_id) const;
 
 
