@@ -22,6 +22,9 @@ do
     elif [ "$TEMPLATE" == "tetDomain" ]
     then
         tetMesh
+    elif [ "$TEMPLATE" == "polyDomain" ]
+    then
+        pMesh
     else
         echo Error: No mesher assigned for $TEMPLATE.
         exit 1

@@ -1,0 +1,23 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+|    _ _ _ _    |                                                             |
+| //         \\ | Creative Fields Mesher                                      |
+| |  cfMesh  | |                                                              |
+| \\ _ _ _ _ // | Version: 1.1.1                                              |
+|               | Web: www.cfmesh.com e-mail: support@c-fields.com          |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version	2;
+    format	ascii;
+    class	dictionary;
+    location	"system";
+    object	meshDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+surfaceFile	"../polyDomain/box-domain-edges.fms";
+
+maxCellSize	0.1;
+
+// ************************************************************************* //
