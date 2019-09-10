@@ -419,7 +419,20 @@ void polynomialVofInitialization::calcSignedDist()
     (
         -fvm::laplacian(signedDistance_)
     );
-    distEqn.solve(); 
+
+    for (auto iteration = 0; iteration != 3; ++iteration)
+    {
+        distEqn.solve();
+
+        // Reset signed distance in the narrow band
+        forAll(signedDistance0_, idx)
+        {
+            if (signedDistance0_[idx] != 0.0)
+            {
+                signedDistance_[idx] = signedDistance0_[idx];
+            }
+        }
+    }
 }
 
 void polynomialVofInitialization::initializeDistances()
