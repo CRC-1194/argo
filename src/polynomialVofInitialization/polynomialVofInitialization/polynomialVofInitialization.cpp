@@ -131,7 +131,6 @@ void polynomialVofInitialization::calcVertexSignedDistance()
     // Compute the signed distance at mesh vertices in the narrow band
     const auto& points = mesh_.points();
     const auto& map_cell_to_vertex = mesh_.cellPoints();
-    const auto& triPoints = surface_.points();  
     const auto& triNormals = surface_.faceNormals(); 
 
     forAll (signedDistance0_, cell_id)
@@ -153,9 +152,8 @@ void polynomialVofInitialization::calcVertexSignedDistance()
                 // So the search distance can be large (TT)
                 auto hit_info = triSearch_.nearest(points[v_id], vector{1.0e8, 1.0e8, 1.0e8});
                 vertexNearestTriangle_[v_id] = hit_info;
-                vertexSignedDistance_[v_id] = 
-                    (points[v_id] - triPoints[surface_[hit_info.index()][0]]) & 
-                    triNormals[hit_info.index()];
+                vector delta_v{points[v_id] - hit_info.hitPoint()};
+                vertexSignedDistance_[v_id] = mag(delta_v)*sign(delta_v&triNormals[hit_info.index()]);
             }
         }
     }
@@ -413,7 +411,6 @@ void polynomialVofInitialization::calcSignedDist()
     // Compute the signed distance in each cell as the distance between the triangle
     // nearest to the cell center and the cell center.
     const volVectorField& C = mesh_.C();  
-    const pointField& triPoints = surface_.points();  
     const vectorField& triNormals = surface_.faceNormals(); 
     forAll(cellNearestTriangle_, cellI)
     {
@@ -421,9 +418,8 @@ void polynomialVofInitialization::calcSignedDist()
 
         if (cellHit.hit()) 
         {
-            signedDistance_[cellI] = 
-                (C[cellI] - triPoints[surface_[cellHit.index()][0]]) & 
-                triNormals[cellHit.index()];
+            vector delta_v{C[cellI] - cellHit.hitPoint()};
+            signedDistance_[cellI] = mag(delta_v)*sign(delta_v&triNormals[cellHit.index()]);
         }
     }
 
@@ -487,7 +483,7 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     {
         auto subsetSurface= surfaceSubset(cell_id);
         triSurfaceSearch subsetSearch{subsetSurface};
-        scalar s = 9.0*Foam::sqrt(sqrSearchDist_[cell_id]);
+        scalar s = 3.0*Foam::sqrt(sqrSearchDist_[cell_id]);
         triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
         
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
