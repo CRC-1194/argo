@@ -270,6 +270,21 @@ polynomialVofInitialization::searchSphere polynomialVofInitialization::cellInter
         radiusSquared = std::max(radiusSquared, (v - centre)&(v - centre)); 
     }
 
+    // Special case: all cell vertices have the same closest point.
+    //      Thus, the bounding sphere of this point set has a radius of
+    //      zero. In this case, relate the search radius to the edge length
+    //      of the closest triangle. (TT)
+    if (radiusSquared < SMALL)
+    {
+        const auto& v = surface_.points();
+        const auto& t = surface_[cellNearestTriangle_[cell_id].index()];
+        radiusSquared = ((v[t[0]] - centre)&(v[t[0]] - centre)) +
+                        ((v[t[1]] - centre)&(v[t[1]] - centre)) +
+                        ((v[t[2]] - centre)&(v[t[2]] - centre));
+    }
+
+    assert(radiusSquared < 1.0e-15 && "Radius of search square is zero.");
+
     return searchSphere{centre, radiusSquared};
 }
 
@@ -284,6 +299,8 @@ triSurface polynomialVofInitialization::surfaceSubset(const label cell_id) const
     {
         includeTri[idx] = true;
     }
+
+    assert(trisInSphere.size() > 0 && "Surface subset is empty set.");
 
     return surface_.subsetMesh(includeTri, pointMap, faceMap);
 }
@@ -444,6 +461,9 @@ void polynomialVofInitialization::initializeDistances()
     calcSqrSearchDist();
     calcSignedDist();
     calcVertexSignedDistance();
+
+    Info << "Identifying interface cells..." << endl;
+
     identifyInterfaceCells();
     calcFaceSignedDistance();
 
@@ -467,9 +487,9 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     {
         auto subsetSurface= surfaceSubset(cell_id);
         triSurfaceSearch subsetSearch{subsetSurface};
-        scalar s = 3.0*Foam::sqrt(sqrSearchDist_[cell_id]);
+        scalar s = 9.0*Foam::sqrt(sqrSearchDist_[cell_id]);
         triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
-
+        
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
 
         adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
