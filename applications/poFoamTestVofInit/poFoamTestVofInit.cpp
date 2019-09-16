@@ -109,6 +109,7 @@ int main(int argc, char *argv[])
     word dataFileName = initDict.getOrDefault<word>("dataFile", "polynomialVofInitResults.csv");
     Switch writeFields = initDict.getOrDefault<Switch>("writeFields", false);
     scalar reference_volume = initDict.getOrDefault<scalar>("surfaceVolume", 0.0);
+    Switch keepOriginalInterfacePosition = initDict.getOrDefault<Switch>("keepOriginalInterfacePosition", false);
 
     // Comand line args
     args.readIfPresent<word>("fieldName", fieldName);
@@ -117,6 +118,7 @@ int main(int argc, char *argv[])
     args.readIfPresent<word>("dataFile", dataFileName);
     writeFields = args.found("writeFields");
     args.readIfPresent<scalar>("surfaceVolume", reference_volume);
+    keepOriginalInterfacePosition = args.found("keepOriginalInterfacePosition");
 
     // Print configuration
     Info << "Test configuration:"
@@ -126,6 +128,7 @@ int main(int argc, char *argv[])
          << "\n\tdataFile: " << dataFileName
          << "\n\twriteFields: " << writeFields
          << "\n\tsurfaceVolume: " << reference_volume
+         << "\n\tkeepOriginalInterfacePosition: " << keepOriginalInterfacePosition
          << endl;
 
     
@@ -137,10 +140,13 @@ int main(int argc, char *argv[])
     high_resolution_clock::time_point p1 = high_resolution_clock::now();
 
     // Position the tool mesh centroid at the base mesh centroid. 
-    label nBasePoints = mesh.nPoints();  
-    const vector baseCenter = sum(mesh.points()) / nBasePoints;  
-    vector toolCenter = sum(surface.points()) / surface.nPoints(); 
-    displaceSurface(surface, baseCenter - toolCenter); 
+    if (!keepOriginalInterfacePosition)
+    {
+        label nBasePoints = mesh.nPoints();  
+        const vector baseCenter = sum(mesh.points()) / nBasePoints;  
+        vector toolCenter = sum(surface.points()) / surface.nPoints(); 
+        displaceSurface(surface, baseCenter - toolCenter); 
+    }
 
     if (writeFields)
     {
@@ -172,8 +178,13 @@ int main(int argc, char *argv[])
 
         // Position the surface mesh randomly within the bounding box of 
         // the volume mesh.
-        vector randomDisplacement = 
-            placeSurfaceRandomlyInBox(surface, mesh.bounds(), mesh.solutionD()); 
+        vector randomDisplacement{0,0,0};
+
+        if (!keepOriginalInterfacePosition)
+        {
+            randomDisplacement = 
+                placeSurfaceRandomlyInBox(surface, mesh.bounds(), mesh.solutionD()); 
+        }
 
         if (writeFields)
         {

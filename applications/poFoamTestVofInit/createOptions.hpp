@@ -43,3 +43,10 @@
         "scalar",
         "Enclosed volume of the given surface. Used to calculate volume errors."
     ); 
+
+    argList::addBoolOption
+    (
+        "keepOriginalInterfacePosition",
+        "Place interface as given by the surface file."
+    );
+

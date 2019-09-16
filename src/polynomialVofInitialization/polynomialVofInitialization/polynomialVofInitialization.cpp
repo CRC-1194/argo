@@ -18,19 +18,9 @@ namespace PolynomialVof {
 // Private member functions
 void polynomialVofInitialization::setBulkFractions(volScalarField& alpha) const
 {
-    // NOTE: the diffused signed distance field should only be used
-    // where the original signed distance has not been computed.
-    // Diffusion may cause cells in interface proximity to change sign (TT).
     forAll(alpha, idx)
     {
-        if (signedDistance0_[idx] != 0.0)
-        {
-            alpha[idx] = 0.5*(sign(signedDistance0_[idx]) + 1.0);
-        }
-        else
-        {
-            alpha[idx] = 0.5*(sign(signedDistance_[idx]) + 1.0);
-        }
+        alpha[idx] = pos(signedDistance_[idx]);
     }
 }
 
@@ -43,21 +33,13 @@ void polynomialVofInitialization::identifyInterfaceCells()
     forAll(cellNearestTriangle_, idx)
     {
         if (
-                cellNearestTriangle_[idx].hit()
-                && 
-                intersectionPossible(cell_centres[idx],
-                 signedDistance0_[idx]*signedDistance0_[idx],
-                 map_cell_to_vertices[idx],
-                 cell_vertices
-                )
-                &&
-                // The conditions below are only valid for a piecewise planar
-                // interface (TT)
-                (
-                    signSwitches(idx)
-                    ||
-                    cellContainsVertex(idx)
-                )
+            cellNearestTriangle_[idx].hit()
+            && 
+            intersectionPossible(cell_centres[idx],
+             signedDistance0_[idx]*signedDistance0_[idx],
+             map_cell_to_vertices[idx],
+             cell_vertices
+            )
         )
         {
             interfaceCells_.push_back(idx);
@@ -81,45 +63,6 @@ bool polynomialVofInitialization::intersectionPossible
         if ((v & v) >= distSqr)
         {
             return true;
-        }
-    }
-
-    return false;
-}
-
-bool polynomialVofInitialization::signSwitches(const label cell_id) const
-{
-    const auto& vertex_ids = mesh_.cellPoints()[cell_id];
-    scalar first_dist = vertexSignedDistance_[vertex_ids[0]];
-
-    for (const auto v_id : vertex_ids)
-    {
-        if (first_dist*vertexSignedDistance_[v_id] < 0.0)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool polynomialVofInitialization::cellContainsVertex(const label cell_id) const
-{
-    const auto& tris = surface_.localFaces();
-    const auto& vertices = surface_.localPoints();
-
-    auto hitInfo = cellNearestTriangle_[cell_id];
-
-    if (hitInfo.hit())
-    {
-        const auto aTri = tris[hitInfo.index()];
-
-        for (const auto v_id : aTri)
-        {
-            if (mesh_.pointInCell(vertices[v_id], cell_id))
-            {
-                return true;
-            }
         }
     }
 
@@ -150,7 +93,7 @@ void polynomialVofInitialization::calcVertexSignedDistance()
             {
                 // Vertices are guaranteed to be close to the interface.
                 // So the search distance can be large (TT)
-                auto hit_info = triSearch_.nearest(points[v_id], vector{1.0e8, 1.0e8, 1.0e8});
+                auto hit_info = triSearch_.nearest(points[v_id], vector{1.0e15, 1.0e15, 1.0e15});
                 vertexNearestTriangle_[v_id] = hit_info;
                 vector delta_v{points[v_id] - hit_info.hitPoint()};
                 vertexSignedDistance_[v_id] = mag(delta_v)*sign(delta_v&triNormals[hit_info.index()]);
@@ -172,7 +115,7 @@ void polynomialVofInitialization::calcFaceSignedDistance()
         {
             if (faceSignedDistance_[face_id] == 1.0e15)
             {
-                auto hit_info = triSearch_.nearest(points[face_id], vector{1.0e8, 1.0e8, 1.0e8});
+                auto hit_info = triSearch_.nearest(points[face_id], vector{1.0e15, 1.0e15, 1.0e15});
                 faceSignedDistance_[face_id] = 
                     (points[face_id] - triPoints[surface_[hit_info.index()][0]]) & 
                     triNormals[hit_info.index()];
@@ -483,7 +426,7 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     {
         auto subsetSurface= surfaceSubset(cell_id);
         triSurfaceSearch subsetSearch{subsetSurface};
-        scalar s = 3.0*Foam::sqrt(sqrSearchDist_[cell_id]);
+        scalar s = 2.0*sqrDistFactor_*Foam::sqrt(sqrSearchDist_[cell_id]);
         triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
         
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
