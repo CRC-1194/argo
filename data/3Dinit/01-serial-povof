@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PARAMETERFILE=$1
-MESHTYPE=$2
+#MESHTYPE=$2
 
 if [[ "$PARAMETERFILE" == "" ]]
 then
@@ -10,7 +10,7 @@ then
 fi
 
 # Run all parameterized domain cases
-for case in *${1/.parameter/}*00*${MESHTYPE}*
+for case in *${1/.parameter/}*00*povof*
 do
     cd $case  
     poFoamTestVofInit

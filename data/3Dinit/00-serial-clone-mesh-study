@@ -1,32 +1,48 @@
 #!/usr/bin/env bash
+TEMPLATECASE=unitDomain
 
-TEMPLATE=$1
-PARAMETERS=$2
+ALGORITHM=$1
+PARAMETERFILE=$2
 
-if [ \( "$TEMPLATE" == "" \) -o \( "$PARAMETERS" == "" \) -o \( ! -d "$TEMPLATE" \) -o \( ! -f "$PARAMETERS" \) ]; 
+if [ \( "$ALGORITHM" == "" \) -o \( "$PARAMETERFILE" == "" \) -o \( ! -f "$PARAMETERFILE" \) ]; 
 then 
-    echo Provide two arguments to this script in the following order: the template case *directory* and the PyFoam parameter *file*.  
+    echo Provide two arguments to this script in the following order: the algorithm name [smci, ccmi, povof] and the PyFoam parameter *file*.  
+    exit 1
+fi
+
+if [ "$ALGORITHM" != "smci" ] && [ "$ALGORITHM" != "ccmi" ] && [ "$ALGORITHM" != "povof" ];
+then
+    echo Algorithm $ALGORITHM not known.
+    echo Valid algorithms: smci, ccmi, povof
     exit 1
 fi
 
 #voFoamParameterInit $1 $2 &&
-pyFoamRunParameterVariation.py --every-variant-one-case-execution --create-database --no-server-process --no-execute-solver --no-mesh-create --no-case-setup $1 $2 &&
+pyFoamRunParameterVariation.py --every-variant-one-case-execution \
+                               --create-database \
+                               --no-server-process \
+                               --no-execute-solver \
+                               --no-mesh-create \
+                               --no-case-setup \
+                               --cloned-case-postfix=$ALGORITHM \
+                               $TEMPLATECASE $PARAMETERFILE &&
 
 # Mesh all parameterized domain cases.
-for case in *${2/.parameter/}*00*${TEMPLATE}
+for case in *${2/.parameter/}*00*${ALGORITHM}
 do
     cd $case  
-    if [ "$TEMPLATE" == "hexDomain" ]
+    if [[ "$PARAMETERFILE" == *"hexDomain"* ]];
     then
         blockMesh
-    elif [ "$TEMPLATE" == "tetDomain" ]
+    elif [[ "$PARAMETERFILE" == *"tetDomain"* ]];
     then
         tetMesh
-    elif [ "$TEMPLATE" == "polyDomain" ]
+    elif [[ "$PARAMETERFILE" == *"polyDomain"* ]];
     then
         pMesh
     else
-        echo Error: No mesher assigned for $TEMPLATE.
+        echo Error: No mesher assigned for $PARAMETERFILE. Name must contain
+        echo either hexDomain, tetDomain or polyDomain.
         exit 1
     fi
     cd ..

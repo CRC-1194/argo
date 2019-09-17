@@ -16,8 +16,8 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-surfaceFile	"../tetDomain/box-domain-edges.fms";
+surfaceFile	"../unitDomain/box-domain-edges.fms";
 
-maxCellSize	0.1;
+maxCellSize	#calc "1.0 / @!N!@";
 
 // ************************************************************************* //

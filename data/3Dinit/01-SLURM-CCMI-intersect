@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 
-for case in ccmiDomain*00*
+PARAMETERFILE=$1
+
+if [ \( "$PARAMETERFILE" == "" \) -o \( ! -f "$PARAMETERFILE" \) ]; 
+then 
+    echo Provide the name of the parameter file as argument.  
+    exit 1
+fi
+
+# Run all cases of the given study
+for case in *${2/.parameter/}*00*ccmi
 do
     cd $case \ 
     sbatch ../CCMI-intersect.sbatch && \
