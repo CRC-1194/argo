@@ -19,7 +19,7 @@ refinementLevel -1;
 surfaceFile     "../toolCase/meshed-sphere.vtk";
 surfaceVolume   0.014137166941154067; // This is the analytical volume of sphere
                                       // with R=0.15
-dataFile        "sphereResults.csv";
+dataFile        "povof.csv";
 writeFields     off;
 
 // ************************************************************************* //

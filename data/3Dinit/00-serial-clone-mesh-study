@@ -13,7 +13,7 @@ fi
 pyFoamRunParameterVariation.py --every-variant-one-case-execution --create-database --no-server-process --no-execute-solver --no-mesh-create --no-case-setup $1 $2 &&
 
 # Mesh all parameterized domain cases.
-for case in *${2/.parameter/}*00*
+for case in *${2/.parameter/}*00*${TEMPLATE}
 do
     cd $case  
     if [ "$TEMPLATE" == "hexDomain" ]
