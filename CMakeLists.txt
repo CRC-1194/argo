@@ -11,8 +11,6 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Use lib instead of lib64 for libraries.
-set(CMAKE_INSTALL_LIBDIR "lib")
 
 # Set the build type suffix based on the build type.
 set(PROJECT_BUILD_TYPE "")
@@ -116,6 +114,10 @@ find_library(OF_FINITEVOLUME finiteVolume PATHS ${of_lib_path})
 find_library(OF_MESHTOOLS meshTools PATHS ${of_lib_path})
 find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
 
+# Use lib instead of lib64 for libraries.
+set(CMAKE_INSTALL_LIBDIR "$ENV{FOAM_USER_LIBBIN}")
+set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
+
 # Build the library
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
@@ -175,24 +177,25 @@ target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}
     m
 )
 
-add_executable("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
-               applications/test/voFoamTestGeophaseMake.cpp)
-target_include_directories("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" PRIVATE 
-    src/include
-    ${of_src_path}/finiteVolume/lnInclude
-    ${of_src_path}/surfMesh/lnInclude
-    ${of_src_path}/meshTools/lnInclude
-    ${of_src_path}/OSspecific/POSIX/lnInclude
-    ${of_src_path}/OpenFOAM/lnInclude
-)
-target_link_libraries("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" 
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    geophase
-    dl
-    m
-)
+# TODO: Add the test application for the geophase algorithms. 
+#add_executable("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
+               #applications/test/voFoamTestGeophaseMake.cpp)
+#target_include_directories("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" PRIVATE 
+    #src/include
+    #${of_src_path}/finiteVolume/lnInclude
+    #${of_src_path}/surfMesh/lnInclude
+    #${of_src_path}/meshTools/lnInclude
+    #${of_src_path}/OSspecific/POSIX/lnInclude
+    #${of_src_path}/OpenFOAM/lnInclude
+#)
+#target_link_libraries("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" 
+    #${OF_FINITEVOLUME}
+    #${OF_MESHTOOLS}
+    #${OF_OPENFOAM}
+    #geophase
+    #dl
+    #m
+#)
 
 # Preprocessing
 add_executable("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
@@ -220,7 +223,7 @@ target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
 # Install executables
 install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         "voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-        "voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
+        #"voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
         "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
         "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
         RUNTIME)
