@@ -16,9 +16,9 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-surfaceFile	"sphere.stl";
+surfaceFile	"cfmesh-sphere.stl";
 
-maxCellSize	0.5;
+maxCellSize	0.01;
 
 boundaryLayers
 {
@@ -26,10 +26,10 @@ boundaryLayers
     patchBoundaryLayers
     {
         // Patch name. Supports regular expressions.
-        "ascii"
+        "sphere"
         {
             // Number of boundary layers at walls.
-            nLayers	1;
+            nLayers	3;
             
             // Thickness ratio between consecutive layers.
             thicknessRatio 100;	
@@ -41,12 +41,9 @@ boundaryLayers
 localRefinement
 {
     // Local refinement regions
-    "ascii"
+    "sphere"
     {
-        // Arc length for the ParaView sphere source (from create-sphere.py): 
-        // Arc length = Radius * 2 * pi / PhiResolution 
-        //              Radius * 2 * pi / ThetaResolution
-        cellSize 0.01472621556370215;
+        cellSize 0.0075;
     }
 }
 

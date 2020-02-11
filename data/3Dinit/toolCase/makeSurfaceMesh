@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
 gmsh -2 -o meshed-sphere.vtk sphere.geo
+gmsh -2 -o cfmesh-sphere.stl sphere.geo
+sed -i 's/Created by Gmsh/sphere/' cfmesh-sphere.stl

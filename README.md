@@ -42,9 +42,11 @@ Inside the `geom-vof-init` directory
 
 ```
 ?>  mkdir build && cd build 
-?>  cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release ..
+?>  cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=on ..
 ?>  make && make install
 ```
+
+where the flag `-DCMAKE_EXPORT_COMPILE_COMMANDS=on` is optional (it instructs CMake to create a `compile_commands.json` file).
 
 Unlike OpenFOAM, CMake will save the `geom-vof-init` executable and library files in the `build` folder.
 
