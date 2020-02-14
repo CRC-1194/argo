@@ -20,10 +20,6 @@ renderView1 = GetActiveViewOrCreate('RenderView')
 # show data in view
 sphere1Display = Show(sphere1, renderView1)
 # trace defaults for the display properties.
-sphere1Display.AmbientColor = [0.0, 0.0, 0.0]
-sphere1Display.ColorArrayName = [None, '']
-sphere1Display.EdgeColor = [0.0, 0.0, 0.0]
-sphere1Display.CubeAxesColor = [0.0, 0.0, 0.0]
 
 # reset view to fit data
 renderView1.ResetCamera()

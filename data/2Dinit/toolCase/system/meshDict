@@ -18,7 +18,7 @@ FoamFile
 
 surfaceFile	"cylinder.stl";
 
-maxCellSize	0.5;
+maxCellSize	0.1;
 
 boundaryLayers
 {
@@ -26,7 +26,7 @@ boundaryLayers
     patchBoundaryLayers
     {
         // Patch name. Supports regular expressions.
-        "ascii"
+        "cylinder"
         {
             // Number of boundary layers at walls.
             nLayers	1;

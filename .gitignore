@@ -1,3 +1,7 @@
 linux64GccDPInt32Opt
 lnInclude
-*[bBuUiILldD]*/
+build/
+*.vtk 
+*.stl
+polyMesh/
+VTK/

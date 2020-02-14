@@ -19,23 +19,29 @@ Nb | number of bulk cells.
 
 Create the sphere.stl in the toolCase/ directory
 
+```
     pvpython paraview-create-sphere.py 
-
+```
 
 Create the 3D tool mesh using cfMesh 
 
-
+```
     toolCase> cartesianMesh
+```
 
 Clone the cases for the parameter study 
 
+```
     ./00-SLURM-clone-mesh-study hexDomain smciDomain.parameter
     ./00-SLURM-clone-mesh-study hexDomain ccmiDomain.parameter
+```
 
 Run the parameter variations 
 
+```
     ./01-SLURM-CCMI-intersect
     ./01-SLURM-SMCI-intersect
+```
 
 # Result processing 
 

@@ -1,2 +1,4 @@
 #!/bin/bash
-pvpython ./paraview-create-cylinder.py && cartesian2DMesh 
+pvpython ./paraview-create-cylinder.py && \
+    sed -i 's/Visualization Toolkit generated SLA File/cylinder/g' cylinder.stl && \
+    cartesian2DMesh 
