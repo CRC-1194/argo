@@ -44,9 +44,11 @@ Inside the `geom-vof-init` directory
 
 ```
 ?>  mkdir build && cd build 
-?>  cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release ..
+?>  cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=on ..
 ?>  make && make install
 ```
+
+where the flag `-DCMAKE_EXPORT_COMPILE_COMMANDS=on` is optional (it instructs CMake to create a `compile_commands.json` file).
 
 Unlike OpenFOAM, CMake will save the `geom-vof-init` executable and library files in the `build` folder.
 
@@ -71,11 +73,28 @@ to finish installing `geom-vof-init`.
 
 ## Running the tests 
 
+### voFoamTestSurfaceCellIntersectMeshes
 TODO.
+
+### poFoamTestVofInit
+TODO
 
 ## Running the applications 
+**Prerequisite:** a STL file that represents the interface for which the volume fraction shall be initialized. A consistent inward orientation of the triangle normals
+is required. You can use OpenFOAM's `surfaceOrient` tool to get a consistent normal orientation.
 
-TODO.
+### voFoamSurfaceCellIntersectMeshes
+TODO
+
+### poFoamVofInit
+This application initializes a volume fraction field from a given surface file in an OpenFOAM case directory. The application is controlled by a set of options.
+These options can either be set using a dictionary (`system/vofInitDict`) or as command line options. Here is a list of the availabe options and their default values:
+* `fieldName <voffield>`: read *voffield* from the 0-folder and write the computed volume fractions to it. (Default: alpha.water)
+* `refinementLevel <integer>`: This sets the number of tetrahedral refinement levels to be used. By default, the refinement level is computed automatically such that
+    the finest tetrahedra have a comparable length as the triangles of the surface file. Specifying a negative value also triggers the use of the automatic mode.
+* `surfaceFile <file_name>`: read the interface from *file_name*. (Default: surface.stl)
+* `writeFields`: if given, additional auxiliary fields used for the volume fraction computation are written. (Default: false)
+* `invert`: by default, the inside of the given surface is set to one. If this option is set, outside cells are set to one instead.
 
 ## Contributing
 

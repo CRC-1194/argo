@@ -58,6 +58,8 @@ target_include_directories(geophase INTERFACE
     ${geophase_SOURCE_DIR}/include/geometrical_algorithm/
     ${geophase_SOURCE_DIR}/include/geometrical_model/
 )
+# OpenMP support
+find_package(OpenMP REQUIRED)
 
 # Read build relevant OpenFOAM environment variables and cache them
 set(of_wm_project_dir "$ENV{WM_PROJECT_DIR}" CACHE PATH "Path to OpenFOAM project folder.")
@@ -146,8 +148,36 @@ target_include_directories("geometricalMeshIntersection" SYSTEM PUBLIC
     ${of_src_path}/OpenFOAM/lnInclude
 )
 
-# Install the library
+add_library("polynomialVofInitialization" SHARED
+    src/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
+    src/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
+    src/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
+    src/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
+)
+target_compile_options("polynomialVofInitialization" PRIVATE "-fopenmp")
+target_include_directories("polynomialVofInitialization" PUBLIC
+    src/polynomialVofInitialization/polynomialVofInitialization
+    src/polynomialVofInitialization/AdaptiveTetCellRefinement
+    src/polynomialVofInitialization/tetVofCalculator
+    src/polynomialVofInitialization/orientedSurfaces
+)
+target_include_directories("polynomialVofInitialization" SYSTEM PUBLIC
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("polynomialVofInitialization"
+    ${OpenMP_CXX_LIBRARIES}
+)
+
+# There is nothing to link, it is a header library: check what CMake link does in this case. TM.
+#target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
+
+# Install the libraries 
 install(TARGETS "geometricalMeshIntersection" LIBRARY)
+install(TARGETS "polynomialVofInitialization" LIBRARY)
 
 # Build executables
 
@@ -193,6 +223,32 @@ target_link_libraries("voFoamTestGeophaseUnit"
     m
 )
 
+add_executable("polynomialVofTest${PROJECT_BUILD_TYPE}"
+               applications/polynomialVofTest/polynomialVofTest.cpp)
+target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
+    "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
+add_executable("poFoamTestVofInit${PROJECT_BUILD_TYPE}"
+               applications/poFoamTestVofInit/poFoamTestVofInit.cpp)
+target_include_directories("poFoamTestVofInit${PROJECT_BUILD_TYPE}" PRIVATE
+    ${${geolib}_SOURCE_DIR}/include/io
+)
+target_link_libraries("poFoamTestVofInit${PROJECT_BUILD_TYPE}"
+    "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
+    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 # Preprocessing
 add_executable("voFoamCellCellIntersectMeshes"
                applications/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
@@ -216,10 +272,26 @@ target_link_libraries("voFoamSurfaceCellIntersectMeshes"
     m
 )
 
+add_executable("poFoamVofInit"
+               applications/poFoamVofInit/poFoamVofInit.cpp)
+
+target_link_libraries("poFoamVofInit"
+    "geometricalMeshIntersection"
+    "polynomialVofInitialization"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 # Install executables
 install(TARGETS "voFoamTestCellCellIntersectMeshes"
         "voFoamTestSurfaceCellIntersectMeshes"
         "voFoamSurfaceCellIntersectMeshes"  
         "voFoamCellCellIntersectMeshes"
         "voFoamTestGeophaseUnit"
+        "poFoamTestVofInit"
+        "poFoamVofInit"
+        "polynomialVofTest"
         RUNTIME)

@@ -11,45 +11,21 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      controlDict;
+    object      fvSolution;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     voFoam;
-
-startFrom       startTime;
-
-startTime       0;
-
-stopAt          endTime;
-
-endTime         1000;
-
-deltaT          1;
-
-writeControl    timeStep;
-
-writeInterval   1;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  15;
-
-writeCompression off;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable yes;
-
-adjustTimeStep  no;
-
-maxCo           0.5;
-
-maxDeltaT       1;
-
+solvers
+{
+    signedDist 
+    {
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       0.5;
+        relTol          0;
+        minIter         1;
+        maxIter         1;
+    }
+}
 
 // ************************************************************************* //

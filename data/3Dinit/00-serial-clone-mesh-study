@@ -33,13 +33,13 @@ do
     cd $case  
     if [[ "$PARAMETERFILE" == *"hexDomain"* ]];
     then
-        sbatch ../blockMesh.sbatch
+        blockMesh
     elif [[ "$PARAMETERFILE" == *"tetDomain"* ]];
     then
-        sbatch ../tetMesh.sbatch
+        tetMesh
     elif [[ "$PARAMETERFILE" == *"polyDomain"* ]];
     then
-        sbatch ../pMesh.sbatch
+        pMesh
     else
         echo Error: No mesher assigned for $PARAMETERFILE. Name must contain
         echo either hexDomain, tetDomain or polyDomain.
@@ -47,4 +47,3 @@ do
     fi
     cd ..
 done
-

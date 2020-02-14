@@ -1,6 +1,6 @@
 values
 {
-    solver (voFoamSetSurfaceFraction);
+    solver (poFoamTestVofInit);
 
     N
     (
@@ -11,5 +11,4 @@ values
     (
         -1
     );
-
 }

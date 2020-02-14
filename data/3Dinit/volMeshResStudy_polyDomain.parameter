@@ -1,0 +1,14 @@
+values
+{
+    solver (poFoamTestVofInit);
+
+    N
+    (
+        3 6 12 24 48 72
+    );
+
+    L
+    (
+        -1
+    );
+}

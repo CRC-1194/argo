@@ -1,7 +1,7 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  1.6                                   |
+|  \\    /   O peration     | Version:  3.0.x                                 |
 |   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
@@ -15,21 +15,21 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     voFoam;
+application     voFoamTestAdvection;
 
-startFrom       startTime;
+startFrom       latestTime;
 
 startTime       0;
 
 stopAt          endTime;
 
-endTime         1000;
+deltaT          1; 
 
-deltaT          1;
+endTime         10; // Perform 1 random tests.
 
-writeControl    timeStep;
-
-writeInterval   1;
+writeControl    adjustableRunTime; // Do not write anything.
+ 
+writeInterval   $endTime;
 
 purgeWrite      0;
 
@@ -47,9 +47,10 @@ runTimeModifiable yes;
 
 adjustTimeStep  no;
 
-maxCo           0.5;
+maxCo           1; 
+
+maxAlphaCo      0.1;  
 
 maxDeltaT       1;
-
 
 // ************************************************************************* //

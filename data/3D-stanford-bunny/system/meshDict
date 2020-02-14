@@ -16,35 +16,8 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-surfaceFile	"cfmesh-sphere.stl";
+surfaceFile	"domainBoundary.stl";
 
-maxCellSize	0.01;
-
-boundaryLayers
-{
-    // Local settings applied to patches.
-    patchBoundaryLayers
-    {
-        // Patch name. Supports regular expressions.
-        "sphere"
-        {
-            // Number of boundary layers at walls.
-            nLayers	3;
-            
-            // Thickness ratio between consecutive layers.
-            thicknessRatio 100;	
-        }
-    }
-}
-
-
-localRefinement
-{
-    // Local refinement regions
-    "sphere"
-    {
-        cellSize 0.0075;
-    }
-}
+maxCellSize	0.05;
 
 // ************************************************************************* //

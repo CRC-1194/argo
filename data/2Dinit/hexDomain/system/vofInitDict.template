@@ -2,7 +2,7 @@
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
 |  \\    /   O peration     | Version:  1.6                                   |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -10,46 +10,16 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "system";
-    object      controlDict;
+    object      vofInitDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     voFoam;
-
-startFrom       startTime;
-
-startTime       0;
-
-stopAt          endTime;
-
-endTime         1000;
-
-deltaT          1;
-
-writeControl    timeStep;
-
-writeInterval   1;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  15;
-
-writeCompression off;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable yes;
-
-adjustTimeStep  no;
-
-maxCo           0.5;
-
-maxDeltaT       1;
-
+fieldName       "alpha.water";
+refinementLevel @!L!@;
+surfaceFile     "../toolCase/cylinder.stl";
+surfaceVolume   0.0070685834705770355; // This is the analytical volume of a
+                                       // cylinder with r=0.15 and h=0.1
+dataFile        "povof.csv";
+writeFields     off;
 
 // ************************************************************************* //
