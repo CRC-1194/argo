@@ -8,6 +8,8 @@ Implementation of the Surface-Cell Mesh Intersection (SMCI) and Cell-Cell Mesh I
 
 * **Tobias Tolle** - *Development* - [MMA, TU Darmstadt](https://www.mathematik.tu-darmstadt.de/fb/personal/details/tobias_tolle.de.jsp)
 
+* **Dirk Gründing** - *Development* - [MMA, TU Darmstadt](https://www.mma.tu-darmstadt.de/index/mitarbeiter_3/mitarbeiter_details_mma_47488.en.jsp)
+
 ## License
 
 This project is licensed under the GPL3.0 License - see the [LICENSE.md](LICENSE.md) file for details.
