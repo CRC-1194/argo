@@ -33,19 +33,19 @@ Author
 #ifndef GeophaseMake_H 
 #define GeophaseMake_H 
 
+// STL 
 #include <vector>
 #include <list>
 #include <numeric>
-
-#include "Polygon.hpp"
-//#include "tag.H"
-//#include "pointMesh.H"
-//#include "AABBox.hpp"
-//#include "Make.hpp"
-//#include "surfaceFields.H"
-//
-
 #include <type_traits>
+
+// Geophase
+#include "Polygon.hpp"
+#include "Polyhedron.hpp"
+//#include "Halfspace.hpp"
+
+// OpenFOAM
+#include "polyMesh.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -60,6 +60,9 @@ namespace geophase {
 
     // An OpenFOAM std::vector polygon is a VectorPolygon.
     using foamVectorPolygon = VectorPolygon<Foam::vector>; 
+
+    // An OpenFOAM std::vector polygon is a VectorPolygon.
+    using foamVectorPolyhedron = VectorPolyhedron<foamVectorPolygon>; 
 }
 
 namespace Foam { namespace GeometricalTransport { 

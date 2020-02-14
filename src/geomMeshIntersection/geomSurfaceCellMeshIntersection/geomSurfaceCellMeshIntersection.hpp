@@ -45,6 +45,10 @@ SourceFiles
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "autoPtr.H" 
+#include "pointFields.H"
+#include <memory>
+#include "volPointInterpolation.H"
+#include "DynamicList.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -57,44 +61,44 @@ namespace Foam { namespace GeometricalTransport {
 
 class geomSurfaceCellMeshIntersection
 {
-    // Private data
+    //- A reference to the mesh.  
+    const fvMesh& mesh_; 
+
+    //- A reference to time.
+    const Time& runTime_;  
+
+    //- Squared search distance field in cell centers. 
+    volScalarField cellSqrSearchDist_;  
+    //- Signed distance at cell centers. 
+    volScalarField cellSignedDist_; 
+    // Initial signed distance field given by the octree, used to correct the 
+    // signed distance propagated by the solution of the Laplace equation. 
+    volScalarField cellSignedDist0_;  
+    // Information used to store the surface proximity information for each cell. 
+    DynamicList<pointIndexHit> cellNearestTriangle_;
+    //- Inverse Distance Interpolation : cell centers to cell corners. 
+    volPointInterpolation cellsToPointsInterp_;
+
+    pointMesh pMesh_;
+    //- Squared search distance at cell corner points. 
+    pointScalarField pointSqrSearchDist_;  
+    //- Signed distance at cell corner points. 
+    pointScalarField pointSignedDist_;
+    //- Nearest triangle to a cell corner point. 
+    DynamicList<pointIndexHit> pointNearestTriangle_;
+
+    // Triangulated surface.
+    const triSurface& triSurf_;
+    // Octree of the triangulated surface.
+    triSurfaceSearch triSurfSearch_;
     
-        //- A reference to the mesh.  
-        const fvMesh& mesh_; 
+    // Indexes of the intersected cells.
+    using dynamicLabelList = DynamicList<label>; 
+    dynamicLabelList intersectedCellLabels_;
 
-        //- A reference to time.
-        const Time& runTime_;  
-
-        //- Squared search distance field used for the sign propagation.
-        volScalarField sqrSearchDist_;  
-
-        //- The signed distance field used for bulk cell identification. 
-        volScalarField signedDist_; 
-
-        // Initial signed distance field given by the octree, used for 
-        // marker field calculation near boundaries where the Laplace 
-        // equation solution may become unstable.
-        volScalarField signedDist0_;  
-
-        // Laplace sign equation coefficient, defaults to 1.  
-        //surfaceScalarField lambda_; 
-
-        // Triangular surface mesh with the octree used for spatial queries. 
-        // AutoPtr used because of constructor delegation. 
-        // Copy construction and assignment perform deep copies.
-        // tmp<triSurface> would be better, but triSurface does not inherit from refCount.
-        autoPtr<triSurface> triSurfPtr_;
-
-        // Information used to store the surface proximity information for each cell. 
-        DynamicList<pointIndexHit> cellNearestTriangle_;
-
-        // Factor used to extend the narrow band by N cells. 
-        // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
-        const scalar sqrDistFactor_; 
-
-        // Number of intersected cells. 
-        label Nx_;
-        // Average number of triangles (intersections) per intersected cell. 
+    // Factor used to extend the narrow band by N cells. 
+    // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
+    const scalar sqrDistFactor_; 
 
 public:
 
@@ -102,80 +106,52 @@ public:
 
     // Constructors
     
-        //- Construct from a mesh (initialize field data)
-        geomSurfaceCellMeshIntersection
-        (
-            const fvMesh& mesh, 
-            // Per default, don't write fields down. Writing is used for testing only.
-            const scalar sqrDistFactor = 3, // Narrow band minimal width = 3 cells. 
-            const IOobject::writeOption& wo = IOobject::NO_WRITE
-        ); 
-
-        //- Construct from a mesh and the file name for the surface file. 
-        geomSurfaceCellMeshIntersection
-        (
-            const fvMesh& mesh, 
-            const fileName& triName, 
-            const scalar sqrDistFactor = 3, // Narrow band minimal width = 3 cells.
-            const IOobject::writeOption& wo = IOobject::NO_WRITE 
-        );
-
-        //- Construct from a mesh and a triSurface 
-        geomSurfaceCellMeshIntersection(
-            const fvMesh& mesh, 
-            const triSurface& triSurf,
-            const scalar sqrDistFactor = 3, // Narrow band minimal width = 3 cells.
-            const IOobject::writeOption& wo = IOobject::NO_WRITE
-        );
-
-        //- Construct copy
-        geomSurfaceCellMeshIntersection(const geomSurfaceCellMeshIntersection& copy); 
-
+    //- Construct from a mesh (initialize field data)
+    geomSurfaceCellMeshIntersection
+    (
+        const fvMesh& mesh, 
+        const triSurface& triSurf, 
+        const scalar sqrDistFactor = 3, // Narrow band minimal width = 3 cells. 
+        const IOobject::writeOption& wo = IOobject::NO_WRITE
+    ); 
 
     //- Destructor
-        virtual ~geomSurfaceCellMeshIntersection() = default;
+    virtual ~geomSurfaceCellMeshIntersection() = default;
 
     // Member Functions
 
-        //- Access
+    //- Access
 
-        const Time& time() const;
+    const Time& time() const;
 
-        const volScalarField& sqrSearchDist() const; 
+    const volScalarField& cellSqrSearchDist() const; 
 
-        const volScalarField& signedDist() const; 
+    const pointScalarField& pointSqrSearchDist() const; 
 
-        const volScalarField& signedDist0() const; 
+    const volScalarField& cellSignedDist() const; 
 
-        //const surfaceScalarField& lambda() const; 
+    const volScalarField& cellSignedDist0() const; 
 
-        const triSurface& surface() const;
+    //const surfaceScalarField& lambda() const; 
 
-        triSurface& surfaceRef(); 
+    const triSurface& surface() const;
 
-        label Nx() const; 
+    //- Computation
 
-        //- Computation
+    // Squared search distance calculation. 
+    virtual void calcSqrSearchDists();  
 
-        // Squared search distance calculation function. 
-        virtual void calcSqrSearchDist();  
+    // Signed distance computation using triSurfaceSearch and an external triSurface.
+    virtual void calcSignedDist();  
 
-        // Signed distance computation using triSurfaceSearch and an external triSurface.
-        virtual void calcSignedDist(const triSurface& tri, const triSurfaceSearch& triSearch);  
+    virtual void findIntersectedCells(); 
 
-        // Signed distance computation using triSurfaceSearch and the internal triSurface.
-        virtual void calcSignedDist();  
+    // Volume fraction calculation.
+    virtual void calcVolFraction(volScalarField& alpha);
 
-        // Volume fraction calculation.
-        virtual void calcVolFraction(volScalarField& alpha, const triSurface& tri);
+    //- Write 
+    virtual void writeFields() const;
 
-        virtual void calcVolFraction(volScalarField& alpha);
-
-        //- Write 
-        virtual void writeFields() const;
-
-    // Operators 
-        void operator=(const geomSurfaceCellMeshIntersection& rhs);
 };
 
 #include "geomSurfaceCellMeshIntersectionI.hpp"

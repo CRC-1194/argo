@@ -40,39 +40,24 @@ const Time& geomSurfaceCellMeshIntersection::time() const
     return runTime_; 
 }
 
-const volScalarField& geomSurfaceCellMeshIntersection::sqrSearchDist() const
+const volScalarField& geomSurfaceCellMeshIntersection::cellSqrSearchDist() const
 {
-    return sqrSearchDist_;  
+    return cellSqrSearchDist_;  
 }
 
-const volScalarField& geomSurfaceCellMeshIntersection::signedDist() const
+const volScalarField& geomSurfaceCellMeshIntersection::cellSignedDist() const
 {
-    return signedDist_;  
+    return cellSignedDist_;  
 }
 
-const volScalarField& geomSurfaceCellMeshIntersection::signedDist0() const
+const volScalarField& geomSurfaceCellMeshIntersection::cellSignedDist0() const
 {
-    return signedDist0_;  
+    return cellSignedDist0_;  
 }
-
-//const surfaceScalarField& geomSurfaceCellMeshIntersection::lambda() const
-//{
-    //return lambda_;  
-//}
 
 const triSurface& geomSurfaceCellMeshIntersection::surface() const
 {
-    return triSurfPtr_(); 
-}
-
-triSurface& geomSurfaceCellMeshIntersection::surfaceRef() 
-{
-    return triSurfPtr_(); 
-}
-
-label geomSurfaceCellMeshIntersection::Nx() const
-{
-    return Nx_;
+    return triSurf_; 
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

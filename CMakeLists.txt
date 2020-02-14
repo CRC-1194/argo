@@ -11,21 +11,21 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
+# FIXME: Consider disregarding the project build type suffix if OF structure is used. 
 # Set the build type suffix based on the build type.
-set(PROJECT_BUILD_TYPE "")
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    message ("Using 'Release' CMAKE_BUILD_TYPE.")
-elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    message ("Using 'Debug' CMAKE_BUILD_TYPE.")
-    set(PROJECT_BUILD_TYPE "Debug")
-elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-    message ("Using 'RelWithDebInfo' CMAKE_BUILD_TYPE.")
-    set(PROJECT_BUILD_TYPE "RelWithDebInfo")
-else()
-    message (FATAL_ERROR "Use '-DCMAKE_BUILD_TYPE=' to define a build type. 'Release', 'Debug' and 'RelWithDebInfo' are supported.")
-    return(1)
-endif()
+#set(PROJECT_BUILD_TYPE "")
+#if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    #message ("Using 'Release' CMAKE_BUILD_TYPE.")
+#elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    #message ("Using 'Debug' CMAKE_BUILD_TYPE.")
+    #set(PROJECT_BUILD_TYPE "Debug")
+#elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+    #message ("Using 'RelWithDebInfo' CMAKE_BUILD_TYPE.")
+    #set(PROJECT_BUILD_TYPE "RelWithDebInfo")
+#else()
+    #message (FATAL_ERROR "Use '-DCMAKE_BUILD_TYPE=' to define a build type. 'Release', 'Debug' and 'RelWithDebInfo' are supported.")
+    #return(1)
+#endif()
 
 # Build dependencies
 
@@ -121,15 +121,15 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 # Build the library
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
-add_library("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SHARED
+add_library("geometricalMeshIntersection" SHARED
     src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
     src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
     src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
 )
 
-target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
+target_link_libraries("geometricalMeshIntersection" geophase)
 
-target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" PUBLIC
+target_include_directories("geometricalMeshIntersection" PUBLIC
     src/geomMeshIntersection/geomMeshIntersection
     src/geomMeshIntersection/geomReconstructError
     src/geomMeshIntersection/geomSurfaceCellMeshIntersection
@@ -138,7 +138,7 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" PU
 )
 # Using PUBLIC here removes the need to specify again the required include directories
 # for the applications.
-target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SYSTEM PUBLIC
+target_include_directories("geometricalMeshIntersection" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
@@ -146,19 +146,16 @@ target_include_directories("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" SY
     ${of_src_path}/OpenFOAM/lnInclude
 )
 
-# There is nothing to link, it is a header library: check what CMake link does in this case. TM.
-#target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
-
 # Install the library
-install(TARGETS "geometricalMeshIntersection${PROJECT_BUILD_TYPE}" LIBRARY)
+install(TARGETS "geometricalMeshIntersection" LIBRARY)
 
 # Build executables
 
 # Tests
-add_executable("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+add_executable("voFoamTestCellCellIntersectMeshes"
                applications/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
-target_link_libraries("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+target_link_libraries("voFoamTestCellCellIntersectMeshes"
+    "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -166,10 +163,10 @@ target_link_libraries("voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     m
 )
 
-add_executable("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}" 
+add_executable("voFoamTestSurfaceCellIntersectMeshes" 
                applications/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
-target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+target_link_libraries("voFoamTestSurfaceCellIntersectMeshes"
+    "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -177,31 +174,30 @@ target_link_libraries("voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}
     m
 )
 
-# TODO: Add the test application for the geophase algorithms. 
-#add_executable("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
-               #applications/test/voFoamTestGeophaseMake.cpp)
-#target_include_directories("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" PRIVATE 
-    #src/include
-    #${of_src_path}/finiteVolume/lnInclude
-    #${of_src_path}/surfMesh/lnInclude
-    #${of_src_path}/meshTools/lnInclude
-    #${of_src_path}/OSspecific/POSIX/lnInclude
-    #${of_src_path}/OpenFOAM/lnInclude
-#)
-#target_link_libraries("voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}" 
-    #${OF_FINITEVOLUME}
-    #${OF_MESHTOOLS}
-    #${OF_OPENFOAM}
-    #geophase
-    #dl
-    #m
-#)
+add_executable("voFoamTestGeophaseUnit"
+                applications/voFoamTestGeophaseUnit/voFoamTestGeophaseUnit.cpp)
+target_include_directories("voFoamTestGeophaseUnit" PRIVATE 
+    src/include
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("voFoamTestGeophaseUnit" 
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    geophase
+    dl
+    m
+)
 
 # Preprocessing
-add_executable("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+add_executable("voFoamCellCellIntersectMeshes"
                applications/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
-target_link_libraries("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+target_link_libraries("voFoamCellCellIntersectMeshes"
+    "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -209,10 +205,10 @@ target_link_libraries("voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
     m
 )
 
-add_executable("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+add_executable("voFoamSurfaceCellIntersectMeshes"
                applications/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
-target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
+target_link_libraries("voFoamSurfaceCellIntersectMeshes"
+    "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -221,9 +217,9 @@ target_link_libraries("voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
 )
 
 # Install executables
-install(TARGETS "voFoamTestCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-        "voFoamTestSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"
-        #"voFoamTestGeophaseMake${PROJECT_BUILD_TYPE}"
-        "voFoamSurfaceCellIntersectMeshes${PROJECT_BUILD_TYPE}"  
-        "voFoamCellCellIntersectMeshes${PROJECT_BUILD_TYPE}"
+install(TARGETS "voFoamTestCellCellIntersectMeshes"
+        "voFoamTestSurfaceCellIntersectMeshes"
+        "voFoamSurfaceCellIntersectMeshes"  
+        "voFoamCellCellIntersectMeshes"
+        "voFoamTestGeophaseUnit"
         RUNTIME)

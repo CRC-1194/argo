@@ -70,6 +70,7 @@ using namespace std::chrono;
 
 int main(int argc, char *argv[])
 {
+    /*
     // Timing point 
     high_resolution_clock::time_point p0 = high_resolution_clock::now();
 
@@ -200,6 +201,7 @@ int main(int argc, char *argv[])
 
     Info<< "End" << endl;
 
+    */
     return 0;
 }
 

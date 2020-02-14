@@ -61,34 +61,31 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const label sqrDistFactor = args.optionLookupOrDefault<scalar>("sqrDistFactor", 3); 
+    const label sqrDistFactor = args.optionLookupOrDefault<scalar>("sqrDistFactor", 2); 
     const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
 
     fileName triFile = args.path() + "/surface.stl";
     if (args.optionFound("surfaceFile"))
         triFile = args.optionRead<fileName>("surfaceFile");
 
-    #include "createFields.hpp"
+    triSurface triSurf(triFile);
 
-    geomSurfaceCellMeshIntersection meshIntersection(mesh, triFile, sqrDistFactor); 
+    geomSurfaceCellMeshIntersection meshIntersection(mesh, triSurf, sqrDistFactor); 
 
-    // TODO: Remove fix normals, this needs to be done externally, by picking an outside point 
-    // and using surfaceOrient or another program. The STL must have consistent normals. TM. 
-    const Switch fixNormals = args.optionFound("fixNormals");
-
-    if (fixNormals)
-        orientNormalsInward(meshIntersection.surfaceRef()); 
-
-    // Compute the search distances once: the mesh is not moving, nor is it
-    // topologically changed. 
-    meshIntersection.calcSqrSearchDist(); 
-
-    // Zero the volume fraction and signed distance for each test.
-    alpha = dimensionedScalar("alpha", dimless, 0); 
-    signedDist = dimensionedScalar("signedDist", dimLength,0);
-
-    // Compute the signed distance field based on the surface octree.
-    meshIntersection.calcSignedDist(); 
+    // Volume fraction field
+    volScalarField alpha
+    (
+        IOobject
+        (
+            fieldName, 
+            runTime.timeName(), 
+            mesh, 
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh, 
+        dimensionedScalar(fieldName, dimless, 0)
+    );
 
     // Compute the volume fraction field.
     meshIntersection.calcVolFraction(alpha); 
@@ -96,9 +93,7 @@ int main(int argc, char *argv[])
     alpha.write(); 
 
     // FIXME: Make a runtime option -testing out of this. 
-#ifdef TESTING
     meshIntersection.writeFields(); 
-#endif
 
     // TODO: Make a runtime option out of this. 
     //if (checkVolume)
