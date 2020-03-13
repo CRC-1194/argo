@@ -11,22 +11,6 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# FIXME: Consider disregarding the project build type suffix if OF structure is used. 
-# Set the build type suffix based on the build type.
-#set(PROJECT_BUILD_TYPE "")
-#if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    #message ("Using 'Release' CMAKE_BUILD_TYPE.")
-#elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    #message ("Using 'Debug' CMAKE_BUILD_TYPE.")
-    #set(PROJECT_BUILD_TYPE "Debug")
-#elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-    #message ("Using 'RelWithDebInfo' CMAKE_BUILD_TYPE.")
-    #set(PROJECT_BUILD_TYPE "RelWithDebInfo")
-#else()
-    #message (FATAL_ERROR "Use '-DCMAKE_BUILD_TYPE=' to define a build type. 'Release', 'Debug' and 'RelWithDebInfo' are supported.")
-    #return(1)
-#endif()
-
 # Build dependencies
 
 # - Dependency: geophase
@@ -87,8 +71,7 @@ set(of_src_path "${of_wm_project_dir}/src" CACHE PATH "Path to OpenFOAM/src fold
 message(STATUS "OpenFOAM lib path: ${of_lib_path}")
 message(STATUS "OpenFOAM src path: ${of_src_path}")
 
-# TODO:
-# Check that those variables are set. Optional: check for reasonable values (TT)
+# TODO: Check that those variables are set. Optional: check for reasonable values (TT)
 
 # Compile definitions required for OpenFOAM
 add_compile_definitions(
@@ -182,9 +165,9 @@ install(TARGETS "polynomialVofInitialization" LIBRARY)
 # Build executables
 
 # Tests
-add_executable("voFoamTestCellCellIntersectMeshes"
-               applications/voFoamTestCellCellIntersectMeshes/voFoamTestCellCellIntersectMeshes.cpp) 
-target_link_libraries("voFoamTestCellCellIntersectMeshes"
+add_executable("cellCellTestVofInit"
+               applications/cellCellTestVofInit/cellCellTestVofInit.cpp) 
+target_link_libraries("cellCellTestVofInit"
     "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
@@ -193,9 +176,9 @@ target_link_libraries("voFoamTestCellCellIntersectMeshes"
     m
 )
 
-add_executable("voFoamTestSurfaceCellIntersectMeshes" 
-               applications/voFoamTestSurfaceCellIntersectMeshes/voFoamTestSurfaceCellIntersectMeshes.cpp)
-target_link_libraries("voFoamTestSurfaceCellIntersectMeshes"
+add_executable("surfaceCellTestVofInit" 
+               applications/surfaceCellTestVofInit/surfaceCellTestVofInit.cpp)
+target_link_libraries("surfaceCellTestVofInit"
     "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
@@ -204,9 +187,9 @@ target_link_libraries("voFoamTestSurfaceCellIntersectMeshes"
     m
 )
 
-add_executable("voFoamTestGeophaseUnit"
-                applications/voFoamTestGeophaseUnit/voFoamTestGeophaseUnit.cpp)
-target_include_directories("voFoamTestGeophaseUnit" PRIVATE 
+add_executable("geophaseUnitTest"
+                applications/geophaseUnitTest/geophaseUnitTest.cpp)
+target_include_directories("geophaseUnitTest" PRIVATE 
     src/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -214,7 +197,7 @@ target_include_directories("voFoamTestGeophaseUnit" PRIVATE
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
 )
-target_link_libraries("voFoamTestGeophaseUnit" 
+target_link_libraries("geophaseUnitTest" 
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -250,9 +233,9 @@ target_link_libraries("poFoamTestVofInit${PROJECT_BUILD_TYPE}"
 )
 
 # Preprocessing
-add_executable("voFoamCellCellIntersectMeshes"
-               applications/voFoamCellCellIntersectMeshes/voFoamCellCellIntersectMeshes.cpp)
-target_link_libraries("voFoamCellCellIntersectMeshes"
+add_executable("cellCellVofInit"
+               applications/cellCellVofInit/cellCellVofInit.cpp)
+target_link_libraries("cellCellVofInit"
     "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
@@ -261,9 +244,9 @@ target_link_libraries("voFoamCellCellIntersectMeshes"
     m
 )
 
-add_executable("voFoamSurfaceCellIntersectMeshes"
-               applications/voFoamSurfaceCellIntersectMeshes/voFoamSurfaceCellIntersectMeshes.cpp)
-target_link_libraries("voFoamSurfaceCellIntersectMeshes"
+add_executable("surfaceCellVofInit"
+               applications/surfaceCellVofInit/surfaceCellVofInit.cpp)
+target_link_libraries("surfaceCellVofInit"
     "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
@@ -286,11 +269,11 @@ target_link_libraries("poFoamVofInit"
 )
 
 # Install executables
-install(TARGETS "voFoamTestCellCellIntersectMeshes"
-        "voFoamTestSurfaceCellIntersectMeshes"
-        "voFoamSurfaceCellIntersectMeshes"  
-        "voFoamCellCellIntersectMeshes"
-        "voFoamTestGeophaseUnit"
+install(TARGETS "cellCellTestVofInit"
+        "surfaceCellTestVofInit"
+        "surfaceCellVofInit"  
+        "cellCellVofInit"
+        "geophaseUnitTest"
         "poFoamTestVofInit"
         "poFoamVofInit"
         "polynomialVofTest"

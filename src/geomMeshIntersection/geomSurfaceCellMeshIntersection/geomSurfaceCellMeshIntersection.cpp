@@ -41,7 +41,9 @@ License
 #include "Make.hpp"
 #include "GeophaseMake.hpp"
 
+// TODO: Testing, remove. 
 #include <cassert>
+#include <limits>
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -158,8 +160,7 @@ void geomSurfaceCellMeshIntersection::findIntersectedCells()
             }
         }
     }
-
-    Info << intersectedCellLabels_.size() << endl;
+    assert((intersectedCellLabels_.size() < mesh.nCells())); 
 }
 
 void geomSurfaceCellMeshIntersection::calcSignedDist()
@@ -236,35 +237,13 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
 {
     // Compute the signed distances using the octree in triSurfaceSearch. 
     calcSignedDist(); 
-
-    // ALGORITHM 
-    // Compute the volume fraction based on the cell centered signed distance
-    // field in the bulk, and perform geometrical intersections of the cells
-    // cut by the surface. 
-
-    // For every cell in the narrow band. 
-    
-        // Use a centroid triangulation for the cell to build tets.  
-        // Every tet that has a sign change in the signed distance of its
-        // two points if it is intersected.
-
-        // Those that have only positive distances are inside and therefore
-        // full, otherwise they are empty.
-        
-        // For each tet that is intersected, build a bounding sphere using
-        // the maximal centroid-vertex length as radius.  
-        
-        // For the tet sphere, get triangles from the STL surface that
-        // intersect the sphere. 
-        
-        // For each triangle intersecting the tet box, intersect the tetrahedron. 
-       
-        // Add the volume of the intersection to the cell. 
     
     // FIXME: Use CMAKE Debug release flag.
     // In the testing mode, prepare the mesh / surface mesh intersection output.
 //#ifdef 
-    //vtk_polydata_stream cutCellStream(prependVtkFileName("cutCells", runTime_.timeIndex())); 
+    //vtk_polydata_stream cutCellStream(
+        //prependVtkFileName("cutCells", runTime_.timeIndex())
+        //); 
 //#endif
 
     const auto& meshCells = mesh_.cells(); 
@@ -280,8 +259,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
     const auto& triPoints = triSurf_.points(); 
     const auto& triNormals = triSurf_.faceNormals(); 
 
-    
-    // Set volume fraction values based on the cell signed distance. 
+    // Full or empty volume fractions for cells, using cell-centered signed distances.
     forAll (cellSignedDist_, cellI)
     {
         if (cellSignedDist_[cellI] < 0)
@@ -290,7 +268,11 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
             alpha[cellI] = 0;
     }
 
-    // Encode tetrahedron signed distances into a bitset.
+    // Encode tetrahedron signed distances into a bitset. For 4 tetrahedron
+    // points: 1110 == positive, positive, positive, negative distance.
+    // Barycentric triangulation of the cell is used: 
+    // - First distance is the distance at the cell center. 
+    // - Second, third and fourth distances are at two cell corner points. 
     std::bitset<4> dists(pow(2,5) - 1);
 
     // Correct the volume fractions geometrically in the intersected cells. 
@@ -298,13 +280,17 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
     {
         // Global cell label.
         const label cellI = intersectedCellLabels_[cellL];
-        Info << "Cell " << cellI << endl;
+        Info << "Cell " << cellI << endl; 
 
-        // Use the geometrical signed distance in the intersected cells.
-        cellSignedDist_[cellI] = cellSignedDist0_[cellI];
+        // Zero the volume fraction in the intersected cell. 
         alpha[cellI] = 0;
 
-        // TODO: Check this part. TM.
+        // Laplace equation introduces errors in the narrow band. Correct  the
+        // signed distance at the cell center with the geometrical signed
+        // distance.
+        cellSignedDist_[cellI] = cellSignedDist0_[cellI];
+
+        // TODO: Check this.
         // Correct boundary oscillation using the octree distance field.
         //if (cellSignedDist0_[cellI] < 0)
             //alpha[cellI] = 1; 
@@ -312,43 +298,42 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
             //alpha[cellI] = 0; 
             
         const auto& cutCell = meshCells[cellI];  
-        const auto& xCell = cellCenters[cellI];
-        const auto& distCell = cellSignedDist_[cellI];
-        dists[0] = std::signbit(distCell);
-        forAll(cutCell, faceI)
+        const auto& xC = cellCenters[cellI];
+        const auto& distC = cellSignedDist_[cellI];
+        // Distance encoding at the center is the sign bit of the cell dist. 
+        dists[0] = std::signbit(distC);
+        // For all faces of the cut cell, 
+        forAll(cutCell, faceL)
         {
-            const label faceG = cutCell[faceI];
+            const label faceG = cutCell[faceL];
             const face& nBandFace = faces[faceG];
             const label point0 = nBandFace[0]; 
             const point& x0 = meshPoints[point0];   
             const scalar dist0 = pointSignedDist_[point0]; 
             dists[1] = std::signbit(dist0); 
-            for (label pointI = 1; pointI < nBandFace.size() - 1; ++pointI)
+
+            for (label I = 1; I < (nBandFace.size() - 1); ++I)
             {
-                const label pointM = nBandFace[pointI]; 
-                const scalar distM = pointSignedDist_[pointM]; 
-                // Set the inside / outside flag for pointM
-                dists[2] = std::signbit(distM);
-                const point& xM = meshPoints[pointM];
+                const label pointI = nBandFace[I]; 
+                const scalar distI = pointSignedDist_[pointI]; 
+                dists[2] = std::signbit(distI);
+                const point& xI = meshPoints[pointI];
 
-                const label pointN = nBandFace[pointI + 1];
-                const scalar distN = pointSignedDist_[pointN]; 
-                // Set the inside / outside flag for pointN 
-                dists[3] = std::signbit(distN);
-                const point& xN = meshPoints[pointN];
+                const label pointJ = nBandFace[I+1]; 
+                const scalar distJ = pointSignedDist_[pointJ]; 
+                dists[3] = std::signbit(distJ);
+                const point& xJ = meshPoints[pointJ];
 
-
-                // If the tet is intersected
-                if ((!dists.all()) && dists.any())
+                if ((!dists.all()) && dists.any()) // If tetrahedron is intersected
                 {
-                    const vector xTet = 0.25 * (xCell + x0 + xM + xN);
-                    const scalar radTet = max(
-                            max(mag(xCell - xTet), mag(x0 - xTet)), 
-                            max(mag(xM - xTet), mag(xN - xTet))
-                    );
+                    const vector xT = 0.25 * (xC + x0 + xI + xJ); // Tetrahedron centroid.
+                    const scalar radiusT = max(
+                            max(mag(xC - xT), mag(x0 - xT)), 
+                            max(mag(xI - xT), mag(xJ - xT))
+                    ); // Tetrahedron radius.
                     
                     // Fetch labels of triangles that intersect the tet sphere. 
-                    auto triangleLabels = octree.findSphere(xTet, radTet);
+                    auto triangleLabels = octree.findSphere(xT, radiusT);
                     
                     // TODO: Make the tetrahedron build work in the test app. 
                     // Build the tetrahedron from foam vectors. 
@@ -364,22 +349,24 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
 
                         // Intersect the tet with the triangle halfspace. 
                         
-                    // Add the intersected volume to the cell volume. 
+                    // Compute the volume of the intersection. 
+                    
+                    // Add the 
                 }
-                // Else if the tet is inside
-                else if (dists.all())
+                else if (dists.all()) // If tetrahedron is inside surface.
                 {
                     // Add the mixed product tet volume to the alpha cell value. 
-                    scalar tetVolume = (1. / 6.) * std::abs( 
-                        ((x0 - xCell) &  ((xM - xCell) ^ (xN - xCell)))); 
-                    std::cout << dists << ":" << tetVolume << std::endl;
-                    alpha[cellI] += tetVolume; 
+                    alpha[cellI] += (1. / 6.) * std::abs( 
+                        ((x0 - xC) &  ((xI - xC) ^ (xJ - xC)))
+                    ); 
                 }
+
             }
         }
-        std::cout << "Volume = " << alpha[cellI] << std::endl;
+        //std::cout << "Volume = " << alpha[cellI] << std::endl;
         alpha[cellI] /= cellVolumes[cellI];
-        std::cout << "Alpha = " << alpha[cellI] << std::endl;
+        assert((std::abs(alpha[cellI] - 1.0) < 128*std::numeric_limits<double>::epsilon()));
+        //std::cout << "Alpha = " << alpha[cellI] << std::endl;
     }
 
     //// FIXME: old code, remove this. TM.

@@ -17,7 +17,7 @@ FoamFile
 
 solvers
 {
-    signedDist 
+    cellSignedDist 
     {
         solver          PCG;
         preconditioner  DIC;

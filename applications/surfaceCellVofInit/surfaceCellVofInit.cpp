@@ -28,7 +28,8 @@ Description
     Intersects a surface mesh with the volume mesh by intersecting cell
     triangulations with a set of nearest surface triangles that intersect the cell. 
 
-    The volume fraction is then given as the ratio of the volume of the intersection 
+ 
+   The volume fraction is then given as the ratio of the volume of the intersection 
     and the volume of the cell.  
 
 Author
@@ -64,7 +65,7 @@ int main(int argc, char *argv[])
     const label sqrDistFactor = args.optionLookupOrDefault<scalar>("sqrDistFactor", 2); 
     const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
 
-    fileName triFile = args.path() + "/surface.stl";
+    fileName triFile = args.path() + "/meshed-surface.vtk";
     if (args.optionFound("surfaceFile"))
         triFile = args.optionRead<fileName>("surfaceFile");
 
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
             fieldName, 
             runTime.timeName(), 
             mesh, 
-            IOobject::MUST_READ,
+            IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         mesh, 
