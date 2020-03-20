@@ -42,7 +42,8 @@ Author
 // Geophase
 #include "Polygon.hpp"
 #include "Polyhedron.hpp"
-//#include "Halfspace.hpp"
+#include "Halfspace.hpp"
+#include "PolyhedronIntersection.hpp"
 
 // OpenFOAM
 #include "polyMesh.H"
@@ -63,6 +64,12 @@ namespace geophase {
 
     // An OpenFOAM std::vector polygon is a VectorPolygon.
     using foamVectorPolyhedron = VectorPolyhedron<foamVectorPolygon>; 
+
+    // An OpenFOAM Halfspace
+    using foamHalfspace = Halfspace<Foam::vector>;
+
+    // An OpenFOAM polyhedron intersection. 
+    using foamPolyhedronIntersection = PolyhedronIntersection<foamVectorPolyhedron>;
 }
 
 namespace Foam { namespace GeometricalTransport { 

@@ -45,9 +45,15 @@ Author
 #include <limits>
 
 #include "GeophaseMake.hpp"
+#include "Halfspace.hpp"
+#include "Equal.hpp"
 #include "Make.hpp"
+#include "Centroid.hpp"
 #include "Area.hpp"
 #include "Volume.hpp"
+#include "Distance.hpp"
+#include "Intersect.hpp"
+#include "PolyhedronIntersection.hpp"
 #include "WriteVtkPolyData.hpp"
 #include "ReadVtkPolyData.hpp"
 
@@ -61,11 +67,15 @@ using namespace Foam;
 
 using geophase::vectorPolygon;
 using geophase::vectorPolyhedron;
-
 using geophase::foamVectorPolygon;
 using geophase::foamVectorPolyhedron;
-
 using geophase::make_tetrahedron;
+using geophase::foamHalfspace;
+using geophase::orient;
+using geophase::equal_by_tolerance;
+using geophase::signed_distance;
+using geophase::intersect_tolerance;
+using geophase::foamPolyhedronIntersection;
 
 int main(int argc, char *argv[])
 {
@@ -77,44 +87,90 @@ int main(int argc, char *argv[])
     const point p2 (0,1,0);
     const point p3 (0,0,1);
 
+    // Test equivalence of points.
+    assert(equal_by_tolerance(p0,p0,EPSILON));
+
     // Compute an OpenFOAM triangle from OpenFOAM points.
     foamVectorPolygon foamTriangle {p0,p1,p2};  
 
     // Compute the area normal vector of the OpenFOAM triangle.
     auto foamTriNormal = area_normal_vector(foamTriangle);  
     assert(foamTriNormal == point(0,0,0.5));
-
     assert(std::abs(foamTriNormal[0]) < EPSILON);
     assert(std::abs(foamTriNormal[1]) < EPSILON);
     assert(std::abs(foamTriNormal[2] - 0.5) < EPSILON);
 
-    // TODO: Remove
+    // Triangle orientation test. 
+    auto orientedTriangle = orient(foamTriangle, point(0,0,1));
+    auto orientedNormal = area_normal_vector(orientedTriangle); 
+    auto foamNormal = area_normal_vector(foamTriangle);
+    assert(equal_by_tolerance(foamNormal, orientedNormal, EPSILON));
+
+    // Write the tetrahedron out as VTK.
     auto unitTet = geophase::make_unit_tetrahedron(); 
     write_vtk(unitTet, "unitTet.vtk");
-    std::cout << volume_by_vol_tri(unitTet) << std::endl;
-    // TODO: Remove
+    std::cout << "Unit tetrahedron volume by centroid triangulation (should be 1/6.) = " 
+        << volume_by_vol_tri(unitTet) << std::endl;
+
+    auto unitCentroid = centroid(unitTet);
+    std::cout << "Unit tetrahedron centroid (should be (0.25,0.25,0.25)) = " 
+        << unitCentroid << std::endl;
+    assert ((std::abs(unitCentroid[0] - 0.25) < EPSILON));
+    assert ((std::abs(unitCentroid[1] - 0.25) < EPSILON));
+    assert ((std::abs(unitCentroid[2] - 0.25) < EPSILON));
 
     // Make a 3D tetrahedron from OpenFOAM points.
-    auto tetrahedron = make_tetrahedron<foamVectorPolyhedron>(p0,p1,p2,p3);
-    write_vtk(tetrahedron, "tetrahedron.vtk");
+    auto foamTetrahedron = make_tetrahedron<foamVectorPolyhedron>(p0,p1,p2,p3);
+    write_vtk(foamTetrahedron, "foamTetrahedron.vtk");
 
-    // Compute the volume of the OpenFOAM tetrahedron using the surface
-    // integral.
-    auto tetraVolumeBySurfTri = volume_by_surf_tri(tetrahedron);
-    Info << tetraVolumeBySurfTri << endl;
+    // OpenFOAM tetrahedron volume using surface the surface integral.
+    auto tetraVolumeBySurfTri = volume_by_surf_tri(foamTetrahedron);
+    std::cout << "FOAM unit tetrahedron volume by centroid triangulation (should be 1/6.) = " 
+        << tetraVolumeBySurfTri << std::endl;
     assert ((std::abs(tetraVolumeBySurfTri - 1.0 / 6.) < EPSILON));
 
-    // Compute the volume of the OpenFOAM tetrahedron using the centroid
-    // triangulation.
-    auto tetraVolumeByVolTri = volume_by_vol_tri(tetrahedron);
-    Info << tetraVolumeByVolTri << endl;
+    // Volume of the OpenFOAM tetrahedron using centroid triangulation.
+    auto tetraVolumeByVolTri = volume_by_vol_tri(foamTetrahedron);
+    std::cout << "FOAM unit tetrahedron volume by surface triangulation (should be 1/6.) = " 
+        << tetraVolumeBySurfTri << std::endl;
     assert ((std::abs(tetraVolumeByVolTri - 1.0 / 6.) < EPSILON));
 
-    // Make an OpenFOAM halfspace. 
+    // OpenFOAM tetrahedron centroid
+    auto foamTetrahedronCentroid = centroid(foamTetrahedron);
+    std::cout << "Unit tetrahedron centroid = (should be (0.25,0.25,0.25))" 
+        << unitCentroid << std::endl;
+    assert ((std::abs(foamTetrahedronCentroid[0] - 0.25) < EPSILON));
+    assert ((std::abs(foamTetrahedronCentroid[1] - 0.25) < EPSILON));
+    assert ((std::abs(foamTetrahedronCentroid[2] - 0.25) < EPSILON));
+    // Equal to the unit tetrahedron centroid.
+    assert ((std::abs(foamTetrahedronCentroid[0] - unitCentroid[0]) < EPSILON));
+    assert ((std::abs(foamTetrahedronCentroid[1] - unitCentroid[1]) < EPSILON));
+    assert ((std::abs(foamTetrahedronCentroid[2] - unitCentroid[2]) < EPSILON));
 
-    // Intersect the OpenFOAM tetrahedron with the OpenFOAM halfspace. 
+    // Make an OpenFOAM halfspace at the centroid of the unit tetrahedron.
+    auto centroidHspace = foamHalfspace(centroid(foamTetrahedron), vector(0,0,1));
+
+    // Test signed distance to halfspace.
+    Info << "Centroid hspace position = " << centroidHspace.position() << nl 
+        << "Centroid hspace direction = " << centroidHspace.direction() << endl;
+    assert((std::abs(signed_distance(centroidHspace, point(0,0,1)) - 0.75) < EPSILON));
+
+    // Halve the OpenFOAM tetrahedron with the OpenFOAM halfspace. 
+    auto halvingHspace = foamHalfspace(point(0,0,0), vector(1,-1,0));
+    auto foamTetraIntersection = intersect_tolerance<foamPolyhedronIntersection>(
+            foamTetrahedron, 
+            halvingHspace, 
+            EPSILON
+    );
+    const auto& halvedFoamTetrahedron = foamTetraIntersection.polyhedron();
+    write_vtk(halvedFoamTetrahedron, "halvedFoamTetrahedron.vtk");
+    double Vhalved = volume_by_surf_tri(halvedFoamTetrahedron);
+    double Vfoam = volume_by_surf_tri(foamTetrahedron);
+    Info << "Vhalved = " << Vhalved << nl << "Vfoam = " << Vfoam << endl;
+    assert((std::abs(Vhalved - 0.5*Vfoam) < EPSILON));
 
     Info<< "SUCCESS" << endl;
+    return 0;
 }
 
 
