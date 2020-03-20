@@ -44,6 +44,19 @@ Author
 #include "Polyhedron.hpp"
 #include "Halfspace.hpp"
 #include "PolyhedronIntersection.hpp"
+#include "Halfspace.hpp"
+#include "Equal.hpp"
+#include "Make.hpp"
+#include "Centroid.hpp"
+#include "Area.hpp"
+#include "Volume.hpp"
+#include "Distance.hpp"
+#include "Intersect.hpp"
+#include "PolyhedronIntersection.hpp"
+#include "WriteVtkPolyData.hpp"
+#include "ReadVtkPolyData.hpp"
+#include "messageStream.H"
+#include "vector.H"
 
 // OpenFOAM
 #include "polyMesh.H"
@@ -71,6 +84,18 @@ namespace geophase {
     // An OpenFOAM polyhedron intersection. 
     using foamPolyhedronIntersection = PolyhedronIntersection<foamVectorPolyhedron>;
 }
+
+using geophase::vectorPolygon;
+using geophase::vectorPolyhedron;
+using geophase::foamVectorPolygon;
+using geophase::foamVectorPolyhedron;
+using geophase::make_tetrahedron;
+using geophase::foamHalfspace;
+using geophase::orient;
+using geophase::equal_by_tolerance;
+using geophase::signed_distance;
+using geophase::intersect_tolerance;
+using geophase::foamPolyhedronIntersection;
 
 namespace Foam { namespace GeometricalTransport { 
 

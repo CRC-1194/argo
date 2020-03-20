@@ -44,38 +44,12 @@ Author
 #include <cassert>
 #include <limits>
 
-#include "GeophaseMake.hpp"
-#include "Halfspace.hpp"
-#include "Equal.hpp"
-#include "Make.hpp"
-#include "Centroid.hpp"
-#include "Area.hpp"
-#include "Volume.hpp"
-#include "Distance.hpp"
-#include "Intersect.hpp"
-#include "PolyhedronIntersection.hpp"
-#include "WriteVtkPolyData.hpp"
-#include "ReadVtkPolyData.hpp"
-
-#include "messageStream.H"
-#include "vector.H"
+#include "Geophase.hpp"
 
 using namespace Foam;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // Main program:
-
-using geophase::vectorPolygon;
-using geophase::vectorPolyhedron;
-using geophase::foamVectorPolygon;
-using geophase::foamVectorPolyhedron;
-using geophase::make_tetrahedron;
-using geophase::foamHalfspace;
-using geophase::orient;
-using geophase::equal_by_tolerance;
-using geophase::signed_distance;
-using geophase::intersect_tolerance;
-using geophase::foamPolyhedronIntersection;
 
 int main(int argc, char *argv[])
 {
