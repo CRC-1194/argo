@@ -205,6 +205,8 @@ target_link_libraries("geophaseUnitTest"
     dl
     m
 )
+add_test(NAME unitTests COMMAND geophaseUnitTest)
+set_tests_properties(unitTests PROPERTIES LABELS "UNIT")
 
 add_executable("polynomialVofTest${PROJECT_BUILD_TYPE}"
                applications/polynomialVofTest/polynomialVofTest.cpp)
