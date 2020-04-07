@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Runs the surfaceCellVofInit in eac
 parser.add_argument('--dir_pattern', dest="dir_pattern", type=str, required=True,
                     help='Pattern contained in the name of each initialization directory.')
 
-parser.add_argument('--surface_file', dest="surface_file", type=str, required=True,
+parser.add_argument('--surface_file', dest="surface_file", type=str, required=True, 
                     help='Surface mesh file used for the volume fraction initialization.')
 
 parser.add_argument('--serial', dest="serial", type=bool, default=True,
@@ -27,26 +27,19 @@ if __name__ == '__main__':
     parameter_dirs = [parameter_dir for parameter_dir in os.listdir(os.curdir) \
                       if os.path.isdir(parameter_dir) \
                       and args.dir_pattern in parameter_dir]
-
-
-    rel_surface_file = os.path.join(os.pardir, args.surface_file)
-    print(rel_surface_file)
+    parameter_dirs.sort()
 
     vof_init_call = ["surfaceCellVofInit", 
                      "-checkVolume", 
+                     "-writeGeometry",
                      "-surfaceFile", 
-                     rel_surface_file] 
+                     args.surface_file] 
 
-    if (args.serial):
-        args.slurm = False
-        for parameter_dir in parameter_dirs: 
-            pwd = os.getcwd()
-            os.chdir(parameter_dir)
+    for parameter_dir in parameter_dirs: 
+        pwd = os.getcwd()
+        os.chdir(parameter_dir)
+        if (args.serial):
             call(vof_init_call)
-            os.chdir(pwd)
-    elif (args.slurm):
-        for parameter_dir in parameter_dirs: 
-            pwd = os.getcwd()
-            os.chdir(parameter_dir)
-            all(["sbatch", os.path.join(os.pardir, "surfaceCellVofInit.sbatch")])
-            os.chdir(pwd)
+        elif (args.slurm):
+            call(["sbatch", os.path.join(os.pardir, "surfaceCellVofInit.sbatch")])
+        os.chdir(pwd)
