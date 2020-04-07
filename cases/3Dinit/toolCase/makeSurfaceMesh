@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-GEO_FILE=$1
-
-gmsh -2 -o ${GEO_FILE%geo}vtk ${GEO_FILE} 
-gmsh -2 -o ${GEO_FILE%geo}stl ${GEO_FILE} 
-sed -i "s/Created by Gmsh/${GEO_FILE%.geo}/" ${GEO_FILE%geo}stl 
