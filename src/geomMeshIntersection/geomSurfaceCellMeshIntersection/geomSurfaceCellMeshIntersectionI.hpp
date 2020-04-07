@@ -60,6 +60,11 @@ const triSurface& geomSurfaceCellMeshIntersection::surface() const
     return triSurf_; 
 }
 
+const double geomSurfaceCellMeshIntersection::nTrianglesPerCell() const
+{
+    return nTrianglesPerCell_; 
+}
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #endif

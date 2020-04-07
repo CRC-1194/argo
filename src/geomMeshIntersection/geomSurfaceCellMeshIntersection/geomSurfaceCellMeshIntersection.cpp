@@ -123,7 +123,8 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     triSurf_(triSurf),
     triSurfSearch_(triSurf),
     intersectedCellLabels_(),
-    sqrDistFactor_(max(2.0, sqrDistFactor)) 
+    sqrDistFactor_(max(2.0, sqrDistFactor)), 
+    nTrianglesPerCell_(0.)
 {
     calcSqrSearchDists(); 
 }
@@ -277,7 +278,9 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         geophase::vtk_file_name("cutMesh", runTime_.timeIndex())
     ); 
 
+
     // Correct the volume fractions geometrically in the intersected cells. 
+    nTrianglesPerCell_ = 0;
     forAll(intersectedCellLabels_, cellL)
     {
         // Global cell label.
@@ -331,6 +334,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                     // - Get labels of triangles that are inside the sphere that contains
                     //   the intersected tetrahedron.
                     auto triangleLabels = octree.findSphere(xT, radiusT*radiusT); // sqr radius used for search
+                    nTrianglesPerCell_ += triangleLabels.size();
                     for (const auto& triangleL : triangleLabels)
                     {
                         // Intersect the tetrahedron with the triangle halfspace. 
@@ -359,6 +363,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         }
         alpha[cellI] /= cellVolumes[cellI];
     }
+    nTrianglesPerCell_ /= intersectedCellLabels_.size();
 }
 
 void geomSurfaceCellMeshIntersection::writeFields() const

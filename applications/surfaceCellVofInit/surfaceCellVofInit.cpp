@@ -45,6 +45,8 @@ Author
 #include "fvCFD.H"
 #include "triSurface.H"
 #include "OFstream.H"
+#include <iomanip>
+#include <chrono>
 
 #include "geomSurfaceCellMeshIntersection.hpp"
 #include "geomTriSurfaceTools.hpp"
@@ -91,13 +93,17 @@ int main(int argc, char *argv[])
     );
 
     // Compute the volume fraction field.
+    auto ctime0 = std::chrono::steady_clock::now();
     meshIntersection.calcVolFraction(alpha); 
-
+    auto ctime1 = std::chrono::steady_clock::now();
+    auto calcTime = 
+        std::chrono::duration_cast<std::chrono::microseconds>(ctime1-ctime0).count();
     // Write the volume fraction field.
     alpha.write(); 
 
     if (args.optionFound("writeAllFields"))
         meshIntersection.writeFields(); 
+
 
     if (args.optionFound("checkVolume"))
     {
@@ -121,11 +127,30 @@ int main(int argc, char *argv[])
             Vsurf *= 1./9.; 
 
             scalar Valpha = gSum((mesh.V() * alpha)()); 
-            scalar Evg = std::abs(Valpha - Vsurf) / Vsurf; 
+            scalar Evsurf = std::abs(Valpha - Vsurf) / Vsurf; 
 
-            Info << "Volume by volume fraction = " << Valpha << nl
-                << "Volume of the surface mesh by divergence theorem = " << Vsurf << nl 
-                << "Volume error % = " << Evg * 100 << nl;
+            std::cout << std::setprecision(20) 
+                << "Volume by volume fraction = " << Valpha << nl
+                << "Volume of the surface mesh by divergence theorem (only closed surfaces!) = " << Vsurf << nl 
+                << "Volume error from surface interval = " << Evsurf << nl;
+
+            std::ofstream errorFile; 
+            errorFile.open("surfaceCellVofInit.csv"); 
+            errorFile << "N_CELLS,"
+                << "N_TRIANGLES,"
+                << "VOLUME_FROM_VOLUME_FRACTION,"
+                << "VOLUME_FROM_SURFACE_INTEGRAL,"
+                << "VOLUME_ERROR_FROM_SURFACE_INTEGRAL,"
+                << "CPU_TIME_MICROSECONDSi," 
+                << "N_TRIANGLES_PER_CELL" << "\n"
+                << mesh.nCells() << "," 
+                << triSurf.size() << "," 
+                << std::setprecision(20) 
+                << Valpha << "," 
+                << Vsurf << "," 
+                << Evsurf << ","
+                << calcTime << ","
+                << meshIntersection.nTrianglesPerCell() << "\n";
         }
     }
 

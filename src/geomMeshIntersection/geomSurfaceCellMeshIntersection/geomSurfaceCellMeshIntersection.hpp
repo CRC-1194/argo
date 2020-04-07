@@ -100,6 +100,9 @@ class geomSurfaceCellMeshIntersection
     // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
     const scalar sqrDistFactor_; 
 
+    // Average number of triangles per cell, used for complexity analysis.
+    scalar nTrianglesPerCell_;  
+
 public:
 
     TypeName ("surfaceCellMeshIntersection"); 
@@ -132,9 +135,9 @@ public:
 
     const volScalarField& cellSignedDist0() const; 
 
-    //const surfaceScalarField& lambda() const; 
-
     const triSurface& surface() const;
+
+    const double nTrianglesPerCell() const;
 
     //- Computation
 
