@@ -7,35 +7,10 @@
 
     argList::addOption
     (
-        "distanceFactor", 
+        "sqrDistFactor", 
         "scalar",
-        "Expand (>1) or contract (<1) the distance field narrow band."
+        "Expand (>1) or contract (<1) the narrow band field around the interface."
     ); 
-
-    argList::addOption
-    (
-        "radiusFactor", 
-        "scalar",
-        "Expand (>1) or contract or contract (<1) the radius used to find triangles for mesh intersection."
-    ); 
-
-    argList::addBoolOption
-    (
-        "checkVolume",
-        "Compute the relative difference between the volume given by the set volume fraction and the input surface mesh volume given by a surfaceMeshCentroid triangulation."  
-    );
-
-    argList::addBoolOption
-    (
-        "fixNormals",
-        "Make the normals consistent. Assumes that the surfaceMeshCentroid of the surface mesh is its Stern point: use only with star-shaped surfaces." 
-    );
-
-    argList::addBoolOption
-    (
-        "writeCutCells",
-        "Write the cut cell triangulations in VTK for visualization."
-    );
 
     argList::addOption
     (
@@ -43,10 +18,20 @@
         "Surface mesh file."
     );
 
-    argList::addOption
+    argList::addBoolOption
     (
-        "dataFile", 
-        "voFoamSetSurfaceFraction.dat",
-        "Name of the volume fraction field." 
-    ); 
+        "writeGeometry",
+        "Write the intersected geometry used to compute the volume fractions."
+    );
 
+    argList::addBoolOption
+    (
+        "checkVolume",
+        "Check the volume given by volume fraction compared with the volume of the surface mesh. Works only with closed surfaces."
+    );
+
+    argList::addBoolOption
+    (
+        "writeAllFields", 
+        "Write all fields used for the initialization. Used when debugging." 
+    ); 

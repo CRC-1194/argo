@@ -24,7 +24,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 // OpenFOAM 
-
 #include "geomSurfaceCellMeshIntersection.hpp"
 #include "calculatedFvPatchField.H"
 #include "fvcAverage.H"
@@ -37,11 +36,9 @@ License
 #include <cmath>
 
 // geophase 
-#include "Polyhedron.hpp"
-#include "Make.hpp"
-#include "GeophaseMake.hpp"
+#include "Geophase.hpp"
 
-// TODO: Testing, remove. 
+// Testing
 #include <cassert>
 #include <limits>
 
@@ -231,6 +228,13 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
     }
 
     findIntersectedCells(); 
+
+    // Correct the volume fractions geometrically in the intersected cells. 
+    forAll(intersectedCellLabels_, cellL)
+    {
+        auto cellK = intersectedCellLabels_[cellL];
+        cellSignedDist_[cellK] = cellSignedDist0_[cellK];
+    }
 }
 
 void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
@@ -238,13 +242,6 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
     // Compute the signed distances using the octree in triSurfaceSearch. 
     calcSignedDist(); 
     
-    // FIXME: Use CMAKE Debug release flag.
-    // In the testing mode, prepare the mesh / surface mesh intersection output.
-//#ifdef 
-    //vtk_polydata_stream cutCellStream(
-        //prependVtkFileName("cutCells", runTime_.timeIndex())
-        //); 
-//#endif
 
     const auto& meshCells = mesh_.cells(); 
     const auto& cellCenters = mesh_.C();  
@@ -262,7 +259,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
     // Full or empty volume fractions for cells, using cell-centered signed distances.
     forAll (cellSignedDist_, cellI)
     {
-        if (cellSignedDist_[cellI] < 0)
+        if (cellSignedDist_[cellI] > 0)
             alpha[cellI] = 1; 
         else 
             alpha[cellI] = 0;
@@ -275,33 +272,25 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
     // - Second, third and fourth distances are at two cell corner points. 
     std::bitset<4> dists(pow(2,5) - 1);
 
+    // Legacy VTK output of the cut mesh geometry. 
+    geophase::vtkPolyDataOStream cutMeshStream(
+        geophase::vtk_file_name("cutMesh", runTime_.timeIndex())
+    ); 
+
     // Correct the volume fractions geometrically in the intersected cells. 
     forAll(intersectedCellLabels_, cellL)
     {
         // Global cell label.
         const label cellI = intersectedCellLabels_[cellL];
-        Info << "Cell " << cellI << endl; 
 
         // Zero the volume fraction in the intersected cell. 
         alpha[cellI] = 0;
-
-        // Laplace equation introduces errors in the narrow band. Correct  the
-        // signed distance at the cell center with the geometrical signed
-        // distance.
-        cellSignedDist_[cellI] = cellSignedDist0_[cellI];
-
-        // TODO: Check this.
-        // Correct boundary oscillation using the octree distance field.
-        //if (cellSignedDist0_[cellI] < 0)
-            //alpha[cellI] = 1; 
-        //else if (cellSignedDist0_[cellI] > 0)
-            //alpha[cellI] = 0; 
             
         const auto& cutCell = meshCells[cellI];  
         const auto& xC = cellCenters[cellI];
         const auto& distC = cellSignedDist_[cellI];
         // Distance encoding at the center is the sign bit of the cell dist. 
-        dists[0] = std::signbit(distC);
+        dists[0] = !std::signbit(distC);
         // For all faces of the cut cell, 
         forAll(cutCell, faceL)
         {
@@ -310,48 +299,53 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
             const label point0 = nBandFace[0]; 
             const point& x0 = meshPoints[point0];   
             const scalar dist0 = pointSignedDist_[point0]; 
-            dists[1] = std::signbit(dist0); 
+            dists[1] = !std::signbit(dist0); 
 
             for (label I = 1; I < (nBandFace.size() - 1); ++I)
             {
                 const label pointI = nBandFace[I]; 
                 const scalar distI = pointSignedDist_[pointI]; 
-                dists[2] = std::signbit(distI);
+                dists[2] = !std::signbit(distI);
                 const point& xI = meshPoints[pointI];
 
                 const label pointJ = nBandFace[I+1]; 
                 const scalar distJ = pointSignedDist_[pointJ]; 
-                dists[3] = std::signbit(distJ);
+                dists[3] = !std::signbit(distJ);
                 const point& xJ = meshPoints[pointJ];
 
                 if ((!dists.all()) && dists.any()) // If tetrahedron is intersected
                 {
                     const vector xT = 0.25 * (xC + x0 + xI + xJ); // Tetrahedron centroid.
-                    const scalar radiusT = max(
+                    const scalar radiusT = 1.1*max(
                             max(mag(xC - xT), mag(x0 - xT)), 
                             max(mag(xI - xT), mag(xJ - xT))
                     ); // Tetrahedron radius.
                     
-                    // Fetch labels of triangles that intersect the tet sphere. 
-                    auto triangleLabels = octree.findSphere(xT, radiusT);
-                    
-                    // TODO: Make the tetrahedron build work in the test app. 
-                    // Build the tetrahedron from foam vectors. 
-                    //auto tetrahedron = 
-                        //geophase::make_tetrahedron3D<geophase::foamVectorPolyhedron>(
-                        //xCell, 
-                        //point0, 
-                        //pointM,
-                        //pointN
-                    //);
+                    // Build the tetrahedron geometry from points. 
+                    auto tetrahedron = 
+                        geophase::make_tetrahedron<geophase::foamVectorPolyhedron>(xC, x0, xI, xJ);
 
-                    // For all triangles in the sphere.
-
-                        // Intersect the tet with the triangle halfspace. 
-                        
-                    // Compute the volume of the intersection. 
-                    
-                    // Add the 
+                    // Initialize the tetrahedron intersection. 
+                    geophase::foamVectorPolyhedron tetIntersection {tetrahedron};
+                    // Intersect the tetrahedron with all the triangles from the sphere. 
+                    // - Get labels of triangles that are inside the sphere that contains
+                    //   the intersected tetrahedron.
+                    auto triangleLabels = octree.findSphere(xT, radiusT*radiusT); // sqr radius used for search
+                    for (const auto& triangleL : triangleLabels)
+                    {
+                        // Intersect the tetrahedron with the triangle halfspace. 
+                        tetIntersection = 
+                            intersect_tolerance<geophase::foamPolyhedronIntersection>(
+                                tetIntersection, 
+                                foamHalfspace(
+                                    triPoints[triSurf_[triangleL][0]], 
+                                    triNormals[triangleL]
+                                )
+                        ).polyhedron();
+                    }
+                    // Add the volume of the intersection to the phase-specific volume.  
+                    alpha[cellI] += volume_by_surf_tri(tetIntersection);
+                    cutMeshStream << tetIntersection;
                 }
                 else if (dists.all()) // If tetrahedron is inside surface.
                 {
@@ -363,79 +357,8 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
 
             }
         }
-        //std::cout << "Volume = " << alpha[cellI] << std::endl;
         alpha[cellI] /= cellVolumes[cellI];
-        assert((std::abs(alpha[cellI] - 1.0) < 128*std::numeric_limits<double>::epsilon()));
-        //std::cout << "Alpha = " << alpha[cellI] << std::endl;
     }
-
-    //// FIXME: old code, remove this. TM.
-            //////// Obtain cell points.
-            //////const pointField cellPoints = cells[cellI].points(
-                    //////mesh_.faces(), 
-                    //////mesh_.points()
-            //////);  
-
-            //////// Find all the surface mesh triangles in the bounding box of a
-            //////// cell in a narrow band. 
-            //////labelList cellTriangles = octree.findBox(treeBoundBox(cellPoints)); 
-
-            //////// FIXME: Add geophase geometry. 
-            //////// If there are triangles in the cell.
-            //////if (!cellTriangles.empty())
-            //////{
-                //////// Triangulate the cell. 
-                
-                ////////auto surfCellIntersection 
-                    ////////= make<triangulationIntersection>(cellI, mesh_); 
-
-                ////////triangulationIntersection cellIntersection
-                ////////(
-                    ////////barycentric_triangulate<tetrahedronVector>
-                    ////////(
-                        ////////make<pointVectorVector>(cellI, mesh_)
-                    ////////)
-                ////////);
-
-                //////// For all triangles in a cell
-                //////for (const auto triLabel : cellTriangles)
-                //////{
-                    //////// Intersect the cell triangulation with the triangle halfspace. 
-                    //////surfCellIntersection = intersect_tolerance<triangulationIntersection>(
-                        //////triangulationIntersection, 
-                        ////////halfspace(triPoints[triangles[triLabel][0]], triNormals[triLabel])
-                        //////halfspace(triPoints[tri[triLabel][0]], -triNormals[triLabel])
-                    //////);  
-                    //////Nx_++; 
-                //////}
-
-                //////// Set the volume fraction of the cell.  
-                //////alpha[cellI] = min(1, volume(cellIntersection) / V[cellI]); 
-
-//////// Visualize all the cut cells as well as each cell, a piece of the surface that intersects
-//////// the cell, as well as the intersection result per cell.
-//////#ifdef TESTING 
-                //////cutCellStream << cellIntersection;
-                //////// Uncomment for debugging. 
-                //////// For every cell that is intersected: 
-                //////// - write the part of the triSurface that intersects it into an stl file
-                //////List<labelledTri> cellTriangleGeo(cellTriangles.size()); 
-                //////forAll(cellTriangleGeo, I)
-                    ////////cellTriangleGeo[I] = triangles[cellTriangles[I]];
-                    //////cellTriangleGeo[I] = tri[cellTriangles[I]];
-                //////triSurface cellSurface(cellTriangleGeo, triPoints); 
-                //////cellSurface.write(appendSuffix("cellSurface", cellI) + ".stl");
-                //////// - write the intersection into a .vtk file. 
-                //////write_vtk_polydata(cellIntersection, appendSuffix("cellIntersection", cellI) + ".vtk");
-                //////write_vtk_polydata
-                //////(
-                    //////build<pointVectorVector>(cellI, mesh_), 
-                    //////appendSuffix("cell", cellI) + ".vtk"
-                //////);
-//////#endif
-            ////}
-        ////}
-    ////}
 }
 
 void geomSurfaceCellMeshIntersection::writeFields() const

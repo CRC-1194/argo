@@ -61,9 +61,11 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
-    const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const label sqrDistFactor = args.optionLookupOrDefault<scalar>("sqrDistFactor", 2); 
-    const word dataFileName = args.optionLookupOrDefault<word>("dataFileName", "surfaceCellMeshIntersection.csv"); 
+    const word fieldName = 
+        args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
+
+    const label sqrDistFactor = 
+        args.optionLookupOrDefault<scalar>("sqrDistFactor", 2); 
 
     fileName triFile = args.path() + "/meshed-surface.vtk";
     if (args.optionFound("surfaceFile"))
@@ -91,24 +93,42 @@ int main(int argc, char *argv[])
     // Compute the volume fraction field.
     meshIntersection.calcVolFraction(alpha); 
 
+    // Write the volume fraction field.
     alpha.write(); 
 
-    // FIXME: Make a runtime option -testing out of this. 
-    meshIntersection.writeFields(); 
+    if (args.optionFound("writeAllFields"))
+        meshIntersection.writeFields(); 
 
-    // TODO: Make a runtime option out of this. 
-    //if (checkVolume)
-    //{
-        //Info << "Cannot check volume 
-        //const scalar Vs = starSurfaceVolume(meshIntersection.surface(), mesh.solutionD()); 
-        //const scalar Valpha = sum(alpha * mesh.V()).value();
-        //const scalar Ev = mag(Vs - Valpha) / Vs; 
+    if (args.optionFound("checkVolume"))
+    {
+        if (Pstream::myProcNo() == 0) // Only compute on master rank in parallel. TM.
+        {
+            scalar Vsurf = 0; 
 
-        //Info<< "Volume from surface mesh = " << Vs << endl;
-        //Info<< "Volume from volume fraction = " << Valpha << endl;
-        //Info<< "Volume error = " << Ev << endl; 
-    //}
-        
+            const auto& triSurfPoints = triSurf.points(); 
+            forAll(triSurf, triangleI) 
+            {
+                const auto& Sf = triSurf.Sf()[triangleI]; 
+                const auto& triangle = triSurf[triangleI]; 
+                Vsurf += dot(
+                    -Sf,  // Surface normals are oriented into the phase. 
+                    (triSurfPoints[triangle[0]] + 
+                    triSurfPoints[triangle[1]] + 
+                    triSurfPoints[triangle[2]])
+                );
+            }
+
+            Vsurf *= 1./9.; 
+
+            scalar Valpha = gSum((mesh.V() * alpha)()); 
+            scalar Evg = std::abs(Valpha - Vsurf) / Vsurf; 
+
+            Info << "Volume by volume fraction = " << Valpha << nl
+                << "Volume of the surface mesh by divergence theorem = " << Vsurf << nl 
+                << "Volume error % = " << Evg * 100 << nl;
+        }
+    }
+
     Info<< "End" << endl;
 }
 
