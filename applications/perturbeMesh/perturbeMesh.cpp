@@ -30,9 +30,8 @@ Description
     2. Move the mesh vertex by alpha (<0.5) of the distance to the 
     neighbor into a random direction. 
 
-    A possible extension may comprise the randomization of the amount of 
-    displacement with a maximum displacement of 0.5*delta_coeffs^{-1} to 
-    avoid self intersections of mesh cells.
+    Note that for alpha >= 0.5 it is theoretically possible to produce self-
+    intersecting meshes. This probability increases with increasing alpha.
 
 Author
     Dirk Gründing
@@ -118,7 +117,7 @@ int main(int argc, char *argv[])
     argList::addOption
     (
         "alpha", 
-        "scalar",
+        "scalar < 0.5",
         "Amount of point pertubation." 
     ); 
 
@@ -137,7 +136,15 @@ int main(int argc, char *argv[])
     resetBoundaryPertubations(mesh, pertubations);
     tmp<vectorField> new_points(mesh.points() + pertubations);
 
-    // update time to trigger update of points
+
+    // trick the mesh into writing for a time step by writing the same points
+    // this allows to compare uncut and cut mesh
+    runTime++; 
+    auto points(mesh.points());
+    mesh.movePoints(points);     
+    mesh.write();
+
+    // update the mesh points for the perturbed mesh and write
     runTime++; 
     Info << "Time = " << runTime.value() << endl << endl;
     mesh.movePoints(new_points());
