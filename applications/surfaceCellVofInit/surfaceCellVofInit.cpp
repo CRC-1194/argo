@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
                 << "VOLUME_FROM_VOLUME_FRACTION,"
                 << "VOLUME_FROM_SURFACE_INTEGRAL,"
                 << "VOLUME_ERROR_FROM_SURFACE_INTEGRAL,"
-                << "CPU_TIME_MICROSECONDSi," 
+                << "CPU_TIME_MICROSECONDS," 
                 << "N_TRIANGLES_PER_CELL" << "\n"
                 << mesh.nCells() << "," 
                 << triSurf.size() << "," 
