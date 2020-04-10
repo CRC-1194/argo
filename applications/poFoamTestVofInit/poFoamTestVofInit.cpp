@@ -60,20 +60,24 @@ using namespace Foam::GeometricalTransport;
 using namespace std::chrono;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-scalar volume(const triSurface& surface)
+scalar volume_surface_integral(const triSurface& triSurf)
 {
-    scalar vol = 0.0;
+    scalar Vsurf = 0; 
 
-    const auto& p = surface.localPoints();
-    const auto& tris = surface.localFaces();
-    vector c = sum(p)/surface.nPoints();
-
-    for (const auto& t : tris)
+    const auto& triSurfPoints = triSurf.points(); 
+    forAll(triSurf, triangleI) 
     {
-        vol += mag((p[t[0]] - c) & ((p[t[1]] - c)^(p[t[2]] - c)));
+        const auto& Sf = triSurf.Sf()[triangleI]; 
+        const auto& triangle = triSurf[triangleI]; 
+        Vsurf += dot(
+            -Sf,  // Surface normals are oriented into the phase. 
+            (triSurfPoints[triangle[0]] + 
+            triSurfPoints[triangle[1]] + 
+            triSurfPoints[triangle[2]])
+        );
     }
 
-    return vol/6.0;
+    return Vsurf/9.; 
 }
 
 int main(int argc, char *argv[])
@@ -108,7 +112,6 @@ int main(int argc, char *argv[])
     fileName surfaceFile = initDict.getOrDefault<fileName>("surfaceFile", args.path() + "/surface.stl");
     word dataFileName = initDict.getOrDefault<word>("dataFile", "polynomialVofInitResults.csv");
     Switch writeFields = initDict.getOrDefault<Switch>("writeFields", false);
-    scalar reference_volume = initDict.getOrDefault<scalar>("surfaceVolume", 0.0);
     Switch keepOriginalInterfacePosition = initDict.getOrDefault<Switch>("keepOriginalInterfacePosition", false);
 
     // Comand line args
@@ -117,7 +120,6 @@ int main(int argc, char *argv[])
     args.readIfPresent<fileName>("surfaceFile", surfaceFile);
     args.readIfPresent<word>("dataFile", dataFileName);
     writeFields = args.found("writeFields");
-    args.readIfPresent<scalar>("surfaceVolume", reference_volume);
     keepOriginalInterfacePosition = args.found("keepOriginalInterfacePosition");
 
     // Print configuration
@@ -127,7 +129,6 @@ int main(int argc, char *argv[])
          << "\n\tsurfaceFile: " << surfaceFile
          << "\n\tdataFile: " << dataFileName
          << "\n\twriteFields: " << writeFields
-         << "\n\tsurfaceVolume: " << reference_volume
          << "\n\tkeepOriginalInterfacePosition: " << keepOriginalInterfacePosition
          << endl;
 
@@ -154,20 +155,14 @@ int main(int argc, char *argv[])
     }
 
     // Open the error file for measurement output..
-    OFstream errorFile(dataFileName); 
-    // Nt : number of cells in the tool mesh 
-    // Nb : number of cells in the base mesh 
-    // Ev : volume conservation error: 
-    // |tool mesh volume from volume fraction - tool mesh volume | / tool mesh volume. 
-    // Ti : initialization time, loading the mesh and fields. 
-    // Te : execution time.
-    // Nx : total number of halfspace / cell intersections. 
-    // Ni : number of interface cells, 
-    // Nk : number of bulk cells.
-    // Va : volume as approximated by the VoF field
-    // Ed : volume conservation error relative to discrete surface volume
-    errorFile << "Nt,Nb,Ev,Ti,Te,Nx,Ni,Nk,Va,Ed\n"; 
-
+    std::ofstream errorFile;
+    errorFile.open(dataFileName); 
+    errorFile << "N_CELLS,N_TRIANGLES,N_INTERFACE_CELLS," 
+              << "VOLUME_FROM_VOLUME_FRACTION,"
+              << "VOLUME_FROM_SURFACE_INTEGRAL,"
+              << "VOLUME_ERROR_FROM_SURFACE_INTEGRAL,"
+              << "CPU_TIME_MICROSECONDS," 
+              << "MAX_REFINEMENT_LEVEL" << "\n";
 
     while(runTime.run())
     {
@@ -201,7 +196,6 @@ int main(int argc, char *argv[])
         // Measurement point
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-
         // Evaluation
         if (writeFields)
         {
@@ -211,52 +205,37 @@ int main(int argc, char *argv[])
 
         // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-        const scalar Ti = duration_cast<nanoseconds>(p1 - p0).count() / 1e09;
-        const scalar Te = duration_cast<nanoseconds>(t1 - t0).count() / 1e09;
+        const scalar Ti = duration_cast<nanoseconds>(p1 - p0).count() / 1e03;
+        const scalar Te = duration_cast<nanoseconds>(t1 - t0).count() / 1e03;
 
-        scalar Vs = reference_volume;
+        scalar V_surf_int = volume_surface_integral(surface);
+        const scalar V_alpha = sum(alpha * mesh.V()).value();
+        const scalar Ev = mag(V_alpha - V_surf_int) / V_surf_int; 
 
-        // TODO: remove/replace one starSurfaceVolume is available again (TT)
-        scalar Vd = volume(surface);
-        if (Vs == 0.0)
-        {
-            Vs = starSurfaceVolume(surface, mesh.solutionD()); 
-        }
-        const scalar Valpha = sum(alpha * mesh.V()).value();
-        const scalar Ev = mag(Vs - Valpha) / Vs; 
+        Info<< "Volume from surface integral = " << V_surf_int << endl;
+        Info<< "Volume from volume fraction = "  << V_alpha << endl;
+        Info<< "Volume error = "                 << Ev << endl; 
+        Info<< "Initialization time = " << Ti << " microseconds"<< endl;
+        Info<< "Calculation time = "    << Te << " microseconds" << endl;
 
-        Info<< "Volume from surface mesh = " << Vs << endl;
-        Info<< "Volume from volume fraction = " << Valpha << endl;
-        Info<< "Volume error = " << Ev << endl; 
-        Info<< "Initialization time = " << Ti << " seconds"<< endl;
-        Info<< "Calculation time = " << Te << " seconds" << endl;
-        Info<< "Discrete surface volume = " << Vd << endl;
-        Info<< "Relative volume difference = " << mag(Vd - Vs)/Vs << endl;
-
-        label Nb = 0; 
-        label Ni = 0; 
-        // No halfspace intersections for this method. Keep the parameter for
-        // compatibility (TT)
-        label Nx = 0;
+        label N_interface_cells = 0; 
 
         forAll(alpha, cellI)
         {
             if ((alpha[cellI] > 0) && (alpha[cellI] < 1))
-                ++Ni; 
-            else
-                ++Nb;
+                ++N_interface_cells; 
         }
 
-        errorFile << surface.size() << "," 
-            << mesh.nCells() << ","
+        errorFile << mesh.nCells() << ","
+            << surface.size() << "," 
+            << N_interface_cells << ","
+            << std::setprecision(20)
+            << V_alpha << ","
+            << V_surf_int << ","
             << Ev << ","  
-            << Ti << "," 
-            << Te << "," 
-            << Nx << ","
-            << Ni << ","
-            << Nb << ","
-            << Valpha << ","
-            << mag(Valpha - Vd)/Vd << endl;
+            << Ti+Te << "," 
+            << vofInit.maxRefinementLevel()
+            << std::endl;
             
         // Move the surface back to its original position. 
         displaceSurface(surface, -randomDisplacement);

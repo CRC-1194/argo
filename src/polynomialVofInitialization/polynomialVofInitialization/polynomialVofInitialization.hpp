@@ -50,6 +50,7 @@ class polynomialVofInitialization
         std::vector<label> interfaceCells_;
         const label max_refinement_level_;
         bool distances_initialized_;
+        label max_used_refinement_level_ = 0;
 
         // Member functions
         void setBulkFractions(volScalarField&) const;
@@ -90,6 +91,7 @@ class polynomialVofInitialization
         const volScalarField& sqrSearchDist() const; 
         const volScalarField& signedDistance() const; 
         const volScalarField& signedDistance0() const; 
+        label maxRefinementLevel() const;
 
         //- Computation
 
