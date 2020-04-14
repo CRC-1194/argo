@@ -18,11 +18,8 @@ parser.add_argument('--surface', dest="surface", type=str, required=True,
 parser.add_argument('--mesh_generator', dest="mesh_generator", type=str, default="", required=True,
                     help='Supported mesh generators: blockMesh, cartesianMesh, tetMesh, polyMesh')
 
-parser.add_argument('--serial', dest="serial", type=bool, default=True,
-                    help='Generate the mesh.')
-
-parser.add_argument('--slurm', dest="slurm", type=bool, default=False,
-                    help='Use SLURM workload manager to submit mesh generation jobs.')
+parser.add_argument('--slurm', action='store_true',
+                    help='Submit mesh generation as SLURM jobs.')
 
 args = parser.parse_args()
 
@@ -54,10 +51,10 @@ if __name__ == '__main__':
     for parameter_dir in parameter_dirs: 
         pwd = os.getcwd()
         os.chdir(parameter_dir)
-        if (args.serial):
-            call([args.mesh_generator])
-        elif (args.slurm): 
+        if (args.slurm):
             call(["sbatch", os.path.join(pwd, "%s.sbatch" % args.mesh_generator)])
+        else: 
+            call([args.mesh_generator])
         geo_file = "%s.geo" % args.surface
         print("Using GMSH file %s for surface generation." % geo_file)
         if (os.path.exists(geo_file) and os.path.isfile(geo_file)):
