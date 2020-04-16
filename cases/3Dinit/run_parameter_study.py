@@ -39,9 +39,8 @@ if __name__ == '__main__':
                             "-surfaceFile", 
                             args.surface_file] 
     elif args.application == "poFoamTestVofInit":
-        # NOTE: run polynomial initialization without randomized interface placement (TT)
         application_call = [args.application, 
-                            "-keepOriginalInterfacePosition",
+                            "-writeFields",
                             "-surfaceFile", 
                             args.surface_file] 
 

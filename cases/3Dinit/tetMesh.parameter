@@ -1,0 +1,15 @@
+values
+{
+    solver ( surfaceCellVofInit );
+
+    N
+    (
+        // 128 exhausts memory on my Laptop (TT)
+        16 32 64
+    );
+
+    ELEMSIZE
+    (
+        0.05 0.02 0.01 0.005 0.0025 0.0015
+    );
+}

@@ -6,47 +6,39 @@
     argList::addOption
     (
         "fieldName", 
-        "alpha.water",
-        "Name of the volume fraction field." 
+        "vof-field",
+        "Name of the volume fraction field.\nDefault: alpha.water" 
     ); 
 
     argList::addOption
     (
         "refinementLevel", 
         "label",
-        "Maximum refinement level to be used. Uses 'auto' -mode if not given."
+        "Maximum refinement level to be used.\nDefault: auto (-1)"
     ); 
 
     argList::addOption
     (
         "surfaceFile",
         "Surface mesh file."
-        "STL file containing the interface description. Requires a consistent, inward normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose."
+        "STL file containing the interface description. Requires a consistent, inward normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose.\nDefault: surface.stl"
     );
 
     argList::addOption
     (
         "dataFile", 
-        "polynomialVofInitResults.csv",
-        "Name of the file to write evaluation results to."
+        "results-file",
+        "Name of the file to write evaluation results to.\nDefault: polynomialVofInitResults.csv"
     ); 
 
     argList::addBoolOption
     (
         "writeFields",
-        "Write randomly placed surface and fields for each run."
+        "Write randomly placed surface and fields for each run.\nDefault: false"
     );
-
-    argList::addOption
-    (
-        "surfaceVolume", 
-        "scalar",
-        "Enclosed volume of the given surface. Used to calculate volume errors."
-    ); 
 
     argList::addBoolOption
     (
-        "keepOriginalInterfacePosition",
-        "Place interface as given by the surface file."
+        "random",
+        "Place interface randomly in the bounding box of the domain.\nDefault: false"
     );
-

@@ -1,79 +1,98 @@
-// SPHERE
+// Define an ellipsoid with with three axes lengths a b c in
+// direction of the coordinate axes x y z 
+//
+// Normal vectors point outwards.
 
-// Parameters to Determine center and radius
+// To conform with gmsh restrictions the ellipsoid is cut along its
+// symmetry axis into eight segments. Each segemnt is setup and afterwards
+// merged into a single surface.
+
+// Parameters to define center and axis lengths.
 x = 0.5;
 y = 0.5;
 z = 0.5;
 
-r = 0.15;
+// Define the ellipse's major axis (twice the semi axis length)
+// Note: for gmsh to work 
+//      a > b > c
+// must be satisfied.
+a = 0.4; 
+b = 0.3;
+c = 0.2;
 
-// Control maximum element size
+// Define maximal element size
 elemsize = @!ELEMSIZE!@;
 
 // Define support points
 // Center point
 Point(1) = {x, y, z};
 
+// Aux point on x-axis
+Point(14) = {x+0.5*a, y, z};
+Point(15) = {x-0.5*a, y, z};
+
+// Aux points on y-axis
+Point(22) = {x, y+0.5*b, z};
+Point(23) = {x, y-0.5*b, z};
+
 // Support points in plane parallel to x-y-plane through center
-Point(2) = {x-r, y, z};
-Point(3) = {x, y-r, z};
-Point(4) = {x+r, y, z};
-Point(5) = {x, y+r, z};
+Point(10) = {x+a, y, z};
+Point(11) = {x, y+b, z};
+Point(12) = {x-a, y, z};
+Point(13) = {x, y-b, z};
 
 // Support points in plane parallel to x-z-plane through center
-Point(6) = {x, y, z-r};
-Point(7) = {x, y, z+r};
+Point(20) = {x, y, z+c};
+Point(21) = {x, y, z-c};
 
-// Define circle arcs in plane parallel to x-y-plane
-Circle(1) = {2, 1, 3};
-Circle(2) = {3, 1, 4};
-Circle(3) = {4, 1, 5};
-Circle(4) = {5, 1, 2};
+// Define ellipse arcs in plane parallel to x-y-plane
+Ellipse(1) = {10, 1, 14, 11};
+Ellipse(2) = {11, 1, 15, 12};
+Ellipse(3) = {12, 1, 15, 13};
+Ellipse(4) = {13, 1, 14, 10};
 
-// Define circle arcs in plane parallel to x-z-plane
-Circle(5) = {6, 1, 4};
-Circle(6) = {4, 1, 7};
-Circle(7) = {7, 1, 2};
-Circle(8) = {2, 1, 6};
+// Define ellipse arcs in plane parallel to x-z-plane
+Ellipse(10) = {10, 1, 14, 21};
+Ellipse(11) = {21, 1, 15, 12};
+Ellipse(12) = {12, 1, 15, 20};
+Ellipse(13) = {20, 1, 14, 10};
 
-// Define circle arcs in plane parallel to y-z-plane
-Circle(9) = {6, 1, 3};
-Circle(10) = {3, 1, 7};
-Circle(11) = {7, 1, 5};
-Circle(12) = {5, 1, 6};
+// Define ellipsearcs in plane parallel to y-z-plane
+Ellipse(20) = {11, 1, 22, 20};
+Ellipse(21) = {20, 1, 23, 13};
+Ellipse(22) = {13, 1, 23, 21};
+Ellipse(23) = {21, 1, 22, 11};
 
-// Define Sphere segments' boundaries:
+// Define ellipsoid segements' boundaries:
 // Begin in positive sector, iterate counter clockwise, segments with x >= 0
-Line Loop(1) = {3, -11, -6};
-Line Loop(2) = {3, 12, 5};
-Line Loop(3) = {-2, -9, 5};
-Line Loop(4) = {-2, 10, -6};
+Line Loop(1) = {13, 20, 1};
+Line Loop(2) = {-20, 12, 2};
+Line Loop(3) = {-12, -21, 3};
+Line Loop(4) = {21, -13, 4};
 
 // Begin in sector (x < 0, y > 0, z > 0) and iterate counter clockwise
-Line Loop(5) = {-4, -11, 7};
-Line Loop(6) = {-4, 12, -8};
-Line Loop(7) = {1, -9, -8};
-Line Loop(8) = {1, 10, 7};
+Line Loop(11) = {23, 10, -1};
+Line Loop(12) = {11, -23, -2};
+Line Loop(13) = {-11, -22, -3};
+Line Loop(14) = {-10, 22, -4};
 
-// Define sphere surface patches
-Surface(1) = {1} In Sphere {1};
-Surface(2) = {2} In Sphere {1};
-Surface(3) = {3} In Sphere {1};
-Surface(4) = {4} In Sphere {1};
-Surface(5) = {5} In Sphere {1};
-Surface(6) = {6} In Sphere {1};
-Surface(7) = {7} In Sphere {1};
-Surface(8) = {8} In Sphere {1};
+// Define ellipsoid surface patches
+Surface(1) = {-1};
+Surface(2) = {-2};
+Surface(3) = {-3};
+Surface(4) = {-4};
+Surface(5) = {-11};
+Surface(6) = {-12};
+Surface(7) = {-13};
+Surface(8) = {-14};
 
-// Test to orient normal vectors consistently
-// They should now point inwards
-Reverse Surface {1};
-Reverse Surface {3};
-Reverse Surface {6};
-Reverse Surface {8};
-
-// Combine to sphere surface
+// Combine to ellipsoid surface
 Physical Surface(1) = {1, 2, 3, 4, 5, 6, 7, 8};
 
+// Set parameters for the meshing process
+Mesh.CharacteristicLengthMin = 0.1*elemsize;
 Mesh.CharacteristicLengthMax = elemsize;
-Mesh.Algorithm = 6; // Frontal
+
+//Mesh.RemeshAlgorithm = 1; // Choose automatically
+//Mesh.RemeshParametrization = 0; // Harmonic
+Mesh.Algorithm = 1; // (1): meshadapt, (6): frontal

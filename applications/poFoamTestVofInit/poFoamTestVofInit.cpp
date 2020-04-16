@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     fileName surfaceFile = initDict.getOrDefault<fileName>("surfaceFile", args.path() + "/surface.stl");
     word dataFileName = initDict.getOrDefault<word>("dataFile", "polynomialVofInitResults.csv");
     Switch writeFields = initDict.getOrDefault<Switch>("writeFields", false);
-    Switch keepOriginalInterfacePosition = initDict.getOrDefault<Switch>("keepOriginalInterfacePosition", false);
+    Switch randomPlacement = initDict.getOrDefault<Switch>("randomPlacement", false);
 
     // Comand line args
     args.readIfPresent<word>("fieldName", fieldName);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     args.readIfPresent<fileName>("surfaceFile", surfaceFile);
     args.readIfPresent<word>("dataFile", dataFileName);
     writeFields = args.found("writeFields");
-    keepOriginalInterfacePosition = args.found("keepOriginalInterfacePosition");
+    randomPlacement = args.found("random");
 
     // Print configuration
     Info << "Test configuration:"
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
          << "\n\tsurfaceFile: " << surfaceFile
          << "\n\tdataFile: " << dataFileName
          << "\n\twriteFields: " << writeFields
-         << "\n\tkeepOriginalInterfacePosition: " << keepOriginalInterfacePosition
+         << "\n\trandomPlacement: " << randomPlacement
          << endl;
 
     
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     high_resolution_clock::time_point p1 = high_resolution_clock::now();
 
     // Position the tool mesh centroid at the base mesh centroid. 
-    if (!keepOriginalInterfacePosition)
+    if (randomPlacement)
     {
         label nBasePoints = mesh.nPoints();  
         const vector baseCenter = sum(mesh.points()) / nBasePoints;  
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
         // the volume mesh.
         vector randomDisplacement{0,0,0};
 
-        if (!keepOriginalInterfacePosition)
+        if (randomPlacement)
         {
             randomDisplacement = 
                 placeSurfaceRandomlyInBox(surface, mesh.bounds(), mesh.solutionD()); 
