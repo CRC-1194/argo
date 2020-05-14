@@ -20,7 +20,7 @@ FetchContent_Declare(geophase
     #       geophase modifications are needed to make geometrical init work, so the geom-vof-init 
     #       branch is used. 
     #GIT_TAG                 v1.0 
-    GIT_TAG                 feature/geom-vof-init  
+    GIT_TAG                 master 
     GIT_SHALLOW             YES
     GIT_PROGRESS            YES
     USES_TERMINAL_DOWNLOAD  YES
