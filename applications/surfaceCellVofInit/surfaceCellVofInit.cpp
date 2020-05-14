@@ -142,7 +142,8 @@ int main(int argc, char *argv[])
                 << "VOLUME_FROM_SURFACE_INTEGRAL,"
                 << "VOLUME_ERROR_FROM_SURFACE_INTEGRAL,"
                 << "CPU_TIME_MICROSECONDS," 
-                << "N_TRIANGLES_PER_CELL" << "\n"
+                << "N_TRIANGLES_PER_CELL,"
+                << "N_INTERSECTED_CELLS" << "\n"
                 << mesh.nCells() << "," 
                 << triSurf.size() << "," 
                 << std::setprecision(20) 
@@ -150,7 +151,8 @@ int main(int argc, char *argv[])
                 << Vsurf << "," 
                 << Evsurf << ","
                 << calcTime << ","
-                << meshIntersection.nTrianglesPerCell() << "\n";
+                << meshIntersection.nTrianglesPerCell() << ","
+                << meshIntersection.nIntersectedCells() << "\n";
         }
     }
 

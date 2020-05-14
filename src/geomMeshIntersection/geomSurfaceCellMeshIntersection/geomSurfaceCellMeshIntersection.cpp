@@ -335,6 +335,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                     //   the intersected tetrahedron.
                     auto triangleLabels = octree.findSphere(xT, radiusT*radiusT); // sqr radius used for search
                     nTrianglesPerCell_ += triangleLabels.size();
+                    #pragma omp for default(shared)
                     for (const auto& triangleL : triangleLabels)
                     {
                         // Intersect the tetrahedron with the triangle halfspace. 

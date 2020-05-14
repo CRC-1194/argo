@@ -9,6 +9,8 @@ from math import ceil
 rcParams["text.usetex"] = True
 rcParams["figure.dpi"] = 300 
 rcParams["font.size"] = 8
+global_markers = ['o', 'x', '^', 'v', 'd']
+
 def plot_study(surface, mesher, exact_volume=1, data_dir="", 
                alg_name="",csv_file="surfaceCellVofInit.csv"):
     
@@ -31,20 +33,22 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
     data["N_C"] = np.ceil(data["N_CELLS"]**(1./3.))
     data["VOLUME_ERROR_FROM_EXACT_VOLUME"] = (data["VOLUME_FROM_VOLUME_FRACTION"] - exact_volume).abs() / exact_volume
     data["CPU_TIME_SECONDS"] = data["CPU_TIME_MICROSECONDS"] / 1e06 
-    
-    data.to_csv(os.path.join(data_dir,"%s-%s-volume-fraction-initialization.csv" % (alg_name,surface)))
-    data.to_latex(os.path.join(data_dir, "%s-%s-volume-fraction-initialization.tex" % (alg_name,surface)))
+
+    data.to_csv(os.path.join(data_dir,"%s-%s-volume-fraction-initialization.csv" % (alg_name,surface)), index=False)
+    data.to_latex(os.path.join(data_dir, "%s-%s-volume-fraction-initialization.tex" % (alg_name,surface)), index=False)
+
     
     # Plot convergence
     fig_conv, ax_conv = plt.subplots()
-    for n_cell in n_cells:
+    for i,n_cell in enumerate(n_cells):
         n_c = ceil(n_cell**(1./3.))
         n_cell_data = data[data["N_CELLS"] == n_cell] 
         ax_conv.plot(n_cell_data["N_TRIANGLES_ROOT"], 
                      n_cell_data["VOLUME_ERROR_FROM_EXACT_VOLUME"], 
-                     label = r"$N_c$ = %d" % n_c, marker='x')
+                     label = r"$N_c = %d$" % n_c, 
+                     marker=global_markers[i % len(n_cells)])
 
-    ax_conv.set_title("Volume fraction errors: %s" % surface)
+    ax_conv.set_title("Volume errors: %s" % surface)
     ax_conv.set_ylabel(r"$E_v$")
     ax_conv.set_xlabel(r"$\sqrt{N_T}$")
     ax_conv.loglog()
@@ -57,12 +61,13 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
     
     # Plot CPU times
     fig_cpu, ax_cpu = plt.subplots()
-    for n_cell in n_cells:
+    for i, n_cell in enumerate(n_cells):
         n_c = ceil(n_cell**(1./3.))
         n_cell_data = data[data["N_CELLS"] == n_cell] 
         ax_cpu.plot(n_cell_data["N_TRIANGLES_ROOT"], 
                     n_cell_data["CPU_TIME_SECONDS"], 
-                    label = r"$N_c$ = %d" % n_c, marker='x')
+                    label = r"$N_c = %d$" % n_c, 
+                    marker=global_markers[i % len(n_cells)])
     ax_cpu.set_title("CPU times: %s" % surface)
     ax_cpu.set_ylabel(r"CPU time in seconds")
     ax_cpu.set_xlabel(r"$\sqrt{N_T}$")
@@ -72,3 +77,5 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
     #fig_cpu.tight_layout()
     fig_cpu.savefig(os.path.join(data_dir, "%s-%s-surface-vof-init-cpu-times.pdf" % (alg_name,surface)),
                     bbox_inches='tight')
+
+    return data
