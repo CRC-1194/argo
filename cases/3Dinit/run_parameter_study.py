@@ -31,7 +31,6 @@ if __name__ == '__main__':
 
     vof_init_call = ["surfaceCellVofInit", 
                      "-checkVolume", 
-                     "-writeGeometry",
                      "-surfaceFile", 
                      args.surface_file] 
 
