@@ -1,0 +1,29 @@
+Bootstrap: localimage
+From: ./layers/openfoam.sif
+
+%files
+    ./geom-vof-init /opt
+    # /home/local/CSI/ip27fuzu/.ssh/disposable_ed25519 /root
+    # /home/local/CSI/ip27fuzu/.ssh/disposable_ed25519.pub /root
+
+
+%post
+    pacman -Sy --noconfirm reflector
+    reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
+    pacman -Syu --noconfirm cmake boost
+
+    # TO BE MODIFIED OR REMOVED (WHEN PROJECT BECOMES PUBLIC)
+    # eval `ssh-agent -s`
+    # echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+    # ssh-add /root/disposable_ed25519
+
+    cd /opt/geom-vof-init
+    git checkout development
+    mkdir build && cd build
+    
+    source /opt/openfoam/OpenFOAM-v1912/etc/bashrc || true
+    cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=on ..
+    make && make install
+    
+    chmod -R 777 /opt/geom-vof-init
+
