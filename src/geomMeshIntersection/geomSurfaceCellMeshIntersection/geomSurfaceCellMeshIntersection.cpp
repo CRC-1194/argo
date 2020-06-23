@@ -203,6 +203,16 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
     );
     distEqn.solve(); 
 
+    // Correct signed distances in the narrow band using 
+    // octree signed distances.
+    forAll(cellNearestTriangle_, cellI)
+    {
+        const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
+
+        if (cellHit.hit()) 
+            cellSignedDist_[cellI] = cellSignedDist0_[cellI]; 
+    }
+
     // Once the cell-centered signed distance is computed, compute the point
     // distances only for determining intersected tetrahedra in the volume
     // calculation step. TM.
