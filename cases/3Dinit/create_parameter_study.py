@@ -2,6 +2,7 @@
 import argparse
 import sys
 import os
+from subprocess import Popen 
 from subprocess import call
 
 parser = argparse.ArgumentParser(description='Generates simulation cases for parameter study using PyFoam.')
@@ -13,16 +14,18 @@ parser.add_argument('--template_case', dest="template_case", type=str,
                     help='OpenFOAM template case', default="templateCase")
 
 parser.add_argument('--surface', dest="surface", type=str, required=True,
-                    help='Name of the surface used for initialization.')
+                    help='Name of the surface used for initialization: available surfaces see are .geo files in the templateCase directory.')
 
 parser.add_argument('--mesh_generator', dest="mesh_generator", type=str, default="", required=True,
                     help='Supported mesh generators: blockMesh, cartesianMesh, tetMesh, polyMesh')
 
-parser.add_argument('--serial', dest="serial", type=bool, default=True,
-                    help='Generate the mesh.')
-
-parser.add_argument('--slurm', dest="slurm", type=bool, default=False,
+parser.add_argument('--serial', dest="serial_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')
+
+parser.add_argument('--slurm', dest="serial_run", action='store_false',
+                    help='Use SLURM workload manager to submit mesh generation jobs.')
+
+parser.set_defaults(serial_run=True)
 
 args = parser.parse_args()
 
@@ -54,12 +57,24 @@ if __name__ == '__main__':
     for parameter_dir in parameter_dirs: 
         pwd = os.getcwd()
         os.chdir(parameter_dir)
-        if (args.serial):
-            call([args.mesh_generator])
-        elif (args.slurm): 
-            call(["sbatch", os.path.join(pwd, "%s.sbatch" % args.mesh_generator)])
         geo_file = "%s.geo" % args.surface
-        print("Using GMSH file %s for surface generation." % geo_file)
-        if (os.path.exists(geo_file) and os.path.isfile(geo_file)):
-            call(["gmsh", "-2", geo_file, "-o", "%s.vtk" % args.surface])
+
+        if (args.serial_run):
+            call([args.mesh_generator])
+            print("Using GMSH file %s for surface generation." % geo_file)
+            if (os.path.exists(geo_file) and os.path.isfile(geo_file)):
+                call(["gmsh", "-2", geo_file, "-o", "%s.vtk" % args.surface])
+        else: 
+            base_command="srun --mem-per-cpu=500 --time=00:10 --ntasks=1"
+
+            # Submit volume mesh generation to the SLURM workload manager.
+            variable_command=" --job-name %s -o %s.log %s >/dev/null 2>&1 &" % \
+                    (args.mesh_generator, args.mesh_generator, args.mesh_generator)
+            call(base_command + variable_command, shell=True)
+
+            # Submit surface mesh generation to the SLURM workload manager.
+            variable_command=" --job-name %s -o %s.log gmsh -2 %s.geo -o %s.vtk >/dev/null 2>&1 &" % \
+                    (args.surface, args.surface, args.surface, args.surface)
+            call(base_command + variable_command, shell=True)
+
         os.chdir(pwd)
