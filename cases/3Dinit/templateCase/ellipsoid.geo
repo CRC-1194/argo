@@ -6,7 +6,7 @@ z = 0.5;
 r = 0.15;
 
 // Control maximum element size
-elemsize = 0.05;
+elemsize = 0.005;
 
 // Define support points
 // Center point

@@ -2,13 +2,15 @@ values
 {
     solver ( surfaceCellVofInit );
 
-    N
+    N_CELLS
     (
-        32 64 128
+        // 8 16
+        16
     );
 
-    ELEMSIZE
+    TRIANGLE_EDGE_LENGTH 
     (
-        0.05 0.02 0.01 0.005 0.0025 0.0015
+        // 0.05 0.02 0.01 0.005 0.0025 0.00125
+        0.05 0.02 0.01 0.005 0.0025
     );
 }

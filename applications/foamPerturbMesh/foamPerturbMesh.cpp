@@ -45,7 +45,6 @@ Author
 
 #include "argList.H"
 #include "Time.H"
-#include "dynamicFvMesh.H"
 #include "fvCFD.H"
 
 #include <omp.h>
@@ -97,7 +96,7 @@ autoPtr<scalarField> pointBoundingBallRadius(const fvMesh& mesh)
     return bbRadiusPtr;
 }
 
-void resetBoundaryPertubations(const dynamicFvMesh& mesh, vectorField& pertubations)
+void resetBoundaryPertubations(const fvMesh& mesh, vectorField& pertubations)
 {
     forAll(mesh.boundaryMesh(), boundaryI)
     {
@@ -124,7 +123,21 @@ int main(int argc, char *argv[])
     argList args(argc, argv);
 
 #   include "createTime.H"
-#   include "createDynamicFvMesh.H"
+
+    fvMesh mesh
+    (
+        //regionName,
+        //runTime.timeName(),
+        //runTime,
+        IOobject
+        (
+            "region0",
+            "constant",
+            runTime, 
+            IOobject::MUST_READ, 
+            IOobject::AUTO_WRITE
+        )
+    );
 
     const scalar alpha = args.optionLookupOrDefault<scalar>("alpha", 0.1); 
     
@@ -135,19 +148,14 @@ int main(int argc, char *argv[])
 
     resetBoundaryPertubations(mesh, pertubations);
     tmp<vectorField> new_points(mesh.points() + pertubations);
-
-
-    // trick the mesh into writing for a time step by writing the same points
-    // this allows to compare uncut and cut mesh
-    runTime++; 
-    auto points(mesh.points());
-    mesh.movePoints(points);     
+    mesh.movePoints(new_points());
     mesh.write();
 
-    // update the mesh points for the perturbed mesh and write
+    // Trick the mesh into writing for a time step by writing the same points
+    // This allows to compare uncut and cut mesh
     runTime++; 
-    Info << "Time = " << runTime.value() << endl << endl;
-    mesh.movePoints(new_points());
+    auto points(new_points());
+    mesh.movePoints(new_points());     
     mesh.write();
 
     Info<< "\nEnd\n" << endl;
