@@ -1,29 +1,51 @@
 Bootstrap: localimage
-From: ./layers/openfoam.sif
+From: ./layers/openfoam-v1912.sif
 
+# TO BE REMOVED ONCE PROJECT IS PUBLIC
 %files
-    ./geom-vof-init /opt
-    # /home/local/CSI/ip27fuzu/.ssh/disposable_ed25519 /root
-    # /home/local/CSI/ip27fuzu/.ssh/disposable_ed25519.pub /root
-
+    /home/local/CSI/ip27fuzu/.ssh/disposable_ed25519 /root
+    /home/local/CSI/ip27fuzu/.ssh/disposable_ed25519.pub /root
 
 %post
-    pacman -Sy --noconfirm reflector
     reflector --latest 5 --sort rate --save /etc/pacman.d/mirrorlist
     pacman -Syu --noconfirm cmake boost
 
-    # TO BE MODIFIED OR REMOVED (WHEN PROJECT BECOMES PUBLIC)
-    # eval `ssh-agent -s`
-    # echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
-    # ssh-add /root/disposable_ed25519
+    # TO BE REMOVED ONCE PROJECT IS PUBLIC
+    eval `ssh-agent -s`
+    echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
+    ssh-add /root/disposable_ed25519
 
-    cd /opt/geom-vof-init
-    git checkout development
-    mkdir build && cd build
-    
+    git clone -b development git@git.rwth-aachen.de:leia/geom-vof-init.git /opt/geom-vof-init/
+    mkdir /opt/geom-vof-init/build && cd "$_"
+
     source /opt/openfoam/OpenFOAM-v1912/etc/bashrc || true
     cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=on ..
     make && make install
-    
+
     chmod -R 777 /opt/geom-vof-init
+
+%runscript
+    CMD=$1
+
+    # Source directory
+    SOURCE_DIR=`realpath "$2"`
+
+    case $CMD in
+        clone)
+            echo 'Copying the geom-vof-init project from the image to $SOURCE_DIR'    
+            cp -r /opt/geom-vof-init/* /opt/openfoam/OpenFOAM-v1912/etc/bashrc $SOURCE_DIR
+            
+	    # Modifications so that OpenFOAM is in /opt/ and change the build folder to be inside the host project.
+            sed -i '/projectDir\=\"\/opt\/openfoam\/OpenFOAM\-\$WM_PROJECT\_VERSION\"/s/^#//g' $SOURCE_DIR/bashrc
+            sed -i "s#WM_PROJECT_USER_DIR=.*#WM_PROJECT_USER_DIR=$SOURCE_DIR/build#g" $SOURCE_DIR/bashrc
+            ;;
+        build)
+	    rm -rf $SOURCE_DIR/build && mkdir -p $SOURCE_DIR/build && cd $SOURCE_DIR/build
+
+            source $SOURCE_DIR/bashrc
+
+            cmake -DCMAKE_INSTALL_PREFIX=./ -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=on ..
+            make && make install
+            ;;
+    esac
 
