@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: ./layers/openfoam-v1912.sif
+From: ./openfoam-v1912.sif
 
 # TO BE REMOVED ONCE PROJECT IS PUBLIC
 %files
