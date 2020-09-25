@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
     // OpenFOAM tetrahedron volume using surface the surface integral.
     auto tetraVolumeBySurfTri = volume_by_surf_tri(foamTetrahedron);
-    std::cout << "FOAM unit tetrahedron volume by centroid triangulation (should be 1/6.) = " 
+    std::cout << "FOAM unit tetrahedron volume by surface triangulation (should be 1/6.) = " 
         << tetraVolumeBySurfTri << std::endl;
     assert ((std::abs(tetraVolumeBySurfTri - 1.0 / 6.) < EPSILON));
 
