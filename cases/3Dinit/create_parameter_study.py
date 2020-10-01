@@ -57,20 +57,22 @@ if __name__ == '__main__':
         os.chdir(parameter_dir)
         geo_file = "%s.geo" % args.surface
 
+        print(parameter_dir)
+
         if (args.slurm_run): 
 
             print("SLURM mesh generation...")
 
-            base_command="srun --mem-per-cpu=500 --time=00:10 --ntasks=1"
+            base_command="srun --mem-per-cpu=3000 --time=00:10:00 --ntasks=1"
 
             # Submit volume mesh generation to the SLURM workload manager.
-            variable_command=" --job-name %s -o %s.log %s >/dev/null 2>&1 &" % \
-                    (args.mesh_generator, args.mesh_generator, args.mesh_generator)
+            variable_command=" --job-name %s -o %s.log %s >/dev/null 2>&1 &" % (args.mesh_generator, args.mesh_generator, args.mesh_generator)
             call(base_command + variable_command, shell=True)
 
+            print(base_command + variable_command)
+
             # Submit surface mesh generation to the SLURM workload manager.
-            variable_command=" --job-name %s -o %s.log gmsh -2 %s.geo -o %s.vtk >/dev/null 2>&1 &" % \
-                    (args.surface, args.surface, args.surface, args.surface)
+            variable_command=" --job-name %s -o %s.log gmsh -2 %s.geo -o %s.vtk >/dev/null 2>&1 &" % (args.surface, args.surface, args.surface, args.surface)
             call(base_command + variable_command, shell=True)
 
         else:
