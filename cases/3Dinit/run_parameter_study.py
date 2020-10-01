@@ -12,10 +12,7 @@ parser.add_argument('--dir_pattern', dest="dir_pattern", type=str, required=True
 parser.add_argument('--surface_file', dest="surface_file", type=str, required=True, 
                     help='Surface mesh file used for the volume fraction initialization.')
 
-parser.add_argument('--serial', dest="serial_run", action='store_true',
-                    help='Use SLURM workload manager to submit mesh generation jobs.')
-
-parser.add_argument('--slurm', dest="serial_run", action='store_false',
+parser.add_argument('--slurm', dest="slurm_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')
 
 parser.set_defaults(serial_run=True)
@@ -39,15 +36,20 @@ if __name__ == '__main__':
     for parameter_dir in parameter_dirs: 
         pwd = os.getcwd()
         os.chdir(parameter_dir)
-        if (args.serial_run):
-            call(vof_init_call)
-        else: 
-            # Memory and run time can now be made dependent on mesh size. 
-            base_command="srun --mem-per-cpu=1000 --time=05:00 --ntasks=1"
 
-            variable_command=" --job-name surfaceCellVofInit " + \
-                " -o %s.log " + \
-                " surfaceCellVofInit -checkVolume -surfaceFile " + \
-                " %s >/dev/null 2>&1 &" % (args.surface_file, args.surface_file)
+        print(parameter_dir)
+
+        if (args.slurm_run):
+            # TODO: Memory and run-time can now be made dependent on mesh size. 
+            base_command="srun --mem-per-cpu=4000 --time=00:10:00 --ntasks=1"
+
+            variable_command=" --job-name surfaceCellVofInit -o slurm-%s.log surfaceCellVofInit -checkVolume -surfaceFile %s >/dev/null 2>&1 &" % (args.surface_file, args.surface_file)
+
+            print(base_command + variable_command)
+
             call(base_command + variable_command, shell=True)
+
+        else: 
+            call(vof_init_call)
+
         os.chdir(pwd)
