@@ -78,6 +78,7 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
     for i, n_cell in enumerate(n_cells):
         n_c = ceil(n_cell**(1./3.))
         n_cell_data = data[data["N_CELLS"] == n_cell] 
+        n_cell_data = n_cell_data[n_cell_data["N_TRIANGLES_ROOT"] < 400]
         ax_cpu.plot(n_cell_data["N_TRIANGLES_ROOT"], 
                     n_cell_data["CPU_TIME_SECONDS"], 
                     label = r"$N_c = %d$" % n_c, 
