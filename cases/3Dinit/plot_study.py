@@ -13,11 +13,10 @@ rcParams["axes.titlesize"] = 9
 rcParams["axes.labelsize"] = 9
 global_markers = ['o', 'x', '^', 'v', 'd']
 
-def plot_study(surface, mesher, exact_volume=1, data_dir="", 
-               alg_name="",csv_file="surfaceCellVofInit.csv"):
+def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surfaceCellVofInit.csv"):
     
-    param_dirs = [param_dir for param_dir in os.listdir(os.curdir) if os.path.isdir(param_dir) \
-                   and surface in param_dir and mesher in param_dir] 
+    param_dirs = [param_dir for param_dir in os.listdir(os.curdir) if os.path.isdir(param_dir) and \
+                  param_dir.startswith(pattern)] 
 
     param_dirs.sort()
 
@@ -38,8 +37,8 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
     data["VOLUME_ERROR_FROM_EXACT_VOLUME"] = (data["VOLUME_FROM_VOLUME_FRACTION"] - exact_volume).abs() / exact_volume
     data["CPU_TIME_SECONDS"] = data["CPU_TIME_MICROSECONDS"] / 1e06 
 
-    data.to_csv(os.path.join(data_dir,"%s-%s-volume-fraction-initialization.csv" % (alg_name,surface)), index=False)
-    data.to_latex(os.path.join(data_dir, "%s-%s-volume-fraction-initialization.tex" % (alg_name,surface)), index=False)
+    data.to_csv(os.path.join(data_dir,"%s-%s.csv" % (pattern, alg_name)), index=False)
+    data.to_latex(os.path.join(data_dir, "%s-%s.tex" % (pattern, alg_name)), index=False)
 
     
     # Plot convergence
@@ -52,7 +51,6 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
                      label = r"$N_c = %d$" % n_c, 
                      marker=global_markers[i % len(n_cells)])
 
-    ax_conv.set_title("Volume errors: %s" % surface)
     ax_conv.set_ylabel(r"$E_v$")
     ax_conv.set_xlabel(r"$\sqrt{N_T}$")
     ax_conv.loglog()
@@ -69,7 +67,7 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
 
     # Save the figure.
     fig_conv.set_size_inches(4,3)
-    fig_conv.savefig(os.path.join(data_dir, "%s-%s-surface-volume-errors.pdf" % (alg_name,surface)),
+    fig_conv.savefig(os.path.join(data_dir, "Ev-%s-%s.pdf" % (pattern,alg_name)),
                      bbox_inches='tight')
     
     # Plot CPU times
@@ -83,13 +81,12 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
                     n_cell_data["CPU_TIME_SECONDS"], 
                     label = r"$N_c = %d$" % n_c, 
                     marker=global_markers[i % len(n_cells)])
-    ax_cpu.set_title("CPU times: %s" % surface)
     ax_cpu.set_ylabel(r"CPU time in seconds")
     ax_cpu.set_xlabel(r"$\sqrt{N_T}$")
 
     fig_cpu.legend(bbox_to_anchor=[0.25,0.85],loc="upper left")
     # Save the figure.
-    fig_cpu.savefig(os.path.join(data_dir, "%s-%s-surface-vof-init-cpu-times.pdf" % (alg_name,surface)),
+    fig_cpu.savefig(os.path.join(data_dir, "CPUtime-%s-%s.pdf" % (pattern,alg_name)),
                     bbox_inches='tight', shadow=True)
 
     return data

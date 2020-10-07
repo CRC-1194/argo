@@ -7,6 +7,9 @@ from subprocess import call
 
 parser = argparse.ArgumentParser(description='Generates simulation cases for parameter study using PyFoam.')
 
+parser.add_argument('--study_name', dest="study_name", type=str, required=True,
+                    help='Name of the parameter study.')
+
 parser.add_argument('--parameter_file', dest="parameter_file", type=str, required=True,
                     help='PyFoam .parameter file')
 
@@ -30,7 +33,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args(sys.argv[1:])
 
-    prefix = args.surface + "_" + args.parameter_file
+    prefix = args.study_name + "_" + args.surface + "_" + args.parameter_file
 
     call_args = ["pyFoamRunParameterVariation.py", 
                  "--every-variant-one-case-execution", 
