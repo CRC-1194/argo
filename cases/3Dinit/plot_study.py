@@ -8,7 +8,9 @@ from math import ceil
 
 rcParams["text.usetex"] = True
 rcParams["figure.dpi"] = 300 
-rcParams["font.size"] = 8
+rcParams["font.size"] = 9
+rcParams["axes.titlesize"] = 9
+rcParams["axes.labelsize"] = 9
 global_markers = ['o', 'x', '^', 'v', 'd']
 
 def plot_study(surface, mesher, exact_volume=1, data_dir="", 
@@ -54,15 +56,25 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
     ax_conv.set_ylabel(r"$E_v$")
     ax_conv.set_xlabel(r"$\sqrt{N_T}$")
     ax_conv.loglog()
-    fig_conv.legend(bbox_to_anchor=[0.95,0.95],loc="upper right")
+
+    box = ax_conv.get_position()
+    ax_conv.set_position([box.x0, box.y0 + box.height * 0.1,
+                         box.width, box.height * 0.9])
+    ax_conv.set_ylim([1e-05,1e-01])
+    ax_conv.set_xlim([10,1000])
+
+    # Put a legend below current axis
+    ax_conv.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
+                   fancybox=True, shadow=True, ncol=5)
+
     # Save the figure.
-    fig_conv.set_size_inches(3,2)
-    #fig_conv.tight_layout()
+    fig_conv.set_size_inches(4,3)
     fig_conv.savefig(os.path.join(data_dir, "%s-%s-surface-volume-errors.pdf" % (alg_name,surface)),
                      bbox_inches='tight')
     
     # Plot CPU times
     fig_cpu, ax_cpu = plt.subplots()
+    fig_cpu.set_size_inches(4,3)
     for i, n_cell in enumerate(n_cells):
         n_c = ceil(n_cell**(1./3.))
         n_cell_data = data[data["N_CELLS"] == n_cell] 
@@ -73,11 +85,10 @@ def plot_study(surface, mesher, exact_volume=1, data_dir="",
     ax_cpu.set_title("CPU times: %s" % surface)
     ax_cpu.set_ylabel(r"CPU time in seconds")
     ax_cpu.set_xlabel(r"$\sqrt{N_T}$")
+
     fig_cpu.legend(bbox_to_anchor=[0.25,0.85],loc="upper left")
     # Save the figure.
-    fig_cpu.set_size_inches(3,2)
-    #fig_cpu.tight_layout()
     fig_cpu.savefig(os.path.join(data_dir, "%s-%s-surface-vof-init-cpu-times.pdf" % (alg_name,surface)),
-                    bbox_inches='tight')
+                    bbox_inches='tight', shadow=True)
 
     return data
