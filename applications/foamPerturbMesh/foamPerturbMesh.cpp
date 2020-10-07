@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
     // Trick the mesh into writing for a time step by writing the same points
     // This allows to compare uncut and cut mesh
-    runTime++; 
+    // runTime++; 
     auto points(new_points());
     mesh.movePoints(new_points());     
     mesh.write();
