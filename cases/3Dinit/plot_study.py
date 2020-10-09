@@ -4,7 +4,7 @@ from math import pi
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import numpy as np
-from math import ceil
+from math import ceil,exp
 
 rcParams["text.usetex"] = True
 rcParams["figure.dpi"] = 300 
@@ -19,6 +19,8 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
                   param_dir.startswith(pattern)] 
 
     param_dirs.sort()
+
+    print(param_dirs[0])
 
     csv_files = [os.path.join(param_dir,csv_file) for param_dir in param_dirs \
                  if os.path.exists(os.path.join(param_dir,csv_file))]
@@ -37,8 +39,8 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     data["VOLUME_ERROR_FROM_EXACT_VOLUME"] = (data["VOLUME_FROM_VOLUME_FRACTION"] - exact_volume).abs() / exact_volume
     data["CPU_TIME_SECONDS"] = data["CPU_TIME_MICROSECONDS"] / 1e06 
 
-    data.to_csv(os.path.join(data_dir,"%s-%s.csv" % (pattern, alg_name)), index=False)
-    data.to_latex(os.path.join(data_dir, "%s-%s.tex" % (pattern, alg_name)), index=False)
+    data.to_csv(os.path.join(data_dir,"Data_Pandas_Dframe-%s-%s.csv" % (pattern, alg_name)), index=False)
+    data.to_latex(os.path.join(data_dir, "Data_Pandas_Dframe-%s-%s.tex" % (pattern, alg_name)), index=False)
 
     
     # Plot convergence
@@ -58,8 +60,8 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     box = ax_conv.get_position()
     ax_conv.set_position([box.x0, box.y0 + box.height * 0.1,
                          box.width, box.height * 0.9])
-    ax_conv.set_ylim([1e-05,1e-01])
-    ax_conv.set_xlim([10,1000])
+    #ax_conv.set_ylim([1e-05,1e-01])
+    #ax_conv.set_xlim([10,1500])
 
     # Put a legend below current axis
     ax_conv.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
