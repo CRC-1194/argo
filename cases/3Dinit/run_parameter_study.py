@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
         if (args.slurm_run):
             # TODO: Memory and run-time can now be made dependent on mesh size. 
-            base_command="srun --mem-per-cpu=6000 --time=01:00:00 --ntasks=1"
+            base_command="srun -A project01456 --mem-per-cpu=6000 --time=01:00:00 --ntasks=1"
 
             variable_command=" --cpu-freq=HighM1-HighM1 --job-name surfaceCellVofInit -o slurm-%s.log surfaceCellVofInit -checkVolume -surfaceFile %s >/dev/null 2>&1 &" % (args.surface_file, args.surface_file)
 

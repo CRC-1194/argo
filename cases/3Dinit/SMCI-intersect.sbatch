@@ -6,7 +6,8 @@
 #SBATCH -c 1      
 #SBATCH -C mpi      
 #SBATCH --mem-per-cpu=7000   
-#SBATCH -t 4:00:00  
+#SBATCH -t 0:15:00  
+#SBATCH -A project01456
 
 # -------------------------------
 

@@ -20,8 +20,6 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
 
     param_dirs.sort()
 
-    print(param_dirs[0])
-
     csv_files = [os.path.join(param_dir,csv_file) for param_dir in param_dirs \
                  if os.path.exists(os.path.join(param_dir,csv_file))]
 
@@ -58,14 +56,16 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     ax_conv.loglog()
 
     box = ax_conv.get_position()
-    ax_conv.set_position([box.x0, box.y0 + box.height * 0.1,
-                         box.width, box.height * 0.9])
+    #ax_conv.set_position([box.x0, box.y0 + box.height * 0.1,
+                         #box.width, box.height * 0.9])
     #ax_conv.set_ylim([1e-05,1e-01])
     #ax_conv.set_xlim([10,1500])
 
     # Put a legend below current axis
-    ax_conv.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
-                   fancybox=True, shadow=True, ncol=5)
+    #ax_conv.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
+                   #fancybox=True, shadow=True, ncol=5)
+    ax_conv.legend(bbox_to_anchor=(1.0, 1.), fancybox=False, frameon=False, framealpha=0)
+
 
     # Save the figure.
     fig_conv.set_size_inches(4,3)
@@ -86,7 +86,7 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     ax_cpu.set_ylabel(r"CPU time in seconds")
     ax_cpu.set_xlabel(r"$\sqrt{N_T}$")
 
-    fig_cpu.legend(bbox_to_anchor=[0.25,0.85],loc="upper left")
+    fig_cpu.legend(bbox_to_anchor=[0.15,0.95],loc="upper left", framealpha=0)
     # Save the figure.
     fig_cpu.savefig(os.path.join(data_dir, "CPUtime-%s-%s.pdf" % (pattern,alg_name)),
                     bbox_inches='tight', shadow=True)
