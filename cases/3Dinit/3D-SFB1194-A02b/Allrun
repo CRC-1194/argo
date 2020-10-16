@@ -1,4 +1,4 @@
 #!/bin/sh
 
-rm -rf 0 && cp -r 0.org 0 && blockMesh && voFoamSurfaceCellIntersectMeshes -surfaceFile wPhil0.5_alpha1_90_25.stl
+rm -rf 0 && cp -r 0.org 0 && blockMesh && surfaceCellVofInit -checkVolume -surfaceFile wPhil0.5_alpha1_90_25.stl
 
