@@ -381,6 +381,29 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         }
     }
     nTrianglesPerCell_ /= intersectedCellLabels_.size();
+
+    // Correct volume fractions. 
+    const auto& cellPointLists = mesh_.cellPoints();
+    forAll(alpha, cellI)
+    {
+        if (alpha[cellI] > 1.) 
+            alpha[cellI] = 1.;
+
+        const auto& cellPoints = cellPointLists[cellI]; 
+        bool cutCell = false; 
+        forAll(cellPoints, pointI)
+        {
+            if (pointSignedDist_[cellPoints[pointI]] > 0)
+            {
+                cutCell = true; 
+                break;
+            }
+        }
+
+        // if the cell is inside phase 1 
+        if (!cutCell && (cellSignedDist_[cellI] < 0))
+            alpha[cellI] = 1.;
+    }
 }
 
 void geomSurfaceCellMeshIntersection::writeFields() const
