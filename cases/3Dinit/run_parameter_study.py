@@ -3,6 +3,7 @@ import argparse
 import sys
 import os
 from subprocess import call
+from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 
 parser = argparse.ArgumentParser(description='Runs the surfaceCellVofInit in each case directory that fits the pattern.')
 
@@ -39,9 +40,16 @@ if __name__ == '__main__':
 
         print(parameter_dir)
 
+        # Get mesh density from blockMeshDict
+        blockMeshDict = ParsedParameterFile("./system/blockMeshDict") 
+        Nc = blockMeshDict["blocks"][2][0]
+
         if (args.slurm_run):
-            # TODO: Memory and run-time can now be made dependent on mesh size. 
-            base_command="srun -A project01456 --mem-per-cpu=6000 --time=01:00:00 --ntasks=1"
+
+            if (Nc >= 256): # Use more memory for the largest resolution. 
+                base_command="srun -A project01456 --mem-per-cpu=10000 --time=01:00:00 --ntasks=1"
+            else:
+                base_command="srun -A project01456 --mem-per-cpu=5000 --time=01:00:00 --ntasks=1"
 
             variable_command=" --cpu-freq=HighM1-HighM1 --job-name surfaceCellVofInit -o slurm-%s.log surfaceCellVofInit -checkVolume -surfaceFile %s >/dev/null 2>&1 &" % (args.surface_file, args.surface_file)
 

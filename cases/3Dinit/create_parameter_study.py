@@ -4,6 +4,7 @@ import sys
 import os
 from subprocess import Popen 
 from subprocess import call
+from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 
 parser = argparse.ArgumentParser(description='Generates simulation cases for parameter study using PyFoam.')
 
@@ -62,11 +63,18 @@ if __name__ == '__main__':
 
         print(parameter_dir)
 
+        # Get mesh density from blockMeshDict
+        blockMeshDict = ParsedParameterFile("./system/blockMeshDict") 
+        Nc = blockMeshDict["blocks"][2][0]
+
         if (args.slurm_run): 
 
             print("SLURM mesh generation...")
 
-            base_command="srun --mem-per-cpu=3000 --time=00:10:00 --ntasks=1"
+            if (Nc >= 256): # Use more memory for the largest resolution. 
+                base_command="srun -A project01456 --mem-per-cpu=10000 --time=00:15:00 --ntasks=1"
+            else:
+                base_command="srun -A project01456 --mem-per-cpu=5000 --time=00:10:00 --ntasks=1"
 
             # Submit volume mesh generation to the SLURM workload manager.
             variable_command=" --job-name %s -o %s.log %s >/dev/null 2>&1 &" % (args.mesh_generator, args.mesh_generator, args.mesh_generator)
