@@ -139,6 +139,8 @@ public:
 
     const double nTrianglesPerCell() const;
 
+    const label nIntersectedCells() const;
+
     //- Computation
 
     // Squared search distance calculation. 

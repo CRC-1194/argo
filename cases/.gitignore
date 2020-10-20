@@ -9,3 +9,8 @@ __pycache__/
 *.tgz
 *.zip
 .ipynb_checkpoints/
+*parameter_*
+*.database
+*.variations
+*.vtk 
+*.msh
