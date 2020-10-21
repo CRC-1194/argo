@@ -2,9 +2,14 @@
 import argparse
 import sys
 import os
+from subprocess import Popen 
 from subprocess import call
+from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 
 parser = argparse.ArgumentParser(description='Generates simulation cases for parameter study using PyFoam.')
+
+parser.add_argument('--study_name', dest="study_name", type=str, required=True,
+                    help='Name of the parameter study.')
 
 parser.add_argument('--parameter_file', dest="parameter_file", type=str, required=True,
                     help='PyFoam .parameter file')
@@ -13,23 +18,23 @@ parser.add_argument('--template_case', dest="template_case", type=str,
                     help='OpenFOAM template case', default="templateCase")
 
 parser.add_argument('--surface', dest="surface", type=str, required=True,
-                    help='Name of the surface used for initialization.')
+                    help='Name of the surface used for initialization: available surfaces see are .geo files in the templateCase directory.')
 
 parser.add_argument('--mesh_generator', dest="mesh_generator", type=str, default="", required=True,
                     help='Supported mesh generators: blockMesh, cartesianMesh, tetMesh, polyMesh')
 
-parser.add_argument('--serial', dest="serial", type=bool, default=True,
-                    help='Generate the mesh.')
-
-parser.add_argument('--slurm', dest="slurm", type=bool, default=False,
+parser.add_argument('--slurm', dest="slurm_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')
+
+parser.set_defaults(serial_run=True)
 
 args = parser.parse_args()
 
 if __name__ == '__main__':
+
     args = parser.parse_args(sys.argv[1:])
 
-    prefix = args.surface + "_" + args.parameter_file
+    prefix = args.study_name + "_" + args.surface + "_" + args.parameter_file
 
     call_args = ["pyFoamRunParameterVariation.py", 
                  "--every-variant-one-case-execution", 
@@ -54,12 +59,40 @@ if __name__ == '__main__':
     for parameter_dir in parameter_dirs: 
         pwd = os.getcwd()
         os.chdir(parameter_dir)
-        if (args.serial):
-            call([args.mesh_generator])
-        elif (args.slurm): 
-            call(["sbatch", os.path.join(pwd, "%s.sbatch" % args.mesh_generator)])
         geo_file = "%s.geo" % args.surface
-        print("Using GMSH file %s for surface generation." % geo_file)
-        if (os.path.exists(geo_file) and os.path.isfile(geo_file)):
-            call(["gmsh", "-2", geo_file, "-o", "%s.vtk" % args.surface])
+
+        print(parameter_dir)
+
+        # Get mesh density from blockMeshDict
+        blockMeshDict = ParsedParameterFile("./system/blockMeshDict") 
+        Nc = blockMeshDict["blocks"][2][0]
+
+        if (args.slurm_run): 
+
+            print("SLURM mesh generation...")
+
+            if (Nc >= 256): # Use more memory for the largest resolution. 
+                base_command="srun -A project01456 --mem-per-cpu=10000 --time=00:15:00 --ntasks=1"
+            else:
+                base_command="srun -A project01456 --mem-per-cpu=5000 --time=00:10:00 --ntasks=1"
+
+            # Submit volume mesh generation to the SLURM workload manager.
+            variable_command=" --job-name %s -o %s.log %s >/dev/null 2>&1 &" % (args.mesh_generator, args.mesh_generator, args.mesh_generator)
+            call(base_command + variable_command, shell=True)
+
+            print(base_command + variable_command)
+
+            # Submit surface mesh generation to the SLURM workload manager.
+            variable_command=" --job-name %s -o %s.log gmsh -2 %s.geo -o %s.vtk >/dev/null 2>&1 &" % (args.surface, args.surface, args.surface, args.surface)
+            call(base_command + variable_command, shell=True)
+
+        else:
+
+            print("Serial mesh generation...")
+
+            call([args.mesh_generator])
+            print("Using GMSH file %s for surface generation." % geo_file)
+            if (os.path.exists(geo_file) and os.path.isfile(geo_file)):
+                call(["gmsh", "-2", geo_file, "-o", "%s.vtk" % args.surface])
+
         os.chdir(pwd)

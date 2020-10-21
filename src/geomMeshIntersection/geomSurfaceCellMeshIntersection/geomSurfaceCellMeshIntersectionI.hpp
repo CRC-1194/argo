@@ -65,6 +65,11 @@ const double geomSurfaceCellMeshIntersection::nTrianglesPerCell() const
     return nTrianglesPerCell_; 
 }
 
+const label geomSurfaceCellMeshIntersection::nIntersectedCells() const
+{
+    return intersectedCellLabels_.size();  
+}
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #endif

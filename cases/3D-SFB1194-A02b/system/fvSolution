@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | foam-extend: Open Source CFD                    |
-|  \\    /   O peration     | Version:     3.1                                |
-|   \\  /    A nd           | Web:         http://www.extend-project.de       |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -17,51 +17,15 @@ FoamFile
 
 solvers
 {
-    cellMotionU
+    cellSignedDist 
     {
         solver          PCG;
         preconditioner  DIC;
-        tolerance       1e-7;
+        tolerance       0.5;
         relTol          0;
-        minIter 1;
+        minIter         1;
+        maxIter         1;
     }
-
-    p
-    {
-        solver          PCG;
-        preconditioner  DIC;
-        tolerance       1e-9;
-        relTol          0;
-        minIter 1;
-    }
-
-    signedDist 
-    {
-        solver          PCG;
-        preconditioner  DIC;
-        tolerance       0.1;
-        relTol          0.1;
-        minIter 1;
-    }
-
-    U
-    {
-        solver          PBiCG;
-        preconditioner  DILU;
-        tolerance       1e-6;
-        relTol          0;
-        minIter 1;
-    }
-}
-
-PISO
-{
-    nOuterCorrectors            10;
-    nCorrectors                 3;
-    nNonOrthogonalCorrectors    1;
-	ddtPhiCorr	true;
-    pRefPoint (0 0 0);
-    pRefValue 0;
 }
 
 // ************************************************************************* //

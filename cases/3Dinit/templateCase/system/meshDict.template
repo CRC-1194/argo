@@ -18,6 +18,6 @@ FoamFile
 
 surfaceFile	"../unitDomain/box-domain-edges.fms";
 
-maxCellSize	#calc "1.0 / @!N!@";
+maxCellSize	#calc "1.0 / @!N_CELLS!@";
 
 // ************************************************************************* //

@@ -6,7 +6,7 @@ z = 0.5;
 r = 0.15;
 
 // Control maximum element size
-elemsize = @!TRIANGLE_EDGE_LENGTH!@;
+elemsize = 0.05;
 
 // Define support points
 // Center point

@@ -20,7 +20,7 @@ FetchContent_Declare(geophase
     #       geophase modifications are needed to make geometrical init work, so the geom-vof-init 
     #       branch is used. 
     #GIT_TAG                 v1.0 
-    GIT_TAG                 feature/geom-vof-init  
+    GIT_TAG                 master 
     GIT_SHALLOW             YES
     GIT_PROGRESS            YES
     USES_TERMINAL_DOWNLOAD  YES
@@ -270,6 +270,24 @@ target_link_libraries("poFoamVofInit"
     m
 )
 
+add_executable("foamPerturbMesh"
+               applications/foamPerturbMesh/foamPerturbMesh.cpp)
+target_include_directories("foamPerturbMesh" PRIVATE 
+    src/include
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("foamPerturbMesh"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 # Install executables
 install(TARGETS "cellCellTestVofInit"
         "surfaceCellTestVofInit"
@@ -279,4 +297,5 @@ install(TARGETS "cellCellTestVofInit"
         "poFoamTestVofInit"
         "poFoamVofInit"
         "polynomialVofTest"
+        "foamPerturbMesh"
         RUNTIME)

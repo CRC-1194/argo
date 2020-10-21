@@ -24,10 +24,11 @@ These instructions will get you a copy of the project up and running on your loc
 
 List of prerequisites with tested versions in brackets:
 
-* g++   (9.1.0)
-* CMake (3.13) 
+* g++   (9.1.0) : Compiler
+* CMake (3.13)  : Build system
+* gmsh  (4.6.0) : Generation of input surface meshes
 
-These you can install on your system using a package manager.
+g++ and CMake are available as packages or modules on an HPC cluster, gmsh binaries are available for different Operating Systems. 
 
 * OpenFOAM-plus (v1906)
 
