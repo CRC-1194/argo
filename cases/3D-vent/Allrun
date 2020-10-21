@@ -2,6 +2,11 @@
 cd ${0%/*} || exit 1                        # Run from this directory
 . $WM_PROJECT_DIR/bin/tools/RunFunctions    # Tutorial run functions
 
+# unfortunatly this puts the geom2.stl into the box.stl together with the
+# bounding box and there is no option to prevent this -> seperate bbox
+# creation necessary
+#surfaceGenerateBoundingBox geom2.stl box.stl 10.0 10.0 10.0 10.0 10.0 10.0
+
 # needs to be executed to obtain good features -> proper box edges
 # needs only to be executed once
 #surfaceFeatureEdges -angle 50 box.stl box.fms
