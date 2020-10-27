@@ -28,7 +28,15 @@ List of prerequisites with tested versions in brackets:
 * CMake (3.13)  : Build system
 * gmsh  (4.6.0) : Generation of input surface meshes
 
-g++ and CMake are available as packages or modules on an HPC cluster, gmsh binaries are available for different Operating Systems. 
+g++ and CMake are available as packages or modules on an HPC cluster, gmsh binaries are available for different Operating Systems. Alternatively, they can be installed via
+
+    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+    sudo apt update
+    sudo apt install gcc-9 g++-9
+
+Select gcc-9 g++-9 as default by
+
+    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 900 --slave /usr/bin/g++ g++ /usr/bin/g++-9
 
 * OpenFOAM-plus (v1906)
 
