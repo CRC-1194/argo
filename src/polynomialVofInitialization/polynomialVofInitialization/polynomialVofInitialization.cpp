@@ -224,7 +224,7 @@ polynomialVofInitialization::searchSphere polynomialVofInitialization::cellInter
                         ((v[t[2]] - centre)&(v[t[2]] - centre));
     }
 
-    assert(radiusSquared < 1.0e-15 && "Radius of search square is zero.");
+    assert(radiusSquared > 1.0e-15 && "Radius of search square is zero.");
 
     return searchSphere{centre, radiusSquared};
 }
@@ -279,7 +279,7 @@ polynomialVofInitialization::polynomialVofInitialization
     (
         IOobject
         (
-            "signedDist", 
+            "cellSignedDist", 
             runTime_.timeName(), 
             mesh, 
             IOobject::NO_READ,
@@ -289,7 +289,7 @@ polynomialVofInitialization::polynomialVofInitialization
         dimensionedScalar("signedDist", dimLength, 0.0),
         "zeroGradient"
     ),
-    signedDistance0_("signedDistance0", signedDistance_), 
+    signedDistance0_("cellSignedDistance0", signedDistance_), 
     faceSignedDistance_{mesh_.faces().size(), 1.0e15},
     vertexSignedDistance_{mesh_.points().size(), 1.0e15},
     interfaceCells_{},
@@ -330,6 +330,11 @@ const volScalarField& polynomialVofInitialization::signedDistance() const
 const volScalarField& polynomialVofInitialization::signedDistance0() const
 {
     return signedDistance0_;
+}
+
+label polynomialVofInitialization::maxRefinementLevel() const
+{
+    return max_used_refinement_level_;
 }
 
 //- Computation
@@ -420,8 +425,9 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
          << interfaceCells_.size() << endl;
 
     const auto& V = mesh_.V();
+    label max_refine = 0;
 
-    #pragma omp parallel for
+    #pragma omp parallel for reduction(max:max_refine)
     for (const auto cell_id : interfaceCells_)
     {
         auto subsetSurface= surfaceSubset(cell_id);
@@ -437,8 +443,11 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
 
         // Limit volume fraction field
         alpha[cell_id] = max(min(alpha[cell_id], 1.0), 0.0);
+
+        max_refine = std::max(refiner.refinementLevel(), max_refine);
     }
 
+    max_used_refinement_level_ = max_refine;
     Info << "Finished volume fraction calculation" << endl;
 }
 

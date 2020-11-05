@@ -5,7 +5,11 @@ import os
 from subprocess import call
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 
-parser = argparse.ArgumentParser(description='Runs the surfaceCellVofInit in each case directory that fits the pattern.')
+parser = argparse.ArgumentParser(description='Run an application in each case directory that fits the pattern.')
+
+parser.add_argument('application', type=str,
+                    choices=['surfaceCellVofInit', 'poFoamTestVofInit'],
+                    help='Name of the application to be run, e.g. surfaceCellVofInit.')
 
 parser.add_argument('--dir_pattern', dest="dir_pattern", type=str, required=True,
                     help='Pattern contained in the name of each initialization directory.')

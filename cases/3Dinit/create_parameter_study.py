@@ -15,13 +15,14 @@ parser.add_argument('--parameter_file', dest="parameter_file", type=str, require
                     help='PyFoam .parameter file')
 
 parser.add_argument('--template_case', dest="template_case", type=str, 
-                    help='OpenFOAM template case', default="templateCase")
+                    help='OpenFOAM template case. Default: templateCase', default="templateCase")
 
 parser.add_argument('--surface', dest="surface", type=str, required=True,
                     help='Name of the surface used for initialization: available surfaces see are .geo files in the templateCase directory.')
 
 parser.add_argument('--mesh_generator', dest="mesh_generator", type=str, default="", required=True,
-                    help='Supported mesh generators: blockMesh, cartesianMesh, tetMesh, polyMesh')
+                    choices=['blockMesh', 'cartesianMesh', 'tetMesh', 'pMesh'],
+                    help='Name of the mesh generation application for the volume Mesh.')
 
 parser.add_argument('--slurm', dest="slurm_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')

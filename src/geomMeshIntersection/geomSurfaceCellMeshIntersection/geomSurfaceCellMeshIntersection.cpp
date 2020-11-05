@@ -158,7 +158,7 @@ void geomSurfaceCellMeshIntersection::findIntersectedCells()
             }
         }
     }
-    assert((intersectedCellLabels_.size() < mesh.nCells())); 
+    assert((intersectedCellLabels_.size() < mesh_.nCells())); 
 }
 
 void geomSurfaceCellMeshIntersection::calcSignedDist()

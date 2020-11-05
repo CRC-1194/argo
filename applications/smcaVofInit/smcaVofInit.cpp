@@ -49,6 +49,9 @@ Author
 #include "polynomialVofInitialization.hpp"
 #include "geomTriSurfaceTools.hpp"
 
+#include <chrono>
+#include <iomanip>
+
 using namespace Foam::PolynomialVof;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -76,26 +79,34 @@ int main(int argc, char *argv[])
                     )
                  );
 
+    // Common options
     word fieldName = initDict.getOrDefault<word>("fieldName", "alpha.water");
     label refinementLevel = initDict.getOrDefault<label>("refinementLevel", -1);
     fileName surfaceFile = initDict.getOrDefault<fileName>("surfaceFile", args.path() + "/surface.stl");
-    Switch writeFields = initDict.getOrDefault<Switch>("writeFields", false);
     Switch invertVolumeFraction = initDict.getOrDefault<Switch>("invert", false);
+    // Testing / debugging related options
+    Switch writeFields = initDict.getOrDefault<Switch>("writeFields", false);
+    Switch writeTets = initDict.getOrDefault<Switch>("writeTets", false);
+    Switch checkVolume = initDict.getOrDefault<Switch>("checkVolume", false);
 
     // Comand line args
     args.readIfPresent<word>("fieldName", fieldName);
     args.readIfPresent<label>("refinementLevel", refinementLevel);
     args.readIfPresent<fileName>("surfaceFile", surfaceFile);
-    writeFields = args.found("writeFields");
     invertVolumeFraction = args.found("invert");
+    writeFields = args.found("writeFields");
+    writeTets = args.found("writeTets");
+    checkVolume = args.found("checkVolume");
 
     // Print configuration
     Info << "Configuration:"
          << "\n\tfieldName: " << fieldName
          << "\n\trefinementLevel: " << refinementLevel
          << "\n\tsurfaceFile: " << surfaceFile
-         << "\n\twriteFields: " << writeFields
          << "\n\tinvert volume fraction: " << invertVolumeFraction
+         << "\n\twriteFields: " << writeFields
+         << "\n\twriteTets: " << writeTets
+         << "\n\tcheckVolume: " << checkVolume
          << endl;
 
     // Initialization
@@ -104,28 +115,81 @@ int main(int argc, char *argv[])
     alpha = dimensionedScalar("alpha", dimless, 0); 
 
     // Compute the volume fraction field.
+    auto ctime0 = std::chrono::steady_clock::now();
     polynomialVofInitialization polyVofInit{mesh, surface, 3.0, IOobject::AUTO_WRITE, refinementLevel}; 
     polyVofInit.calcVolFraction(alpha);
+    auto ctime1 = std::chrono::steady_clock::now();
+    auto calcTime = 
+        std::chrono::duration_cast<std::chrono::microseconds>(ctime1-ctime0).count();
 
     if (invertVolumeFraction)
     {
         alpha = 1.0 - alpha;
     }
 
+    alpha.write(); 
+
+    // Begin testing and debugging
     if (writeFields)
     {
         polyVofInit.writeFields();
     }
 
-    scalar Valpha = sum(alpha * mesh.V()).value();
+    if (writeTets)
+    {
+        // TODO: implement in polyVof class
+    }
 
-    Info << "\nOverall volume given by " << fieldName
-         << ": " << Valpha << endl;
-    Info << "Relative fraction of overall mesh volume: "
-         << Valpha/sum(mesh.V()).value() << "\n" << endl;
+    if (checkVolume)
+    {
+        // This is taken from surfaceCellVofInit (TT)
+        if (Pstream::myProcNo() == 0) // Only compute on master rank in parallel. Thanks to TM.
+        {
+            scalar Vsurf = 0; 
 
-    alpha.write(); 
-        
+            const auto& surfacePoints = surface.points(); 
+            forAll(surface, triangleI) 
+            {
+                const auto& Sf = surface.Sf()[triangleI]; 
+                const auto& triangle = surface[triangleI]; 
+                Vsurf += dot(
+                    -Sf,  // Surface normals are oriented into the phase. 
+                    (surfacePoints[triangle[0]] + 
+                    surfacePoints[triangle[1]] + 
+                    surfacePoints[triangle[2]])
+                );
+            }
+
+            Vsurf *= 1./9.; 
+
+            scalar Valpha = gSum((mesh.V() * alpha)()); 
+            scalar Evsurf = std::abs(Valpha - Vsurf) / Vsurf; 
+
+            std::cout << std::setprecision(20) 
+                << "Volume by volume fraction = " << Valpha << nl
+                << "Volume of the surface mesh by divergence theorem (only closed surfaces!) = " << Vsurf << nl 
+                << "Volume error from surface interval = " << Evsurf << nl;
+
+            std::ofstream errorFile; 
+            errorFile.open("smcaVofInit.csv"); 
+            errorFile << "N_CELLS,"
+                << "N_TRIANGLES,"
+                << "VOLUME_FROM_VOLUME_FRACTION,"
+                << "VOLUME_FROM_SURFACE_INTEGRAL,"
+                << "VOLUME_ERROR_FROM_SURFACE_INTEGRAL,"
+                << "CPU_TIME_MICROSECONDS," 
+                << "MAX_REFINEMENT_LEVEL" << "\n"
+                << mesh.nCells() << "," 
+                << surface.size() << "," 
+                << std::setprecision(20) 
+                << Valpha << "," 
+                << Vsurf << "," 
+                << Evsurf << ","
+                << calcTime << ","
+                << polyVofInit.maxRefinementLevel() << "\n";
+        }
+    }
+
     Info<< "End" << endl;
 
     return 0;
