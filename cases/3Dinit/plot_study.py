@@ -89,6 +89,6 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     fig_cpu.legend(bbox_to_anchor=[0.15,0.95],loc="upper left", framealpha=0)
     # Save the figure.
     fig_cpu.savefig(os.path.join(data_dir, "CPUtime-%s-%s.pdf" % (pattern,alg_name)),
-                    bbox_inches='tight', shadow=True)
+                    bbox_inches='tight')
 
     return data

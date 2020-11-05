@@ -219,21 +219,6 @@ target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
     m
 )
 
-add_executable("poFoamTestVofInit${PROJECT_BUILD_TYPE}"
-               applications/poFoamTestVofInit/poFoamTestVofInit.cpp)
-target_include_directories("poFoamTestVofInit${PROJECT_BUILD_TYPE}" PRIVATE
-    ${${geolib}_SOURCE_DIR}/include/io
-)
-target_link_libraries("poFoamTestVofInit${PROJECT_BUILD_TYPE}"
-    "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
-    "geometricalMeshIntersection${PROJECT_BUILD_TYPE}"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
-
 # Preprocessing
 add_executable("cellCellVofInit"
                applications/cellCellVofInit/cellCellVofInit.cpp)
@@ -257,10 +242,10 @@ target_link_libraries("surfaceCellVofInit"
     m
 )
 
-add_executable("poFoamVofInit"
-               applications/poFoamVofInit/poFoamVofInit.cpp)
+add_executable("smcaVofInit"
+               applications/smcaVofInit/smcaVofInit.cpp)
 
-target_link_libraries("poFoamVofInit"
+target_link_libraries("smcaVofInit"
     "geometricalMeshIntersection"
     "polynomialVofInitialization"
     ${OF_FINITEVOLUME}
@@ -294,8 +279,7 @@ install(TARGETS "cellCellTestVofInit"
         "surfaceCellVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"
-        "poFoamTestVofInit"
-        "poFoamVofInit"
+        "smcaVofInit"
         "polynomialVofTest"
         "foamPerturbMesh"
         RUNTIME)

@@ -26,12 +26,24 @@
 
     argList::addBoolOption
     (
-        "writeFields",
-        "Write randomly placed surface and fields for each run."
+        "invert",
+        "Invert the computed volume fraction field: cells outside of the surface are set to 1."
     );
 
     argList::addBoolOption
     (
-        "invert",
-        "Invert the computed volume fraction field: cells outside of the surface are set to 1."
+        "writeFields",
+        "Write out all fields used by the initialization method"
+    );
+
+    argList::addBoolOption
+    (
+        "writeTets",
+        "Write the resulting tetrahedral decomposition for each interface cell."
+    );
+
+    argList::addBoolOption
+    (
+        "checkVolume",
+        "Check the volume given by volume fraction compared with the volume of the surface mesh. Works only with closed surfaces."
     );
