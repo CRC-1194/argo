@@ -427,7 +427,9 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     const auto& V = mesh_.V();
     label max_refine = 0;
 
-    #pragma omp parallel for reduction(max:max_refine)
+    // TODO: OpenMP disbaled for now. Loop does not execute correct with
+    // more than two threads. See issue on GitLab (TT)
+    //#pragma omp parallel for reduction(max:max_refine)
     for (const auto cell_id : interfaceCells_)
     {
         auto subsetSurface= surfaceSubset(cell_id);
