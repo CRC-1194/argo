@@ -102,7 +102,7 @@ class polynomialVofInitialization
         void calcSignedDist();  
 
         // Volume fraction calculation.
-        void calcVolFraction(volScalarField& alpha);
+        void calcVolFraction(volScalarField& alpha, const bool writeTets = false);
 
         // For testing purposes: split initialization (aka distance computations)
         // from the interface cell decomposition and VoF calculation (TT)

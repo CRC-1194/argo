@@ -414,7 +414,7 @@ void polynomialVofInitialization::initializeDistances()
     distances_initialized_ = true;
 }
 
-void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
+void polynomialVofInitialization::calcVolFraction(volScalarField& alpha, const bool writeTets)
 {
     initializeDistances();
 
@@ -439,14 +439,23 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
         
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
 
-        adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
+        adaptiveTetCellRefinement<triSurfaceAdapter> refiner
+                                                     {
+                                                         adapter,
+                                                         points,
+                                                         signed_dist,
+                                                         tets,
+                                                         max_refinement_level_,
+                                                         writeTets,
+                                                         cell_id
+                                                     };
         tetVofCalculator vofCalc{};
         alpha[cell_id] = vofCalc.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
 
         // Limit volume fraction field
         alpha[cell_id] = max(min(alpha[cell_id], 1.0), 0.0);
 
-        max_refine = std::max(refiner.refinementLevel(), max_refine);
+        max_refine = std::max(refiner.refinement_level(), max_refine);
     }
 
     max_used_refinement_level_ = max_refine;

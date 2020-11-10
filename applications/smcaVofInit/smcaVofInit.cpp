@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     // Compute the volume fraction field.
     auto ctime0 = std::chrono::steady_clock::now();
     polynomialVofInitialization polyVofInit{mesh, surface, 3.0, IOobject::AUTO_WRITE, refinementLevel}; 
-    polyVofInit.calcVolFraction(alpha);
+    polyVofInit.calcVolFraction(alpha, writeTets);
     auto ctime1 = std::chrono::steady_clock::now();
     auto calcTime = 
         std::chrono::duration_cast<std::chrono::microseconds>(ctime1-ctime0).count();
