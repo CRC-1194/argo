@@ -74,7 +74,6 @@ void polynomialVofInitialization::calcVertexSignedDistance()
     // Compute the signed distance at mesh vertices in the narrow band
     const auto& points = mesh_.points();
     const auto& map_cell_to_vertex = mesh_.cellPoints();
-    const auto& triNormals = surface_.faceNormals(); 
 
     forAll (signedDistance0_, cell_id)
     {
@@ -93,10 +92,9 @@ void polynomialVofInitialization::calcVertexSignedDistance()
             {
                 // Vertices are guaranteed to be close to the interface.
                 // So the search distance can be large (TT)
-                auto hit_info = triSearch_.nearest(points[v_id], vector{1.0e15, 1.0e15, 1.0e15});
+                auto [hit_info, distance] = sig_dist_calc_.signed_distance(points[v_id], 1e15);
                 vertexNearestTriangle_[v_id] = hit_info;
-                vector delta_v{points[v_id] - hit_info.hitPoint()};
-                vertexSignedDistance_[v_id] = mag(delta_v)*sign(delta_v&triNormals[hit_info.index()]);
+                vertexSignedDistance_[v_id] = distance;
             }
         }
     }
@@ -115,10 +113,7 @@ void polynomialVofInitialization::calcFaceSignedDistance()
         {
             if (faceSignedDistance_[face_id] == 1.0e15)
             {
-                auto hit_info = triSearch_.nearest(points[face_id], vector{1.0e15, 1.0e15, 1.0e15});
-                faceSignedDistance_[face_id] = 
-                    (points[face_id] - triPoints[surface_[hit_info.index()][0]]) & 
-                    triNormals[hit_info.index()];
+                faceSignedDistance_[face_id] = sig_dist_calc_.signed_distance(points[face_id]);
             }
         }
     }
@@ -260,6 +255,7 @@ polynomialVofInitialization::polynomialVofInitialization
     runTime_{mesh_.time()},
     surface_{surface},
     triSearch_{surface},
+    sig_dist_calc_{surface},
     sqrDistFactor_{max(3.0, sqrDistFactor)},
     cellNearestTriangle_{},
     vertexNearestTriangle_{},
@@ -348,28 +344,7 @@ void polynomialVofInitialization::calcSignedDist()
     // Zero the signed distance.
     signedDistance_ = dimensionedScalar{"signedDist", dimLength, 0};
 
-    // Use the octree and the square search distance multiplied by a distance factor 
-    // to build the surface mesh / volume mesh proximity information list. 
-    triSearch_.findNearest(
-        mesh_.C(),
-        sqrDistFactor_ * sqrDistFactor_ * sqrSearchDist_,
-        cellNearestTriangle_
-    );
-
-    // Compute the signed distance in each cell as the distance between the triangle
-    // nearest to the cell center and the cell center.
-    const volVectorField& C = mesh_.C();  
-    const vectorField& triNormals = surface_.faceNormals(); 
-    forAll(cellNearestTriangle_, cellI)
-    {
-        const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
-
-        if (cellHit.hit()) 
-        {
-            vector delta_v{C[cellI] - cellHit.hitPoint()};
-            signedDistance_[cellI] = mag(delta_v)*sign(delta_v&triNormals[cellHit.index()]);
-        }
-    }
+    signedDistance_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_);
 
     // Save the signed distance field given by the octree.
     signedDistance0_ = signedDistance_; 

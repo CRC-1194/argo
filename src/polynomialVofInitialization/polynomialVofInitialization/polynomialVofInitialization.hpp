@@ -2,6 +2,7 @@
 #define polynomialVofInitialization_hpp
 
 #include "AdaptiveTetCellRefinement.hpp"
+#include "signedDistanceCalculator.hpp"
 
 // OpenFOAM includes
 #include "fvMesh.H"
@@ -33,6 +34,7 @@ class polynomialVofInitialization
         const Time& runTime_;
         const triSurface& surface_;
         triSurfaceSearch triSearch_;
+        SigDistCalc::signedDistanceCalculator sig_dist_calc_;
         
         // Factor used to extend the narrow band by N cells. 
         // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 

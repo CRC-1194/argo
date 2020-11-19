@@ -1,0 +1,24 @@
+#!/bin/sh
+cd ${0%/*} || exit 1                        # Run from this directory
+. $WM_PROJECT_DIR/bin/tools/RunFunctions    # Tutorial run functions
+
+echo ""
+echo "#-----------------------------------------------------------#"
+echo "  The Imperial Star Destroyer II interface is taken from"
+echo "  https://www.thingiverse.com/thing:1779687"
+echo "  All credits for the interface go to dantesgift and the"
+echo "  people mentioned on the website."
+echo "#-----------------------------------------------------------#"
+echo ""
+
+# Preprocessing
+cp -r 0.org 0
+runApplication cartesianMesh
+runApplication checkMesh
+
+# Initialization
+runApplication smcaVofInit -checkVolume -writeFields -surfaceFile ISD2.stl
+
+# Postprocessing
+runApplication foamToVTK
+#------------------------------------------------------------------------------

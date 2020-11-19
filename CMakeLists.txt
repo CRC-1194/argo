@@ -106,6 +106,18 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 # Build the library
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
+add_library("signedDistanceCalculator" SHARED
+    src/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator.cpp
+)
+
+target_include_directories("signedDistanceCalculator" PUBLIC
+    src/signedDistanceCalculation/signedDistanceCalculator
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+
 add_library("geometricalMeshIntersection" SHARED
     src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
     src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
@@ -152,6 +164,7 @@ target_include_directories("polynomialVofInitialization" SYSTEM PUBLIC
     ${of_src_path}/OpenFOAM/lnInclude
 )
 target_link_libraries("polynomialVofInitialization"
+    "signedDistanceCalculator"
     ${OpenMP_CXX_LIBRARIES}
 )
 
@@ -159,6 +172,7 @@ target_link_libraries("polynomialVofInitialization"
 #target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
 
 # Install the libraries 
+install(TARGETS "signedDistanceCalculator" LIBRARY)
 install(TARGETS "geometricalMeshIntersection" LIBRARY)
 install(TARGETS "polynomialVofInitialization" LIBRARY)
 
@@ -255,6 +269,26 @@ target_link_libraries("smcaVofInit"
     m
 )
 
+add_executable("signedDistanceTestCalc"
+               applications/signedDistanceTestCalc/signedDistanceTestCalc.cpp)
+target_include_directories("signedDistanceTestCalc" PRIVATE
+    applications/signedDistanceTestCalc
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/fileFormats/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("signedDistanceTestCalc"
+    "signedDistanceCalculator"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 add_executable("foamPerturbMesh"
                applications/foamPerturbMesh/foamPerturbMesh.cpp)
 target_include_directories("foamPerturbMesh" PRIVATE 
@@ -280,6 +314,7 @@ install(TARGETS "cellCellTestVofInit"
         "cellCellVofInit"
         "geophaseUnitTest"
         "smcaVofInit"
+        "signedDistanceTestCalc"
         "polynomialVofTest"
         "foamPerturbMesh"
         RUNTIME)
