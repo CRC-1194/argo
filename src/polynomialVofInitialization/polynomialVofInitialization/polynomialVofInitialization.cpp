@@ -1,5 +1,6 @@
 #include "polynomialVofInitialization.hpp"
 
+#include "insideOutsidePropagation.hpp"
 #include "orientedPlane.hpp"
 #include "tetVofCalculator.hpp"
 #include "triSurfaceAdapter.hpp"
@@ -341,34 +342,9 @@ void polynomialVofInitialization::calcSqrSearchDist()
 
 void polynomialVofInitialization::calcSignedDist()
 {
-    // Zero the signed distance.
-    signedDistance_ = dimensionedScalar{"signedDist", dimLength, 0};
+    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_);
 
-    signedDistance_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_);
-
-    // Save the signed distance field given by the octree.
-    signedDistance0_ = signedDistance_; 
-
-    // Propagate the sign information into the bulk by solving a Laplace
-    // equation for a single iteration for the signed distance field. 
-    fvScalarMatrix distEqn
-    (
-        -fvm::laplacian(signedDistance_)
-    );
-
-    for (auto iteration = 0; iteration != 3; ++iteration)
-    {
-        distEqn.solve();
-
-        // Reset signed distance in the narrow band
-        forAll(signedDistance0_, idx)
-        {
-            if (signedDistance0_[idx] != 0.0)
-            {
-                signedDistance_[idx] = signedDistance0_[idx];
-            }
-        }
-    }
+    signedDistance_ = SigDistCalc::insideOutsidePropagation{}.propagate_inside_outside(signedDistance0_);
 }
 
 void polynomialVofInitialization::initializeDistances()

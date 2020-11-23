@@ -108,10 +108,13 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 #       Check which type is required / reasonable for this project (TT)
 add_library("signedDistanceCalculator" SHARED
     src/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator.cpp
+    src/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
 )
 
 target_include_directories("signedDistanceCalculator" PUBLIC
     src/signedDistanceCalculation/signedDistanceCalculator
+    src/signedDistanceCalculation/insideOutsidePropagation
+    ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
