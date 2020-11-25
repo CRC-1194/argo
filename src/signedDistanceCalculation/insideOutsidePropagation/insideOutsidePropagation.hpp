@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2020 AUTHOR,AFFILIATION
+    Copyright (C) 2020 Tobias Tolle, TU Darmstadt
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
