@@ -64,14 +64,14 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     const word fieldName = 
-        args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
+        args.getOrDefault<word>("fieldName", "alpha.water"); 
 
     const label sqrDistFactor = 
-        args.optionLookupOrDefault<scalar>("sqrDistFactor", 2); 
+        args.getOrDefault<scalar>("sqrDistFactor", 3); 
 
     fileName triFile = args.path() + "/meshed-surface.vtk";
-    if (args.optionFound("surfaceFile"))
-        triFile = args.optionRead<fileName>("surfaceFile");
+    if (args.found("surfaceFile"))
+        triFile = args.get<fileName>("surfaceFile");
 
     triSurface triSurf(triFile);
 
@@ -101,11 +101,11 @@ int main(int argc, char *argv[])
     // Write the volume fraction field.
     alpha.write(); 
 
-    if (args.optionFound("writeAllFields"))
+    if (args.found("writeAllFields"))
         meshIntersection.writeFields(); 
 
 
-    if (args.optionFound("checkVolume"))
+    if (args.found("checkVolume"))
     {
         if (Pstream::myProcNo() == 0) // Only compute on master rank in parallel. TM.
         {
