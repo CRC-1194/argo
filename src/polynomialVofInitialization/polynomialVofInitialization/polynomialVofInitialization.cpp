@@ -1,5 +1,6 @@
 #include "polynomialVofInitialization.hpp"
 
+#include "insideOutsidePropagation.hpp"
 #include "orientedPlane.hpp"
 #include "tetVofCalculator.hpp"
 #include "triSurfaceAdapter.hpp"
@@ -74,7 +75,6 @@ void polynomialVofInitialization::calcVertexSignedDistance()
     // Compute the signed distance at mesh vertices in the narrow band
     const auto& points = mesh_.points();
     const auto& map_cell_to_vertex = mesh_.cellPoints();
-    const auto& triNormals = surface_.faceNormals(); 
 
     forAll (signedDistance0_, cell_id)
     {
@@ -93,10 +93,9 @@ void polynomialVofInitialization::calcVertexSignedDistance()
             {
                 // Vertices are guaranteed to be close to the interface.
                 // So the search distance can be large (TT)
-                auto hit_info = triSearch_.nearest(points[v_id], vector{1.0e15, 1.0e15, 1.0e15});
+                auto [hit_info, distance] = sig_dist_calc_.signed_distance(points[v_id], 1e15);
                 vertexNearestTriangle_[v_id] = hit_info;
-                vector delta_v{points[v_id] - hit_info.hitPoint()};
-                vertexSignedDistance_[v_id] = mag(delta_v)*sign(delta_v&triNormals[hit_info.index()]);
+                vertexSignedDistance_[v_id] = distance;
             }
         }
     }
@@ -115,10 +114,7 @@ void polynomialVofInitialization::calcFaceSignedDistance()
         {
             if (faceSignedDistance_[face_id] == 1.0e15)
             {
-                auto hit_info = triSearch_.nearest(points[face_id], vector{1.0e15, 1.0e15, 1.0e15});
-                faceSignedDistance_[face_id] = 
-                    (points[face_id] - triPoints[surface_[hit_info.index()][0]]) & 
-                    triNormals[hit_info.index()];
+                faceSignedDistance_[face_id] = sig_dist_calc_.signed_distance(points[face_id]);
             }
         }
     }
@@ -260,6 +256,7 @@ polynomialVofInitialization::polynomialVofInitialization
     runTime_{mesh_.time()},
     surface_{surface},
     triSearch_{surface},
+    sig_dist_calc_{surface},
     sqrDistFactor_{max(3.0, sqrDistFactor)},
     cellNearestTriangle_{},
     vertexNearestTriangle_{},
@@ -345,55 +342,9 @@ void polynomialVofInitialization::calcSqrSearchDist()
 
 void polynomialVofInitialization::calcSignedDist()
 {
-    // Zero the signed distance.
-    signedDistance_ = dimensionedScalar{"signedDist", dimLength, 0};
+    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_);
 
-    // Use the octree and the square search distance multiplied by a distance factor 
-    // to build the surface mesh / volume mesh proximity information list. 
-    triSearch_.findNearest(
-        mesh_.C(),
-        sqrDistFactor_ * sqrDistFactor_ * sqrSearchDist_,
-        cellNearestTriangle_
-    );
-
-    // Compute the signed distance in each cell as the distance between the triangle
-    // nearest to the cell center and the cell center.
-    const volVectorField& C = mesh_.C();  
-    const vectorField& triNormals = surface_.faceNormals(); 
-    forAll(cellNearestTriangle_, cellI)
-    {
-        const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
-
-        if (cellHit.hit()) 
-        {
-            vector delta_v{C[cellI] - cellHit.hitPoint()};
-            signedDistance_[cellI] = mag(delta_v)*sign(delta_v&triNormals[cellHit.index()]);
-        }
-    }
-
-    // Save the signed distance field given by the octree.
-    signedDistance0_ = signedDistance_; 
-
-    // Propagate the sign information into the bulk by solving a Laplace
-    // equation for a single iteration for the signed distance field. 
-    fvScalarMatrix distEqn
-    (
-        -fvm::laplacian(signedDistance_)
-    );
-
-    for (auto iteration = 0; iteration != 3; ++iteration)
-    {
-        distEqn.solve();
-
-        // Reset signed distance in the narrow band
-        forAll(signedDistance0_, idx)
-        {
-            if (signedDistance0_[idx] != 0.0)
-            {
-                signedDistance_[idx] = signedDistance0_[idx];
-            }
-        }
-    }
+    signedDistance_ = SigDistCalc::insideOutsidePropagation{}.propagate_inside_outside(signedDistance0_);
 }
 
 void polynomialVofInitialization::initializeDistances()
@@ -414,7 +365,7 @@ void polynomialVofInitialization::initializeDistances()
     distances_initialized_ = true;
 }
 
-void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
+void polynomialVofInitialization::calcVolFraction(volScalarField& alpha, const bool writeTets)
 {
     initializeDistances();
 
@@ -427,7 +378,9 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
     const auto& V = mesh_.V();
     label max_refine = 0;
 
-    #pragma omp parallel for reduction(max:max_refine)
+    // TODO: OpenMP disbaled for now. Loop does not execute correct with
+    // more than two threads. See issue on GitLab (TT)
+    //#pragma omp parallel for reduction(max:max_refine)
     for (const auto cell_id : interfaceCells_)
     {
         auto subsetSurface= surfaceSubset(cell_id);
@@ -437,14 +390,23 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha)
         
         auto [tets, points, signed_dist] = decomposeCell(cell_id);
 
-        adaptiveTetCellRefinement<triSurfaceAdapter> refiner{adapter, points, signed_dist, tets, max_refinement_level_};
+        adaptiveTetCellRefinement<triSurfaceAdapter> refiner
+                                                     {
+                                                         adapter,
+                                                         points,
+                                                         signed_dist,
+                                                         tets,
+                                                         max_refinement_level_,
+                                                         writeTets,
+                                                         cell_id
+                                                     };
         tetVofCalculator vofCalc{};
         alpha[cell_id] = vofCalc.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
 
         // Limit volume fraction field
         alpha[cell_id] = max(min(alpha[cell_id], 1.0), 0.0);
 
-        max_refine = std::max(refiner.refinementLevel(), max_refine);
+        max_refine = std::max(refiner.refinement_level(), max_refine);
     }
 
     max_used_refinement_level_ = max_refine;

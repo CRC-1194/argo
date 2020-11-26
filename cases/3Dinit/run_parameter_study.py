@@ -8,7 +8,7 @@ from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 parser = argparse.ArgumentParser(description='Run an application in each case directory that fits the pattern.')
 
 parser.add_argument('application', type=str,
-                    choices=['surfaceCellVofInit', 'poFoamTestVofInit'],
+                    choices=['surfaceCellVofInit', 'smcaVofInit'],
                     help='Name of the application to be run, e.g. surfaceCellVofInit.')
 
 parser.add_argument('--dir_pattern', dest="dir_pattern", type=str, required=True,
@@ -37,6 +37,10 @@ if __name__ == '__main__':
                      "-checkVolume", 
                      "-surfaceFile", 
                      args.surface_file] 
+    smca_init_call = ["smcaVofInit",
+                       "-checkVolume",
+                       "-surfaceFile",
+                       args.surface_file]
 
     for parameter_dir in parameter_dirs: 
         pwd = os.getcwd()
@@ -62,6 +66,9 @@ if __name__ == '__main__':
             call(base_command + variable_command, shell=True)
 
         else: 
-            call(vof_init_call)
+            if args.application == "smcaVofInit":
+                call(smca_init_call)
+            elif args.application == "surfaceCellVofInit":
+                call(vof_init_call)
 
         os.chdir(pwd)

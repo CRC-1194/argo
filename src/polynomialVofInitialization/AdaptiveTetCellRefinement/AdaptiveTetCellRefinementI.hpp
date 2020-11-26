@@ -25,17 +25,16 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 template<class T>
 std::array<scalar, 6> adaptiveTetCellRefinement<T>::edge_lengths(const indexedTet& tet) const
 {
     std::array<scalar, 6> lengths{};
-    auto tet_edges = edges(tet);
+    const auto tet_edges = edges(tet);
 
     for (int idx = 0; idx != 6; ++idx)
     {
-        auto [p_id, q_id] = tet_edges[idx];
+        const auto [p_id, q_id] = tet_edges[idx];
         lengths[idx] = sqrt(distance_squared(points_[p_id], points_[q_id]));
     }
 
@@ -51,7 +50,7 @@ label adaptiveTetCellRefinement<T>::compute_max_refinement_level()
 
     for (const auto& tet : tets_)
     {
-        auto lengths = edge_lengths(tet);
+        const auto lengths = edge_lengths(tet);
         avg_length += std::accumulate(lengths.begin(), lengths.end(), 0.0);
     }
 
@@ -78,18 +77,20 @@ void adaptiveTetCellRefinement<T>::compute_decomposition()
 
     for (int level = 0; level != max_refinement_level_; ++level)
     {
-        auto n_refined_tets = flag_tets_for_refinement(level);
+        const auto n_refined_tets = flag_tets_for_refinement(level);
         update_tet_container_sizes(level, n_refined_tets*n_tets_from_decomposition);
         update_edge_to_point_map(level);
         create_refined_tets(level);
         compute_signed_distances(level);
     }
+
+    decomposition_performed_ = true;
 }
 
 template<class T>
-label adaptiveTetCellRefinement<T>::flag_tets_for_refinement(int level) 
+label adaptiveTetCellRefinement<T>::flag_tets_for_refinement(const int level) 
 {
-    auto [start, end] = level_to_tetid_range_[level];
+    const auto [start, end] = level_to_tetid_range_[level];
 
     auto n_tets_to_refine = 0;
 
@@ -109,7 +110,7 @@ label adaptiveTetCellRefinement<T>::flag_tets_for_refinement(int level)
 template<class T>
 bool adaptiveTetCellRefinement<T>::has_to_be_refined(const indexedTet& tet) const
 {
-    auto [max_dist_sqr, max_p_id] = maxiumum_distance_sqr_and_pointid(tet);
+    const auto [max_dist_sqr, max_p_id] = maxiumum_distance_sqr_and_pointid(tet);
 
     // Bounding sphere criterion (TT)
     for (const auto p_id : tet)
@@ -148,7 +149,7 @@ scalar adaptiveTetCellRefinement<T>::distance_squared(const point& p_a, const po
 }
 
 template<class T>
-void adaptiveTetCellRefinement<T>::update_tet_container_sizes(int level, int n_new_tets)
+void adaptiveTetCellRefinement<T>::update_tet_container_sizes(const int level, const int n_new_tets)
 {
     // Update vector sizes related to the number of tets
     level_to_tetid_range_[level + 1] = indexTuple{tets_.size(), tets_.size() + n_new_tets};
@@ -158,7 +159,7 @@ void adaptiveTetCellRefinement<T>::update_tet_container_sizes(int level, int n_n
     // NOTE: only tets whose refine flag is false are returned by the public
     // member functions. Thus, default initialize the newly added fields to
     // false.
-    auto [next_start, next_end] = level_to_tetid_range_[level + 1];
+    const auto [next_start, next_end] = level_to_tetid_range_[level + 1];
     for (auto idx = next_start; idx != next_end; ++idx)
     {
         refinement_required_[idx] = false;
@@ -166,7 +167,7 @@ void adaptiveTetCellRefinement<T>::update_tet_container_sizes(int level, int n_n
 }
 
 template<class T>
-void adaptiveTetCellRefinement<T>::add_to_map(std::array<edge, 6> tet_edges)
+void adaptiveTetCellRefinement<T>::add_to_map(const std::array<edge, 6> tet_edges)
 {
     for (const auto tet_edge : tet_edges)
     {
@@ -175,11 +176,11 @@ void adaptiveTetCellRefinement<T>::add_to_map(std::array<edge, 6> tet_edges)
 }
 
 template<class T>
-void adaptiveTetCellRefinement<T>::update_edge_to_point_map(int level)
+void adaptiveTetCellRefinement<T>::update_edge_to_point_map(const int level)
 {
     edge_to_point_id_.clear();
 
-    auto [start, end] = level_to_tetid_range_[level];
+    const auto [start, end] = level_to_tetid_range_[level];
 
     for (auto idx = start; idx != end; ++idx)
     {
@@ -190,7 +191,7 @@ void adaptiveTetCellRefinement<T>::update_edge_to_point_map(int level)
     }
 
     // Update container sizes
-    auto n_new_points = edge_to_point_id_.size();
+    const auto n_new_points = edge_to_point_id_.size();
     level_to_pointid_range_[level + 1] = indexTuple{points_.size(), points_.size() + n_new_points};
     points_.resize(points_.size() + n_new_points);
     signed_distance_.resize(signed_distance_.size() + n_new_points);
@@ -221,7 +222,7 @@ std::array<std::tuple<label, label>, 6> adaptiveTetCellRefinement<T>::edges(cons
 template<class T>
 void adaptiveTetCellRefinement<T>::create_refined_tets(int level)
 {
-    auto [start, end] = level_to_tetid_range_[level];
+    const auto [start, end] = level_to_tetid_range_[level];
     auto refined_tet_id = end;
 
     for (auto idx = start; idx != end; ++idx)
@@ -235,7 +236,7 @@ void adaptiveTetCellRefinement<T>::create_refined_tets(int level)
 }
 
 template<class T>
-void adaptiveTetCellRefinement<T>::decompose_and_add_new_tets(const indexedTet& tet, label start_id)
+void adaptiveTetCellRefinement<T>::decompose_and_add_new_tets(const indexedTet& tet, const label start_id)
 {
     auto tet_edges = edges(tet);
 
@@ -259,9 +260,9 @@ void adaptiveTetCellRefinement<T>::decompose_and_add_new_tets(const indexedTet& 
     // TODO: Not clear if taking the minimal distance results in more regular
     // tets. Needs testing. (TT)
     // NOTE: first tests look promosing (TT)
-    auto d0 = distance_squared(points_[pids[0]], points_[pids[5]]);
-    auto d1 = distance_squared(points_[pids[1]], points_[pids[4]]);
-    auto d2 = distance_squared(points_[pids[2]], points_[pids[3]]);
+    const auto d0 = distance_squared(points_[pids[0]], points_[pids[5]]);
+    const auto d1 = distance_squared(points_[pids[1]], points_[pids[4]]);
+    const auto d2 = distance_squared(points_[pids[2]], points_[pids[3]]);
 
     // Tets solely constituted by by points from refinement
     if (d0 < d1 && d0 < d2)
@@ -288,14 +289,84 @@ void adaptiveTetCellRefinement<T>::decompose_and_add_new_tets(const indexedTet& 
 }
 
 template<class T>
-void adaptiveTetCellRefinement<T>::compute_signed_distances(int level)
+void adaptiveTetCellRefinement<T>::compute_signed_distances(const int level)
 {
-    auto [start, end] = level_to_pointid_range_[level + 1];
+    const auto [start, end] = level_to_pointid_range_[level + 1];
 
     for (auto idx = start; idx != end; ++idx)
     {
         signed_distance_[idx] = surface_.signedDistance(points_[idx]);
     }
+}
+
+template<class T>
+void adaptiveTetCellRefinement<T>::save_decomposition_as_vtk
+(
+    const std::vector<indexedTet>& tets,
+    const std::vector<point>& points,
+    const std::vector<scalar>& signed_distance,
+    const std::vector<label>& refinement_levels,
+    std::string file_name
+) const
+{
+    // Use VTK legacy format for now for the sake of simplicity (TT)
+    std::ofstream out_file;
+    // Ensure directory exists
+    std::filesystem::create_directory("VTK");
+    out_file.open("VTK/"+file_name);
+
+    // Header
+    out_file << "# vtk DataFile Version 3.0\n";
+
+    out_file << "Tetrahedral decomposition of a cell.\n";
+    out_file << "ASCII\n";
+    out_file << "DATASET UNSTRUCTURED_GRID\n";
+
+    // Write points
+    out_file << "POINTS " << std::to_string(points.size()) << " double\n";
+    for (const auto& p : points)
+    {
+        out_file << std::to_string(p[0]) << " "
+                 << std::to_string(p[1]) << " "
+                 << std::to_string(p[2]) << "\n";
+    }
+
+    // Write tets
+    out_file << "CELLS " << std::to_string(tets.size()) << " "
+             << std::to_string(5*tets.size()) << "\n";
+    for (const auto& tet : tets)
+    {
+        out_file << "4 "
+                 << std::to_string(tet[0]) << " "
+                 << std::to_string(tet[1]) << " "
+                 << std::to_string(tet[2]) << " "
+                 << std::to_string(tet[3]) << "\n";
+    }
+    out_file << "CELL_TYPES " << std::to_string(tets.size()) << "\n";
+    for (uint idx = 0; idx != tets.size(); ++idx)
+    {
+        out_file << "10\n";
+    }
+
+    // Write signed distance
+    out_file << "POINT_DATA " << std::to_string(points.size()) << "\n";
+    out_file << "Scalars signed_distance double 1\n";
+    out_file << "LOOKUP_TABLE default\n";
+    for (const auto phi : signed_distance)
+    {
+        out_file << std::to_string(phi) << "\n";
+    }
+
+    // Write volume fraction as cell data
+    out_file << "CELL_DATA " << std::to_string(tets.size()) << "\n";
+    out_file << "Scalars refinement_level double 1\n";
+    out_file << "LOOKUP_TABLE default\n";
+    for (const label alpha : refinement_levels)
+    {
+        out_file << std::to_string(alpha) << "\n";
+    }
+
+    out_file.close();
 }
 
 
@@ -307,7 +378,9 @@ adaptiveTetCellRefinement<T>::adaptiveTetCellRefinement
     const std::vector<point> points,
     const std::vector<scalar> signed_distance,
     const std::vector<indexedTet> tets,
-    const label max_refine_level
+    const label max_refine_level,
+    const bool write_tets,
+    const label cell_ID
 )
     :
     surface_{surface},
@@ -318,7 +391,9 @@ adaptiveTetCellRefinement<T>::adaptiveTetCellRefinement
     edge_to_point_id_{},
     level_to_pointid_range_{},
     level_to_tetid_range_{},
-    max_refinement_level_{max_refine_level}
+    max_refinement_level_{max_refine_level},
+    write_tets_{write_tets},
+    cell_ID_{cell_ID}
 {
     if (max_refinement_level_ < 0)
     {
@@ -353,11 +428,11 @@ const std::vector<scalar>& adaptiveTetCellRefinement<T>::signed_distance()
 template<class T>
 std::vector<indexedTet> adaptiveTetCellRefinement<T>::resulting_tets()
 {
-    compute_decomposition();
-
     std::vector<indexedTet> final_tets{};
 
-    auto n_tets = std::count(refinement_required_.begin(), refinement_required_.end(), false);
+    compute_decomposition();
+
+    const auto n_tets = std::count(refinement_required_.begin(), refinement_required_.end(), false);
 
     final_tets.resize(n_tets);
 
@@ -371,11 +446,22 @@ std::vector<indexedTet> adaptiveTetCellRefinement<T>::resulting_tets()
          }
     }
 
+    if (write_tets_)
+    {
+        save_decomposition_as_vtk
+        (
+            final_tets, points_,
+            signed_distance_,
+            refinement_levels(n_tets),
+            "cell-"+std::to_string(cell_ID_)+"-decomposition.vtk"
+        );
+    }
+
     return final_tets;
 }
 
 template<class T>
-label adaptiveTetCellRefinement<T>::refinementLevel() const
+label adaptiveTetCellRefinement<T>::refinement_level() const
 {
     return max_refinement_level_;
 }
@@ -384,6 +470,7 @@ template<class T>
 void adaptiveTetCellRefinement<T>::print_level_infos() const
 {
     Info << "Number of tets and points per level\n";
+
     for (auto level = 0; level <= max_refinement_level_; ++level)
     {
         auto [tstart, tend] = level_to_tetid_range_[level];
@@ -391,7 +478,6 @@ void adaptiveTetCellRefinement<T>::print_level_infos() const
         Info << "Level = " << level << ":\n"
              << "\tn_tets = " << (tend - tstart) << "\n"
              << "\tn_points = " << (pend - pstart) << "\n";
-
     }
 }
 
@@ -420,5 +506,31 @@ void adaptiveTetCellRefinement<T>::print_points() const
 
         Info << "p_id = " << idx << ": " << p << "\n";
     }
+}
+
+template<class T>
+std::vector<label> adaptiveTetCellRefinement<T>::refinement_levels(const label n_tets)
+{
+    std::vector<label> tet_ref_levels(n_tets);
+
+    label tet_id = 0;
+
+    compute_decomposition();
+    
+    for (int level = max_refinement_level_; level >= 0; --level)
+    {
+        const auto [idx_end, idx_start] = level_to_tetid_range_[level];
+
+        for (int idx = idx_start - 1; idx >= idx_end; --idx)
+        {
+            if (refinement_required_[idx] == false)
+            {
+                tet_ref_levels[tet_id] = level;
+                ++tet_id;
+            }
+        }
+    }
+
+    return tet_ref_levels;
 }
 // ************************************************************************* //

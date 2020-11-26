@@ -2,6 +2,7 @@
 #define polynomialVofInitialization_hpp
 
 #include "AdaptiveTetCellRefinement.hpp"
+#include "signedDistanceCalculator.hpp"
 
 // OpenFOAM includes
 #include "fvMesh.H"
@@ -33,6 +34,7 @@ class polynomialVofInitialization
         const Time& runTime_;
         const triSurface& surface_;
         triSurfaceSearch triSearch_;
+        SigDistCalc::signedDistanceCalculator sig_dist_calc_;
         
         // Factor used to extend the narrow band by N cells. 
         // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
@@ -102,7 +104,7 @@ class polynomialVofInitialization
         void calcSignedDist();  
 
         // Volume fraction calculation.
-        void calcVolFraction(volScalarField& alpha);
+        void calcVolFraction(volScalarField& alpha, const bool writeTets = false);
 
         // For testing purposes: split initialization (aka distance computations)
         // from the interface cell decomposition and VoF calculation (TT)

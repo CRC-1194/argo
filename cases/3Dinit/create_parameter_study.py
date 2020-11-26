@@ -24,6 +24,9 @@ parser.add_argument('--mesh_generator', dest="mesh_generator", type=str, default
                     choices=['blockMesh', 'cartesianMesh', 'tetMesh', 'pMesh'],
                     help='Name of the mesh generation application for the volume Mesh.')
 
+parser.add_argument('--perturb_mesh', dest="alpha_perturb", type=float, default=0.0,
+                    help="Perturb mesh with foamPerturbMesh. Alpha in [0, 0.5] prescribes the amount of perturbation.")
+
 parser.add_argument('--slurm', dest="slurm_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')
 
@@ -87,6 +90,9 @@ if __name__ == '__main__':
             variable_command=" --job-name %s -o %s.log gmsh -2 %s.geo -o %s.vtk >/dev/null 2>&1 &" % (args.surface, args.surface, args.surface, args.surface)
             call(base_command + variable_command, shell=True)
 
+            if args.alpha_perturb > 0.0:
+                print("Sorry: mesh perturbation not implemented yet for SLURM.")
+
         else:
 
             print("Serial mesh generation...")
@@ -95,5 +101,9 @@ if __name__ == '__main__':
             print("Using GMSH file %s for surface generation." % geo_file)
             if (os.path.exists(geo_file) and os.path.isfile(geo_file)):
                 call(["gmsh", "-2", geo_file, "-o", "%s.vtk" % args.surface])
+            if args.alpha_perturb > 0.0:
+                print("Perturbing mesh with foamPerturbMesh using alpha = %f" % args.alpha_perturb)
+                call(["foamPerturbMesh", "-alpha", "%f" % args.alpha_perturb])
+                call(["cp", "0/polyMesh/points", "constant/polyMesh"])
 
         os.chdir(pwd)
