@@ -288,7 +288,6 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         geophase::vtk_file_name("cutMesh", runTime_.timeIndex())
     ); 
 
-
     // Correct the volume fractions geometrically in the intersected cells. 
     nTrianglesPerCell_ = 0;
     //forAll(intersectedCellLabels_, cellL) TODO: Remove
@@ -334,6 +333,10 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                             max(mag(xI - xT), mag(xJ - xT))
                     ); // Tetrahedron radius.
 
+                    const double tetVolume = (1. / 6.) * std::abs( 
+                        ((x0 - xC) &  ((xI - xC) ^ (xJ - xC)))
+                    ); 
+
                     // Intersect the tetrahedron with all the triangles from the sphere. 
                     // - Get labels of triangles that are inside the sphere that contains
                     //   the intersected tetrahedron.
@@ -350,6 +353,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
 
                         // Initialize the tetrahedron intersection. 
                         geophase::foamVectorPolyhedron tetIntersection {tetrahedron};
+                        geophase::foamVectorPolyhedron invTetIntersection {tetrahedron};
                         nTrianglesPerCell_ += triangleLabels.size();
                         for (const auto& triangleL : triangleLabels)
                         {
@@ -362,17 +366,27 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                                         triNormals[triangleL]
                                     )
                             ).polyhedron();
+                            invTetIntersection = 
+                                intersect_tolerance<geophase::foamPolyhedronIntersection>(
+                                    tetIntersection, 
+                                    foamHalfspace(
+                                        triPoints[triSurf_[triangleL][0]], 
+                                        -1. * triNormals[triangleL]
+                                    )
+                            ).polyhedron();
                         }
                         // Add the volume of the intersection to the phase-specific volume.  
-                        alpha[cellI] += volume_by_surf_tri(tetIntersection);
+                        // Use the inverted cut volume to correct for surface convexity / non-convexity.
+                        double cutVolume = volume_by_surf_tri(tetIntersection); 
+                        double cutVolumeInv = tetVolume - volume_by_surf_tri(invTetIntersection);
+                        alpha[cellI] += min(cutVolume, cutVolumeInv);  
+
                         cutMeshStream << tetIntersection;
                     }
                     else if (dists.all()) // If tetrahedron is inside surface.
                     {
                         // Add the mixed product tet volume to the alpha cell value. 
-                        alpha[cellI] += (1. / 6.) * std::abs( 
-                            ((x0 - xC) &  ((xI - xC) ^ (xJ - xC)))
-                        ); 
+                        alpha[cellI] += tetVolume;
                     }
 
                 }
@@ -381,6 +395,8 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         }
     }
     nTrianglesPerCell_ /= intersectedCellLabels_.size();
+
+    /*
 
     // Correct volume fractions. 
     const auto& cellPointLists = mesh_.cellPoints();
@@ -404,6 +420,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         if (!cutCell && (cellSignedDist_[cellI] < 0))
             alpha[cellI] = 1.;
     }
+    */
 }
 
 void geomSurfaceCellMeshIntersection::writeFields() const
