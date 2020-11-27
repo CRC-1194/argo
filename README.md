@@ -34,9 +34,23 @@ g++ and CMake are available as packages or modules on an HPC cluster, gmsh binar
     sudo apt update
     sudo apt install gcc-9 g++-9
 
-Select gcc-9 g++-9 as default by
+Add to the list of gcc and g++ compiler alternativesThen setup the 
 
-    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 900 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 9
+    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9
+
+Select the corresponding version 9 for gcc
+
+    sudo update-alternatives --config gcc
+
+and gcc version 9 
+
+    sudo update-alternatives --config g++
+
+by selection of the corresponding number of your compiler. Check whether the selection has been successfull via
+
+    gcc --version
+    g++ --version
 
 * OpenFOAM-plus (v1906)
 
