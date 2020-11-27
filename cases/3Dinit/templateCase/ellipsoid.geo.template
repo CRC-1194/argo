@@ -3,7 +3,9 @@ x = 0.5;
 y = 0.5;
 z = 0.5;
 
-r = 0.15;
+a = 0.4;
+b = 0.3;
+c = 0.2;
 
 // Control maximum element size
 elemsize = @!TRIANGLE_EDGE_LENGTH!@;
@@ -13,14 +15,14 @@ elemsize = @!TRIANGLE_EDGE_LENGTH!@;
 Point(1) = {x, y, z};
 
 // Support points in plane parallel to x-y-plane through center
-Point(2) = {x-3*r, y, z};
-Point(3) = {x, y-2*r, z};
-Point(4) = {x+3*r, y, z};
-Point(5) = {x, y+2*r, z};
+Point(2) = {x-a, y, z};
+Point(3) = {x, y-b, z};
+Point(4) = {x+a, y, z};
+Point(5) = {x, y+b, z};
 
 // Support points in plane parallel to x-z-plane through center
-Point(6) = {x, y, z-r};
-Point(7) = {x, y, z+r};
+Point(6) = {x, y, z-c};
+Point(7) = {x, y, z+c};
 
 // Define Ellipse  arcs in plane parallel to x-y-plane
 Ellipse (1) = {2, 1, 2, 3};
