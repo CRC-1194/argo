@@ -181,18 +181,6 @@ install(TARGETS "polynomialVofInitialization" LIBRARY)
 
 # Build executables
 
-# Tests
-add_executable("cellCellTestVofInit"
-               applications/cellCellTestVofInit/cellCellTestVofInit.cpp) 
-target_link_libraries("cellCellTestVofInit"
-    "geometricalMeshIntersection"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
-
 add_executable("geophaseUnitTest"
                 applications/geophaseUnitTest/geophaseUnitTest.cpp)
 target_include_directories("geophaseUnitTest" PRIVATE 
@@ -300,7 +288,7 @@ target_link_libraries("foamPerturbMesh"
 )
 
 # Install executables
-install(TARGETS "cellCellTestVofInit"
+install(TARGETS 
         "surfaceCellVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"

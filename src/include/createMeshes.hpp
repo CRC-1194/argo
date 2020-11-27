@@ -40,7 +40,7 @@ Author
 
 // Initialize the base time and mesh.
 
-fileName baseCase = args.optionLookupOrDefault<fileName>("case", "./"); 
+fileName baseCase = args.getOrDefault<fileName>("case", "./"); 
 baseCase.clean();
 const fileName baseRoot = baseCase.path();
 baseCase = baseCase.name();
@@ -73,7 +73,7 @@ fvMesh baseMesh
 
 // Initialize the tool time and mesh.
 
-fileName toolCase = args.optionLookupOrDefault<fileName>("toolCase", "../toolCase"); 
+fileName toolCase = args.getOrDefault<fileName>("toolCase", "../toolCase"); 
 toolCase.clean(); 
 const fileName toolRoot = toolCase.path();
 toolCase = toolCase.name(); 
