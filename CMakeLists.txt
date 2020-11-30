@@ -98,6 +98,7 @@ endif(MSVC)
 find_library(OF_FINITEVOLUME finiteVolume PATHS ${of_lib_path})
 find_library(OF_MESHTOOLS meshTools PATHS ${of_lib_path})
 find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
+find_library(OF_SURFMESH surfMesh PATHS ${of_lib_path})
 
 # Use lib instead of lib64 for libraries.
 set(CMAKE_INSTALL_LIBDIR "$ENV{FOAM_USER_LIBBIN}")
@@ -287,8 +288,28 @@ target_link_libraries("foamPerturbMesh"
     m
 )
 
+add_executable("computeLiquidVolume"
+    applications/computeLiquidVolume/computeLiquidVolume.cpp)
+target_include_directories("computeLiquidVolume" PRIVATE 
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("computeLiquidVolume"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    ${OF_SURFMESH}
+    dl
+    m
+)
+
 # Install executables
 install(TARGETS 
+        "cellCellTestVofInit"
+        "surfaceCellTestVofInit"
         "surfaceCellVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"
@@ -296,4 +317,5 @@ install(TARGETS
         "signedDistanceTestCalc"
         "polynomialVofTest"
         "foamPerturbMesh"
+        "computeLiquidVolume"
         RUNTIME)
