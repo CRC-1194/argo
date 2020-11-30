@@ -308,8 +308,6 @@ target_link_libraries("computeLiquidVolume"
 
 # Install executables
 install(TARGETS 
-        "cellCellTestVofInit"
-        "surfaceCellTestVofInit"
         "surfaceCellVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"
