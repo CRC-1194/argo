@@ -342,7 +342,7 @@ void polynomialVofInitialization::calcSqrSearchDist()
 
 void polynomialVofInitialization::calcSignedDist()
 {
-    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_);
+    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_, 0.0);
 
     signedDistance_ = SigDistCalc::insideOutsidePropagation{}.propagate_inside_outside(signedDistance0_);
 }
