@@ -84,11 +84,11 @@ int main(int argc, char *argv[])
 
     #include "createMeshes.hpp"
 
-    const word fieldName = args.optionLookupOrDefault<word>("fieldName", "alpha.water"); 
-    const word dataFile = args.optionLookupOrDefault<word>("dataFile", "geomIntersectMeshes.dat"); 
+    const word fieldName = args.getOrDefault<word>("fieldName", "alpha.water"); 
+    const word dataFile = args.getOrDefault<word>("dataFile", "geomIntersectMeshes.dat"); 
 
     Switch writeGeometry = true;  
-    if (! args.optionFound("writeGeometry"))
+    if (! args.found("writeGeometry"))
         writeGeometry = false; 
 
     Info<< "Reading field alpha1\n" << endl;

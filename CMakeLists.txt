@@ -98,6 +98,7 @@ endif(MSVC)
 find_library(OF_FINITEVOLUME finiteVolume PATHS ${of_lib_path})
 find_library(OF_MESHTOOLS meshTools PATHS ${of_lib_path})
 find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
+find_library(OF_SURFMESH surfMesh PATHS ${of_lib_path})
 
 # Use lib instead of lib64 for libraries.
 set(CMAKE_INSTALL_LIBDIR "$ENV{FOAM_USER_LIBBIN}")
@@ -181,18 +182,6 @@ install(TARGETS "polynomialVofInitialization" LIBRARY)
 
 # Build executables
 
-# Tests
-add_executable("cellCellTestVofInit"
-               applications/cellCellTestVofInit/cellCellTestVofInit.cpp) 
-target_link_libraries("cellCellTestVofInit"
-    "geometricalMeshIntersection"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
-
 add_executable("geophaseUnitTest"
                 applications/geophaseUnitTest/geophaseUnitTest.cpp)
 target_include_directories("geophaseUnitTest" PRIVATE 
@@ -250,7 +239,6 @@ target_link_libraries("surfaceCellVofInit"
 
 add_executable("smcaVofInit"
                applications/smcaVofInit/smcaVofInit.cpp)
-
 target_link_libraries("smcaVofInit"
     "geometricalMeshIntersection"
     "polynomialVofInitialization"
@@ -281,6 +269,26 @@ target_link_libraries("signedDistanceTestCalc"
     m
 )
 
+add_executable("signedDistanceInit"
+               applications/signedDistanceInit/signedDistanceInit.cpp)
+target_include_directories("signedDistanceInit" PRIVATE
+    applications/signedDistanceTestInit
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/fileFormats/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("signedDistanceInit"
+    "signedDistanceCalculator"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 add_executable("foamPerturbMesh"
                applications/foamPerturbMesh/foamPerturbMesh.cpp)
 target_include_directories("foamPerturbMesh" PRIVATE 
@@ -299,13 +307,33 @@ target_link_libraries("foamPerturbMesh"
     m
 )
 
+add_executable("computeLiquidVolume"
+    applications/computeLiquidVolume/computeLiquidVolume.cpp)
+target_include_directories("computeLiquidVolume" PRIVATE 
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("computeLiquidVolume"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    ${OF_SURFMESH}
+    dl
+    m
+)
+
 # Install executables
-install(TARGETS "cellCellTestVofInit"
+install(TARGETS 
         "surfaceCellVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"
         "smcaVofInit"
+        "signedDistanceInit"
         "signedDistanceTestCalc"
         "polynomialVofTest"
         "foamPerturbMesh"
+        "computeLiquidVolume"
         RUNTIME)

@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
         )
     );
 
-    const scalar alpha = args.optionLookupOrDefault<scalar>("alpha", 0.1); 
+    const scalar alpha = args.getOrDefault<scalar>("alpha", 0.1); 
     
     auto pertubationVecPtr = randomUnitVec(mesh.points().size());
     auto maxDistancePtr = pointBoundingBallRadius(mesh);

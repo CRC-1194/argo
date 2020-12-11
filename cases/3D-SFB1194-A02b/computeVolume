@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+cp wPhil0.5_alpha1_90_25.stl.gz drop.stl.gz
+gunzip -d drop.stl.gz
+computeLiquidVolume -stl "$(pwd)/drop.stl"
