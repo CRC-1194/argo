@@ -13,8 +13,7 @@ rcParams["axes.titlesize"] = 9
 rcParams["axes.labelsize"] = 9
 global_markers = ['o', 'x', '^', 'v', 'd']
 
-def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surfaceCellVofInit.csv"):
-    
+def read_data(pattern, csv_file):
     param_dirs = [param_dir for param_dir in os.listdir(os.curdir) if os.path.isdir(param_dir) and \
                   param_dir.startswith(pattern)] 
 
@@ -28,8 +27,16 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
 
     data = pd.concat((pd.read_csv(csv_file) for csv_file in csv_files))
 
+    return data
+
+def n_cells_sorted(data):
     n_cells = list(set(data["N_CELLS"]))
     n_cells.sort()
+
+    return n_cells
+
+def compute_dependent_data(data, exact_volume, pattern, alg_name, data_write_dir):
+    n_cells = n_cells_sorted(data)
     n_triangles = list(set(data["N_TRIANGLES"]))
     
     data["N_TRIANGLES_ROOT"] = data["N_TRIANGLES"] ** 0.5
@@ -37,11 +44,11 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     data["VOLUME_ERROR_FROM_EXACT_VOLUME"] = (data["VOLUME_FROM_VOLUME_FRACTION"] - exact_volume).abs() / exact_volume
     data["CPU_TIME_SECONDS"] = data["CPU_TIME_MICROSECONDS"] / 1e06 
 
-    data.to_csv(os.path.join(data_dir,"Data_Pandas_Dframe-%s-%s.csv" % (pattern, alg_name)), index=False)
-    data.to_latex(os.path.join(data_dir, "Data_Pandas_Dframe-%s-%s.tex" % (pattern, alg_name)), index=False)
+    data.to_csv(os.path.join(data_write_dir,"Data_Pandas_Dframe-%s-%s.csv" % (pattern, alg_name)), index=False)
+    data.to_latex(os.path.join(data_write_dir, "Data_Pandas_Dframe-%s-%s.tex" % (pattern, alg_name)), index=False)
 
-    
-    # Plot convergence
+def plot_convergence(data, pattern, alg_name, data_write_dir):
+    n_cells = n_cells_sorted(data)
     fig_conv, ax_conv = plt.subplots()
     for i,n_cell in enumerate(n_cells):
         n_c = ceil(n_cell**(1./3.))
@@ -56,23 +63,15 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     ax_conv.loglog()
 
     box = ax_conv.get_position()
-    #ax_conv.set_position([box.x0, box.y0 + box.height * 0.1,
-                         #box.width, box.height * 0.9])
-    #ax_conv.set_ylim([1e-05,1e-01])
-    #ax_conv.set_xlim([10,1500])
-
-    # Put a legend below current axis
-    #ax_conv.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
-                   #fancybox=True, shadow=True, ncol=5)
     ax_conv.legend(bbox_to_anchor=(1.0, 1.), fancybox=False, frameon=False, framealpha=0)
-
 
     # Save the figure.
     fig_conv.set_size_inches(4,3)
-    fig_conv.savefig(os.path.join(data_dir, "Ev-%s-%s.pdf" % (pattern,alg_name)),
+    fig_conv.savefig(os.path.join(data_write_dir, "Ev-%s-%s.pdf" % (pattern,alg_name)),
                      bbox_inches='tight')
-    
-    # Plot CPU times
+
+def plot_cpu_times(data, pattern, alg_name, data_write_dir):
+    n_cells =n_cells_sorted(data)
     fig_cpu, ax_cpu = plt.subplots()
     fig_cpu.set_size_inches(4,3)
     for i, n_cell in enumerate(n_cells):
@@ -86,9 +85,28 @@ def plot_study(pattern, alg_name, exact_volume=1, data_dir="", csv_file="surface
     ax_cpu.set_ylabel(r"CPU time in seconds")
     ax_cpu.set_xlabel(r"$\sqrt{N_T}$")
 
-    fig_cpu.legend(bbox_to_anchor=[0.15,0.95],loc="upper left", framealpha=0)
+    ax_cpu.legend(bbox_to_anchor=[0.01,0.99], loc="upper left", framealpha=0)
     # Save the figure.
-    fig_cpu.savefig(os.path.join(data_dir, "CPUtime-%s-%s.pdf" % (pattern,alg_name)),
+    fig_cpu.savefig(os.path.join(data_write_dir, "CPUtime-%s-%s.pdf" % (pattern,alg_name)),
                     bbox_inches='tight')
+
+def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", csv_file="smcaVofInit.csv"):
+    data = read_data(pattern, csv_file)
+    compute_dependent_data(data, exact_volume, pattern, "SMCA", data_write_dir)
+    fig, axis = plt.subplots()
+    fig.set_size_inches(4,3)
+    axis.grid()
+    axis.semilogy(data["MAX_REFINEMENT_LEVEL"], data["VOLUME_ERROR_FROM_EXACT_VOLUME"],
+              linewidth=0, marker='x', color='k')
+    axis.set_xlabel(r"$l_\mathrm{max}$")
+    axis.set_ylabel(r"$E_v$")
+    fig.savefig(os.path.join(data_write_dir, "refinement-convergence-%s-SCMA.pdf" % pattern),
+                    bbox_inches='tight')
+
+def plot_study(pattern, alg_name, exact_volume, data_write_dir="", csv_file="surfaceCellVofInit.csv"):
+    data = read_data(pattern, csv_file)
+    compute_dependent_data(data, exact_volume, pattern, alg_name, data_write_dir)
+    plot_convergence(data, pattern, alg_name, data_write_dir)
+    plot_cpu_times(data, pattern, alg_name, data_write_dir)
 
     return data

@@ -10,6 +10,11 @@ values
 
     ELEMSIZE
     (
-        0.05 0.02 0.01 0.005 0.0025 0.0015
+        0.05 0.02 0.01 0.005 0.0025 0.00125
+    );
+
+    MAX_REFINEMENT_LEVEL
+    (
+        -1 // Automatic refinement mode for SMCA algorithm
     );
 }
