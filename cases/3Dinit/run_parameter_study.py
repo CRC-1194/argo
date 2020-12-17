@@ -8,8 +8,8 @@ from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 parser = argparse.ArgumentParser(description='Run an application in each case directory that fits the pattern.')
 
 parser.add_argument('application', type=str,
-                    choices=['surfaceCellVofInit', 'smcaVofInit'],
-                    help='Name of the application to be run, e.g. surfaceCellVofInit.')
+                    choices=['smciVofInit', 'smcaVofInit'],
+                    help='Name of the application to be run, e.g. smciVofInit.')
 
 parser.add_argument('--dir_pattern', dest="dir_pattern", type=str, required=True,
                     help='Pattern contained in the name of each initialization directory.')
@@ -33,7 +33,7 @@ if __name__ == '__main__':
                       and args.dir_pattern in parameter_dir]
     parameter_dirs.sort()
 
-    vof_init_call = ["surfaceCellVofInit", 
+    vof_init_call = ["smciVofInit", 
                      "-checkVolume", 
                      "-surfaceFile", 
                      args.surface_file] 
@@ -59,7 +59,7 @@ if __name__ == '__main__':
             else:
                 base_command="srun -A project01456 --mem-per-cpu=5000 --time=01:00:00 --ntasks=1"
 
-            variable_command=" --cpu-freq=HighM1-HighM1 --job-name surfaceCellVofInit -o slurm-%s.log surfaceCellVofInit -checkVolume -surfaceFile %s >/dev/null 2>&1 &" % (args.surface_file, args.surface_file)
+            variable_command=" --cpu-freq=HighM1-HighM1 --job-name smciVofInit -o slurm-%s.log smciVofInit -checkVolume -surfaceFile %s >/dev/null 2>&1 &" % (args.surface_file, args.surface_file)
 
             print(base_command + variable_command)
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         else: 
             if args.application == "smcaVofInit":
                 call(smca_init_call)
-            elif args.application == "surfaceCellVofInit":
+            elif args.application == "smciVofInit":
                 call(vof_init_call)
 
         os.chdir(pwd)

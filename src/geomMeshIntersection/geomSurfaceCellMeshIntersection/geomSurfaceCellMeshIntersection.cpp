@@ -56,6 +56,7 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     const fvMesh& mesh,
     const triSurface& triSurf,
     const scalar sqrDistFactor,
+    const bool writeGeo, 
     const IOobject::writeOption& writeOption // Allows output for testing purposes.
 )
 :
@@ -124,6 +125,7 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
     triSurfSearch_(triSurf),
     intersectedCellLabels_(),
     sqrDistFactor_(max(2.0, sqrDistFactor)), 
+    writeGeo_(writeGeo),
     nTrianglesPerCell_(0.)
 {
     calcSqrSearchDists(); 
@@ -287,9 +289,6 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
     geophase::vtkPolyDataOStream cutMeshStream(
         geophase::vtk_file_name("cutMesh", runTime_.timeIndex())
     ); 
-    geophase::vtkPolyDataOStream invCutMeshStream(
-        geophase::vtk_file_name("invCutMesh", runTime_.timeIndex())
-    ); 
 
     // Correct the volume fractions geometrically in the intersected cells. 
     nTrianglesPerCell_ = 0;
@@ -331,22 +330,13 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                     const point& xJ = meshPoints[pointJ];
 
                     const vector xT = 0.25 * (xC + x0 + xI + xJ); // Tetrahedron centroid.
-                    const scalar radiusT = 1.1*max(
+                    const scalar radiusT = max(
                             max(mag(xC - xT), mag(x0 - xT)), 
                             max(mag(xI - xT), mag(xJ - xT))
                     ); // Tetrahedron radius.
 
-                    const double tetVolume = (1. / 6.) * std::abs( 
-                        ((x0 - xC) &  ((xI - xC) ^ (xJ - xC)))
-                    ); 
-
-                    // Intersect the tetrahedron with all the triangles from the sphere. 
-                    // - Get labels of triangles that are inside the sphere that contains
-                    //   the intersected tetrahedron.
-                    //   // sqr radius used for search
                     auto triangleLabels = octree.findSphere(xT, radiusT*radiusT); 
 
-                    //if ((!dists.all()) && dists.any()) // If tetrahedron is intersected
                     // If the tetrahedron sphere intersects triangles from the surface.
                     if (triangleLabels.size()) 
                     {
@@ -380,19 +370,16 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                         }
                         // Add the volume of the intersection to the phase-specific volume.  
                         // Use the inverted cut volume to correct for surface convexity / non-convexity.
-                        double cutVolume = volume_by_surf_tri(tetIntersection); 
-			Info << "cutVolume = " << cutVolume << endl;
-                        double invCutVolume = tetVolume - volume_by_surf_tri(invTetIntersection);
-			Info << "invCutVolume = " << cutVolume << endl;
-                        alpha[cellI] += max(cutVolume, invCutVolume);  
-
-                        cutMeshStream << tetIntersection;
-                        invCutMeshStream << invTetIntersection;
+                        alpha[cellI] += volume_by_surf_tri(tetIntersection);
+                        if (writeGeo_)
+                            cutMeshStream << tetIntersection;
                     }
                     else if (dists.all()) // If tetrahedron is inside surface.
                     {
                         // Add the mixed product tet volume to the alpha cell value. 
-                        alpha[cellI] += tetVolume;
+                        alpha[cellI] += (1. / 6.) * std::abs( 
+                            ((x0 - xC) &  ((xI - xC) ^ (xJ - xC)))
+                        ); 
                     }
 
                 }
@@ -401,32 +388,6 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         }
     }
     nTrianglesPerCell_ /= intersectedCellLabels_.size();
-
-    /*
-
-    // Correct volume fractions. 
-    const auto& cellPointLists = mesh_.cellPoints();
-    forAll(alpha, cellI)
-    {
-        if (alpha[cellI] > 1.) 
-            alpha[cellI] = 1.;
-
-        const auto& cellPoints = cellPointLists[cellI]; 
-        bool cutCell = false; 
-        forAll(cellPoints, pointI)
-        {
-            if (pointSignedDist_[cellPoints[pointI]] > 0)
-            {
-                cutCell = true; 
-                break;
-            }
-        }
-
-        // if the cell is inside phase 1 
-        if (!cutCell && (cellSignedDist_[cellI] < 0))
-            alpha[cellI] = 1.;
-    }
-    */
 }
 
 void geomSurfaceCellMeshIntersection::writeFields() const
