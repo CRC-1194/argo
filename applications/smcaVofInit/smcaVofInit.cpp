@@ -135,11 +135,6 @@ int main(int argc, char *argv[])
         polyVofInit.writeFields();
     }
 
-    if (writeTets)
-    {
-        // TODO: implement in polyVof class
-    }
-
     if (checkVolume)
     {
         // This is taken from surfaceCellVofInit (TT)

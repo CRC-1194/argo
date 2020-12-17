@@ -287,6 +287,9 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
     geophase::vtkPolyDataOStream cutMeshStream(
         geophase::vtk_file_name("cutMesh", runTime_.timeIndex())
     ); 
+    geophase::vtkPolyDataOStream invCutMeshStream(
+        geophase::vtk_file_name("invCutMesh", runTime_.timeIndex())
+    ); 
 
     // Correct the volume fractions geometrically in the intersected cells. 
     nTrianglesPerCell_ = 0;
@@ -368,7 +371,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                             ).polyhedron();
                             invTetIntersection = 
                                 intersect_tolerance<geophase::foamPolyhedronIntersection>(
-                                    tetIntersection, 
+                                    invTetIntersection, 
                                     foamHalfspace(
                                         triPoints[triSurf_[triangleL][0]], 
                                         -1. * triNormals[triangleL]
@@ -378,10 +381,13 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                         // Add the volume of the intersection to the phase-specific volume.  
                         // Use the inverted cut volume to correct for surface convexity / non-convexity.
                         double cutVolume = volume_by_surf_tri(tetIntersection); 
-                        double cutVolumeInv = tetVolume - volume_by_surf_tri(invTetIntersection);
-                        alpha[cellI] += min(cutVolume, cutVolumeInv);  
+			Info << "cutVolume = " << cutVolume << endl;
+                        double invCutVolume = tetVolume - volume_by_surf_tri(invTetIntersection);
+			Info << "invCutVolume = " << cutVolume << endl;
+                        alpha[cellI] += max(cutVolume, invCutVolume);  
 
                         cutMeshStream << tetIntersection;
+                        invCutMeshStream << invTetIntersection;
                     }
                     else if (dists.all()) // If tetrahedron is inside surface.
                     {
