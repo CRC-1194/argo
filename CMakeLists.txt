@@ -226,9 +226,9 @@ target_link_libraries("cellCellVofInit"
     m
 )
 
-add_executable("surfaceCellVofInit"
-               applications/surfaceCellVofInit/surfaceCellVofInit.cpp)
-target_link_libraries("surfaceCellVofInit"
+add_executable("smciVofInit"
+               applications/smciVofInit/smciVofInit.cpp)
+target_link_libraries("smciVofInit"
     "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
@@ -327,7 +327,7 @@ target_link_libraries("computeLiquidVolume"
 
 # Install executables
 install(TARGETS 
-        "surfaceCellVofInit"  
+        "smciVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"
         "smcaVofInit"
