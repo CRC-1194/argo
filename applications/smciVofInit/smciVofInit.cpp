@@ -75,7 +75,16 @@ int main(int argc, char *argv[])
 
     triSurface triSurf(triFile);
 
-    geomSurfaceCellMeshIntersection meshIntersection(mesh, triSurf, sqrDistFactor); 
+    bool writeGeo = false; 
+    if (args.found("writeGeometry"))
+        writeGeo = true; 
+
+    geomSurfaceCellMeshIntersection meshIntersection(
+            mesh, 
+            triSurf, 
+            sqrDistFactor,
+            writeGeo
+    ); 
 
     // Volume fraction field
     volScalarField alpha
@@ -103,6 +112,7 @@ int main(int argc, char *argv[])
 
     if (args.found("writeAllFields"))
         meshIntersection.writeFields(); 
+
 
 
     if (args.found("checkVolume"))
