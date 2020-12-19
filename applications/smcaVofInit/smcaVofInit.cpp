@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
                 );
             }
 
-            Vsurf *= 1./9.; 
+            Vsurf = 1./9.*mag(Vsurf); 
 
             scalar Valpha = gSum((mesh.V() * alpha)()); 
             scalar Evsurf = std::abs(Valpha - Vsurf) / Vsurf; 
