@@ -100,6 +100,8 @@ class geomSurfaceCellMeshIntersection
     // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
     const scalar sqrDistFactor_; 
 
+    const bool writeGeo_; 
+
     // Average number of triangles per cell, used for complexity analysis.
     scalar nTrianglesPerCell_;  
 
@@ -115,6 +117,7 @@ public:
         const fvMesh& mesh, 
         const triSurface& triSurf, 
         const scalar sqrDistFactor = 3, // Narrow band minimal width = 3 cells. 
+        const bool writeGeo = false,
         const IOobject::writeOption& wo = IOobject::NO_WRITE
     ); 
 

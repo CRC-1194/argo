@@ -226,9 +226,9 @@ target_link_libraries("cellCellVofInit"
     m
 )
 
-add_executable("surfaceCellVofInit"
-               applications/surfaceCellVofInit/surfaceCellVofInit.cpp)
-target_link_libraries("surfaceCellVofInit"
+add_executable("smciVofInit"
+               applications/smciVofInit/smciVofInit.cpp)
+target_link_libraries("smciVofInit"
     "geometricalMeshIntersection"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
@@ -239,7 +239,6 @@ target_link_libraries("surfaceCellVofInit"
 
 add_executable("smcaVofInit"
                applications/smcaVofInit/smcaVofInit.cpp)
-
 target_link_libraries("smcaVofInit"
     "geometricalMeshIntersection"
     "polynomialVofInitialization"
@@ -262,6 +261,26 @@ target_include_directories("signedDistanceTestCalc" PRIVATE
     ${of_src_path}/OpenFOAM/lnInclude
 )
 target_link_libraries("signedDistanceTestCalc"
+    "signedDistanceCalculator"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
+add_executable("signedDistanceInit"
+               applications/signedDistanceInit/signedDistanceInit.cpp)
+target_include_directories("signedDistanceInit" PRIVATE
+    applications/signedDistanceTestInit
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/fileFormats/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+target_link_libraries("signedDistanceInit"
     "signedDistanceCalculator"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
@@ -308,10 +327,11 @@ target_link_libraries("computeLiquidVolume"
 
 # Install executables
 install(TARGETS 
-        "surfaceCellVofInit"  
+        "smciVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"
         "smcaVofInit"
+        "signedDistanceInit"
         "signedDistanceTestCalc"
         "polynomialVofTest"
         "foamPerturbMesh"

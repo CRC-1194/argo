@@ -1,0 +1,21 @@
+values
+{
+    solver ( smcaVofInit );
+
+    N_CELLS
+    (
+        //8 16 32 64 128 
+        16
+    );
+
+    TRIANGLE_EDGE_LENGTH 
+    (
+        //0.05 0.02 0.01 0.005 0.0025 0.00125
+        0.001
+    );
+
+    MAX_REFINEMENT_LEVEL
+    (
+        0 1 2 3 4 5 6 7 8
+    );
+}
