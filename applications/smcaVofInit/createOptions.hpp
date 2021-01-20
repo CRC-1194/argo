@@ -19,6 +19,13 @@
 
     argList::addOption
     (
+        "narrowBandWidth", 
+        "scalar",
+        "Number of cells in interface normal direction constituting the narrow band."
+    ); 
+
+    argList::addOption
+    (
         "surfaceFile",
         "Surface mesh file."
         "STL file containing the interface description. Requires a consistent, inward normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose."

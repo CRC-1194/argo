@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
     // Common options
     word fieldName = initDict.getOrDefault<word>("fieldName", "alpha.water");
     label refinementLevel = initDict.getOrDefault<label>("refinementLevel", -1);
+    scalar narrowBandWidth = initDict.getOrDefault<scalar>("narrowBandWidth", 4.0);
     fileName surfaceFile = initDict.getOrDefault<fileName>("surfaceFile", args.path() + "/surface.stl");
     Switch invertVolumeFraction = initDict.getOrDefault<Switch>("invert", false);
     // Testing / debugging related options
@@ -92,6 +93,7 @@ int main(int argc, char *argv[])
     // Comand line args
     args.readIfPresent<word>("fieldName", fieldName);
     args.readIfPresent<label>("refinementLevel", refinementLevel);
+    args.readIfPresent<scalar>("narrowBandWidth", narrowBandWidth);
     args.readIfPresent<fileName>("surfaceFile", surfaceFile);
     invertVolumeFraction = args.found("invert");
     writeFields = args.found("writeFields");
@@ -116,7 +118,7 @@ int main(int argc, char *argv[])
 
     // Compute the volume fraction field.
     auto ctime0 = std::chrono::steady_clock::now();
-    polynomialVofInitialization polyVofInit{mesh, surface, 4.0, IOobject::AUTO_WRITE, refinementLevel}; 
+    polynomialVofInitialization polyVofInit{mesh, surface, narrowBandWidth, IOobject::AUTO_WRITE, refinementLevel}; 
     polyVofInit.calcVolFraction(alpha, writeTets);
     auto ctime1 = std::chrono::steady_clock::now();
     auto calcTime = 
