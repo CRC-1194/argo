@@ -169,16 +169,14 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
     // Zero the signed distance.
     cellSignedDist_ = dimensionedScalar("cellSignedDist", dimLength, 0);
 
-    // Use the octree and the square search distance multiplied by a distance factor 
-    // to build the surface mesh / volume mesh proximity information list. 
+    // Find nearest triangles to cells using octree subdivision.
     triSurfSearch_.findNearest(
         mesh_.C(),
         (sqrDistFactor_ * sqrDistFactor_) * cellSqrSearchDist_,
         cellNearestTriangle_
     );
 
-    // Compute the signed distance in each cell as the distance between the triangle
-    // nearest to the cell center and the cell center.
+    // Compute distances from cell centers to nearest triangles. 
     const volVectorField& C = mesh_.C();  
     const pointField& triPoints = triSurf_.points();  
     const vectorField& triNormals = triSurf_.faceNormals(); 
@@ -197,16 +195,15 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
     // Save the signed distance field given by the octree.
     cellSignedDist0_ = cellSignedDist_; 
 
-    // Propagate the sign information into the bulk by solving a Laplace
-    // equation for a single iteration for the signed distance field. 
+    // Propagate inside-outside information by approximately solving 
+    // the Laplace equation for the signed distance.
     fvScalarMatrix distEqn
     (
         -fvm::laplacian(cellSignedDist_)
     );
     distEqn.solve(); 
 
-    // Correct signed distances in the narrow band using 
-    // octree signed distances.
+    // Reset the signed distance in narrow band to geometrical distance.
     forAll(cellNearestTriangle_, cellI)
     {
         const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
@@ -215,18 +212,17 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
             cellSignedDist_[cellI] = cellSignedDist0_[cellI]; 
     }
 
-    // Once the cell-centered signed distance is computed, compute the point
-    // distances only for determining intersected tetrahedra in the volume
-    // calculation step. TM.
-    // Use the octree and the square search distance multiplied by a distance factor 
-    // to build the surface mesh / mesh points proximity information list. 
+    // Interpolate the cell-centered signed distances to cell-corner points
+    cellsToPointsInterp_.interpolate(cellSignedDist_, pointSignedDist_);  
+
+    // Find triangles nearest to cell corner-points.
     triSurfSearch_.findNearest(
         mesh_.points(),
         (sqrDistFactor_ * sqrDistFactor_) * pointSqrSearchDist_,
         pointNearestTriangle_ 
     );
 
-    cellsToPointsInterp_.interpolate(cellSignedDist_, pointSignedDist_);  
+    // Correct the cell-corner signed distances with geometrical distances.
     const pointField& meshPoints = mesh_.points();  
     forAll(pointNearestTriangle_, pointI)
     {
@@ -240,21 +236,12 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
         }
     }
 
-    findIntersectedCells(); 
-
-    // Correct the volume fractions geometrically in the intersected cells. 
-    forAll(intersectedCellLabels_, cellL)
-    {
-        auto cellK = intersectedCellLabels_[cellL];
-        cellSignedDist_[cellK] = cellSignedDist0_[cellK];
-    }
 }
 
 void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
 {
     // Compute the signed distances using the octree in triSurfaceSearch. 
     calcSignedDist(); 
-    
 
     const auto& meshCells = mesh_.cells(); 
     const auto& cellCenters = mesh_.C();  
@@ -292,14 +279,22 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
 
     // Correct the volume fractions geometrically in the intersected cells. 
     nTrianglesPerCell_ = 0;
-    //forAll(intersectedCellLabels_, cellL) TODO: Remove
-    forAll(cellNearestTriangle_, cellI)
-    {
-        const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
 
-        if (cellHit.hit()) 
-        {
+    findIntersectedCells(); 
+    
+    // TODO: Remove
+
+    Info << "DEBUGGING: N intersected cells = " << intersectedCellLabels_.size() << endl;
+    forAll(intersectedCellLabels_, cellJ) 
+    //forAll(cellNearestTriangle_, cellI)
+    {
+        //const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
+
+        //if (cellHit.hit()) 
+        //{
             // Zero the volume fraction in the intersected cell. 
+
+            const auto cellI = intersectedCellLabels_[cellJ];
             alpha[cellI] = 0;
                 
             const auto& cutCell = meshCells[cellI];  
@@ -385,7 +380,7 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
                 }
             }
             alpha[cellI] /= cellVolumes[cellI];
-        }
+        //}
     }
     nTrianglesPerCell_ /= intersectedCellLabels_.size();
 }
