@@ -11,7 +11,7 @@ values
     TRIANGLE_EDGE_LENGTH 
     (
         // Convergence test
-        0.05 0.02 0.01 0.005 0.0025
+        0.05 0.02 0.01 0.005 
     );
 
     MAX_REFINEMENT_LEVEL
