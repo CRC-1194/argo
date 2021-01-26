@@ -1,6 +1,6 @@
-# geom-vof-init
+# argo  
 
-Implementation of the Surface-Cell Mesh Intersection (SMCI) and Cell-Cell Mesh Intersection (CCMI) algorithms for computing volume fractions by intersecting unstructured meshes. The SCMI algorithm computes volume fractions by intersecting a surface mesh with a volume mesh. The CCMI algorithm intersects cells of two volume meshes with each other.  
+The "argo" project is an [OpenFOAM](https://develop.openfoam.com/Development/openfoam) module that implements unstructured Lagrangian / Eulerian Interface (LEIA) methods for multiphase flow simulations in complex geometries.
 
 ## Authors
 
@@ -10,60 +10,82 @@ Implementation of the Surface-Cell Mesh Intersection (SMCI) and Cell-Cell Mesh I
 
 * **Dirk Gründing** - *Development* - [MMA, TU Darmstadt](https://www.mma.tu-darmstadt.de/index/mitarbeiter_3/mitarbeiter_details_mma_47488.en.jsp)
 
+## Methods
+
+### Computing volume fractions and signed distances from arbitrary surfaces on unstructured meshes
+
+Implementation of the Surface-Cell Mesh Intersection (SMCI) and Surface-Cell Mesh Approximation (SMCA) algorithms for computing volume fractions on unstructured meshes from arbitrarily shaped surfaces. 
+
+DOI: [arXiv:2101.08511](https://arxiv.org/abs/2101.08511) 
+
+Citation:
+
+```
+@misc{tolle2021computing,
+      title={Computing volume fractions and signed distances from arbitrary surfaces on unstructured meshes}, 
+      author={Tobias Tolle and Dirk Gründing and Dieter Bothe and Tomislav Marić},
+      year={2021},
+      eprint={2101.08511},
+      archivePrefix={arXiv},
+      primaryClass={physics.comp-ph}
+}
+```
+
 ## License
 
 This project is licensed under the GPL3.0 License - see the [LICENSE.md](LICENSE.md) file for details.
 
-## Getting Started
+## Installation 
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
+These instructions will get your copy of the project up and running on your local machine for development and testing purposes. 
 
-`geom-vof-init` is a project that is used together with OpenFOAM. It compiles on its own and links against OpenFOAM libraries. It consists of a library for geometrical intersections between mesh data structures in OpenFOAM: triSurfaceMesh (triangle surface mesh) and fvMesh (polyhedral volume mesh). 
+`argo` is a project that builds on [OpenFOAM](https://develop.openfoam.com/Development/openfoam) so it compiles and links against OpenFOAM libraries.  
 
-### Prerequisites
+### Compilation & Installation dependencies 
 
-List of prerequisites with tested versions in brackets:
+* Compiler:  g++ (GCC) 10.2.0
+* Build system: cmake version 3.19.3
 
-* g++   (9.1.0) : Compiler
-* CMake (3.13)  : Build system
-* gmsh  (4.6.0) : Generation of input surface meshes
+#### Computing dependencies
 
-g++ and CMake are available as packages or modules on an HPC cluster, gmsh binaries are available for different Operating Systems. Alternatively, they can be installed via
+Meshing 
 
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update
-    sudo apt install gcc-9 g++-9
+    * [gmsh](http://gmsh.info/) meshing software version 4.7.1, used for generating surface meshes
+    * [cfmesh](https://cfmesh.com/cfmesh/), available as OpenFOAM sub-module, used for automatic generation of unstructured volume meshes
 
-Add to the list of gcc and g++ compiler alternativesThen setup the 
+OpenFOAM
 
-    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 9
-    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 9
+`argo` is based on OpenFOAM, git tag OpenFOAM-v2012
 
-Select the corresponding version 9 for gcc
+To install OpenFOAM follow the [instructions on installing OpenFOAM from sources](https://develop.openfoam.com/Development/openfoam/). 
 
-    sudo update-alternatives --config gcc
+1. Check out openfoam using git. 
+2. Check out the git tag 
 
-and gcc version 9 
+```
+    ?> git checkout OpenFOAM-v2012
+```
+3. Compie OpenFOAM as instructed by its documentation. 
 
-    sudo update-alternatives --config g++
+#### Post-processing dependencies
 
-by selection of the corresponding number of your compiler. Check whether the selection has been successfull via
+We use [Jupyter notebooks](https://jupyter.org/) for visualization and processing of test results, and following packages (may be differently named on your Operating System) 
 
-    gcc --version
-    g++ --version
+* python, python-pandas, python-numpy, python-jupyter
 
-* OpenFOAM-plus (v1906)
+### Installing `argo`
 
-To install OpenFOAM-plus, tag (version) v1906 follow the [instructions on installing OpenFOAM v1906 from sources](https://develop.openfoam.com/Development/OpenFOAM-plus).
+`argo` is built using the [CMake](https://cmake.org) build system.  
 
-### Installing
+Execute following command to build `argo` and install its libraries and executables in the OpenFOAM PATH structure, once you have installed all its dependencies listed above. Inside the `argo` directory, call
 
-`geom-vof-init` is using the [CMake](https://cmake.org) build system.  
+```
+    ?> ./install.sh
+```
 
-Execute following commands to build `geom-vof-init`, once you have installed OpenFOAM-plus (v1906). 
+#### Manual compilation 
 
-Inside the `geom-vof-init` directory
-
+`argo` can be built by directly calling `cmake`
 
 ```
 ?>  mkdir build && cd build 
@@ -73,52 +95,10 @@ Inside the `geom-vof-init` directory
 
 where the flag `-DCMAKE_EXPORT_COMPILE_COMMANDS=on` is optional (it instructs CMake to create a `compile_commands.json` file).
 
-Unlike OpenFOAM, CMake will save the `geom-vof-init` executable and library files in the `build` folder.
+## Examples 
 
-The next step is to expand the `PATH` variabe so that the executables are found and to expand the `LD_LIBRARY_PATH` so that the linker can find the mesh intersection library. 
-
-Add something along the lines of 
-
-
-```
-export PATH="/path/to/your/own/geom-vof-init/build/bin":$PATH
-export LD_LIBRARY_PATH="/path/to/your/own/geom-vof-init/build/lib":$LD_LIBRARY_PATH
-
-```  
-
-to your `.bashrc` file, then execute
-
-```
-?> source $HOME/.bashrc
-```
-
-to finish installing `geom-vof-init`. 
-
-## Running the tests 
-
-### voFoamTestSurfaceCellIntersectMeshes
-TODO.
-
-### poFoamTestVofInit
-TODO
-
-## Running the applications 
-**Prerequisite:** a STL file that represents the interface for which the volume fraction shall be initialized. A consistent inward orientation of the triangle normals
-is required. You can use OpenFOAM's `surfaceOrient` tool to get a consistent normal orientation.
-
-### voFoamSurfaceCellIntersectMeshes
-TODO
-
-### poFoamVofInit
-This application initializes a volume fraction field from a given surface file in an OpenFOAM case directory. The application is controlled by a set of options.
-These options can either be set using a dictionary (`system/vofInitDict`) or as command line options. Here is a list of the availabe options and their default values:
-* `fieldName <voffield>`: read *voffield* from the 0-folder and write the computed volume fractions to it. (Default: alpha.water)
-* `refinementLevel <integer>`: This sets the number of tetrahedral refinement levels to be used. By default, the refinement level is computed automatically such that
-    the finest tetrahedra have a comparable length as the triangles of the surface file. Specifying a negative value also triggers the use of the automatic mode.
-* `surfaceFile <file_name>`: read the interface from *file_name*. (Default: surface.stl)
-* `writeFields`: if given, additional auxiliary fields used for the volume fraction computation are written. (Default: false)
-* `invert`: by default, the inside of the given surface is set to one. If this option is set, outside cells are set to one instead.
+**TODO**
 
 ## Contributing
 
-The code is maintained at [TU-GitLab](https://git.rwth-aachen.de/leia/geom-vof-init). Feedback in the form of contributions, bug reports or feature requests is handled there. Users external to the German TU-GitLab network can login using their github.com credentials. 
+The code is maintained at [GitLab](https://gitlab.com/leia-methods/argo). Feedback in the form of contributions, bug reports or feature requests is handled [TODO: Link to gitlab.com service desk](). 
