@@ -67,15 +67,24 @@ class geomSurfaceCellMeshIntersection
     //- A reference to time.
     const Time& runTime_;  
 
+    // Cell-center distances
+    
     //- Squared search distance field in cell centers. 
     volScalarField cellSqrSearchDist_;  
     //- Signed distance at cell centers. 
     volScalarField cellSignedDist_; 
-    // Initial signed distance field given by the octree, used to correct the 
+    //- Initial signed distance field given by the octree, used to correct the 
     // signed distance propagated by the solution of the Laplace equation. 
     volScalarField cellSignedDist0_;  
-    // Information used to store the surface proximity information for each cell. 
+    //- Information used to store the surface proximity information for each cell. 
     DynamicList<pointIndexHit> cellNearestTriangle_;
+
+    // Face-center distances 
+    //- Signed distance at face centers. 
+    surfaceScalarField faceSignedDist_; 
+
+    // Point signed distances 
+    
     //- Inverse Distance Interpolation : cell centers to cell corners. 
     volPointInterpolation cellsToPointsInterp_;
 
@@ -88,6 +97,8 @@ class geomSurfaceCellMeshIntersection
     DynamicList<pointIndexHit> pointNearestTriangle_;
 
     // Triangulated surface.
+    
+    // Surface mesh
     const triSurface& triSurf_;
     // Octree of the triangulated surface.
     triSurfaceSearch triSurfSearch_;

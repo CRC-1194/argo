@@ -27,6 +27,7 @@ License
 #include "geomSurfaceCellMeshIntersection.hpp"
 #include "calculatedFvPatchField.H"
 #include "fvcAverage.H"
+#include "surfaceInterpolate.H"
 #include "fvScalarMatrix.H"
 #include "fvm.H"
 #include "fvc.H"
@@ -89,6 +90,18 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
         "zeroGradient"
     ),
     cellSignedDist0_("cellSignedDist0", cellSignedDist_), 
+    faceSignedDist_(
+        IOobject
+        (
+            "faceSignedDist", 
+            runTime_.timeName(), 
+            mesh, 
+            IOobject::NO_READ,
+            writeOption 
+        ),
+        mesh,
+        dimensionedScalar("faceSignedDist", dimLength,0)
+    ),
     cellNearestTriangle_(), 
     cellsToPointsInterp_(mesh),
     pMesh_(mesh_),
@@ -102,6 +115,7 @@ geomSurfaceCellMeshIntersection::geomSurfaceCellMeshIntersection
             IOobject::NO_READ,
             writeOption            
         ),
+
         pMesh_,
         dimensionedScalar("pointSqrSearchDist", dimLength,0),
         "zeroGradient"
@@ -169,16 +183,14 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
     // Zero the signed distance.
     cellSignedDist_ = dimensionedScalar("cellSignedDist", dimLength, 0);
 
-    // Use the octree and the square search distance multiplied by a distance factor 
-    // to build the surface mesh / volume mesh proximity information list. 
+    // Find nearest triangles to cells using octree subdivision.
     triSurfSearch_.findNearest(
         mesh_.C(),
         (sqrDistFactor_ * sqrDistFactor_) * cellSqrSearchDist_,
         cellNearestTriangle_
     );
 
-    // Compute the signed distance in each cell as the distance between the triangle
-    // nearest to the cell center and the cell center.
+    // Compute distances from cell centers to nearest triangles. 
     const volVectorField& C = mesh_.C();  
     const pointField& triPoints = triSurf_.points();  
     const vectorField& triNormals = triSurf_.faceNormals(); 
@@ -197,16 +209,15 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
     // Save the signed distance field given by the octree.
     cellSignedDist0_ = cellSignedDist_; 
 
-    // Propagate the sign information into the bulk by solving a Laplace
-    // equation for a single iteration for the signed distance field. 
+    // Propagate inside-outside information by approximately solving 
+    // the Laplace equation for the signed distance.
     fvScalarMatrix distEqn
     (
         -fvm::laplacian(cellSignedDist_)
     );
     distEqn.solve(); 
 
-    // Correct signed distances in the narrow band using 
-    // octree signed distances.
+    // Reset the signed distance in narrow band to geometrical distance.
     forAll(cellNearestTriangle_, cellI)
     {
         const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
@@ -215,18 +226,22 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
             cellSignedDist_[cellI] = cellSignedDist0_[cellI]; 
     }
 
-    // Once the cell-centered signed distance is computed, compute the point
-    // distances only for determining intersected tetrahedra in the volume
-    // calculation step. TM.
-    // Use the octree and the square search distance multiplied by a distance factor 
-    // to build the surface mesh / mesh points proximity information list. 
+    // Calculate the face centered signed distances by linear 
+    // interpolation: we only need the sign of the distance.
+    faceSignedDist_ = fvc::interpolate(cellSignedDist_, "linear");
+
+
+    // Interpolate the cell-centered signed distances to cell-corner points
+    cellsToPointsInterp_.interpolate(cellSignedDist_, pointSignedDist_);  
+
+    // Find triangles nearest to cell corner-points.
     triSurfSearch_.findNearest(
         mesh_.points(),
         (sqrDistFactor_ * sqrDistFactor_) * pointSqrSearchDist_,
         pointNearestTriangle_ 
     );
 
-    cellsToPointsInterp_.interpolate(cellSignedDist_, pointSignedDist_);  
+    // Correct the cell-corner signed distances with geometrical distances.
     const pointField& meshPoints = mesh_.points();  
     forAll(pointNearestTriangle_, pointI)
     {
@@ -240,21 +255,12 @@ void geomSurfaceCellMeshIntersection::calcSignedDist()
         }
     }
 
-    findIntersectedCells(); 
-
-    // Correct the volume fractions geometrically in the intersected cells. 
-    forAll(intersectedCellLabels_, cellL)
-    {
-        auto cellK = intersectedCellLabels_[cellL];
-        cellSignedDist_[cellK] = cellSignedDist0_[cellK];
-    }
 }
 
 void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
 {
     // Compute the signed distances using the octree in triSurfaceSearch. 
     calcSignedDist(); 
-    
 
     const auto& meshCells = mesh_.cells(); 
     const auto& cellCenters = mesh_.C();  
@@ -290,102 +296,91 @@ void geomSurfaceCellMeshIntersection::calcVolFraction(volScalarField& alpha)
         geophase::vtk_file_name("cutMesh", runTime_.timeIndex())
     ); 
 
-    // Correct the volume fractions geometrically in the intersected cells. 
+    // Correct the volume fractions geometrically in intersected cells. 
     nTrianglesPerCell_ = 0;
-    //forAll(intersectedCellLabels_, cellL) TODO: Remove
-    forAll(cellNearestTriangle_, cellI)
+
+    findIntersectedCells(); 
+    forAll(intersectedCellLabels_, cellJ) 
     {
-        const pointIndexHit& cellHit = cellNearestTriangle_[cellI];
+        const auto cellI = intersectedCellLabels_[cellJ];
+        alpha[cellI] = 0;
+        const auto& cutCell = meshCells[cellI];  
 
-        if (cellHit.hit()) 
+        // Cell center and its distance as tetrahedron input.
+        const auto& xC = cellCenters[cellI];
+        const auto& distC = cellSignedDist_[cellI];
+        dists[0] = !std::signbit(distC);
+
+        // For all faces of the cut cell, 
+        forAll(cutCell, faceL)
         {
-            // Zero the volume fraction in the intersected cell. 
-            alpha[cellI] = 0;
-                
-            const auto& cutCell = meshCells[cellI];  
-            const auto& xC = cellCenters[cellI];
-            const auto& distC = cellSignedDist_[cellI];
-            // Distance encoding at the center is the sign bit of the cell dist. 
-            dists[0] = !std::signbit(distC);
-            // For all faces of the cut cell, 
-            forAll(cutCell, faceL)
+            const label faceG = cutCell[faceL];
+
+            // Face center & distance for tetrahedron input.
+            const auto& xF = faceCenters[faceG]; 
+            const scalar distF = faceSignedDist_[faceG]; 
+            dists[1] = !std::signbit(distF); 
+
+            const face& nBandFace = faces[faceG];
+            for (label I = 0; I < nBandFace.size(); ++I)
             {
-                const label faceG = cutCell[faceL];
-                const face& nBandFace = faces[faceG];
-                const label point0 = nBandFace[0]; 
-                const point& x0 = meshPoints[point0];   
-                const scalar dist0 = pointSignedDist_[point0]; 
-                dists[1] = !std::signbit(dist0); 
+                // Current face-point & dist for tetrahedron input 
+                const label pointI0 = nBandFace[I]; 
+                const scalar distI0 = pointSignedDist_[pointI0]; 
+                dists[2] = !std::signbit(distI0);
+                const point& xI0 = meshPoints[pointI0];
 
-                for (label I = 1; I < (nBandFace.size() - 1); ++I)
+                // Next face-point & distance for tetrahedron input 
+                const label pointI1 = nBandFace[(I+1) % nBandFace.size()]; 
+                const scalar distI1 = pointSignedDist_[pointI1]; 
+                dists[3] = !std::signbit(distI1);
+                const point& xI1 = meshPoints[pointI1];
+
+                // Tetrahedron centroid.
+                const vector xT = 0.25 * (xC + xF + xI0 + xI1); 
+
+                // Tetrahedron sphere radius.
+                const scalar radiusT = max(
+                        max(mag(xC - xT), mag(xF - xT)), 
+                        max(mag(xI0 - xT), mag(xI1 - xT))
+                ); 
+
+                // Triangles interesecting tetrahedron sphere. 
+                auto triangleLabels = octree.findSphere(xT, radiusT*radiusT); 
+                if (dists.all()) // If tetrahedron is inside surface.
                 {
-                    const label pointI = nBandFace[I]; 
-                    const scalar distI = pointSignedDist_[pointI]; 
-                    dists[2] = !std::signbit(distI);
-                    const point& xI = meshPoints[pointI];
-
-                    const label pointJ = nBandFace[I+1]; 
-                    const scalar distJ = pointSignedDist_[pointJ]; 
-                    dists[3] = !std::signbit(distJ);
-                    const point& xJ = meshPoints[pointJ];
-
-                    const vector xT = 0.25 * (xC + x0 + xI + xJ); // Tetrahedron centroid.
-                    const scalar radiusT = max(
-                            max(mag(xC - xT), mag(x0 - xT)), 
-                            max(mag(xI - xT), mag(xJ - xT))
-                    ); // Tetrahedron radius.
-
-                    auto triangleLabels = octree.findSphere(xT, radiusT*radiusT); 
-
-                    // If the tetrahedron sphere intersects triangles from the surface.
-                    if (triangleLabels.size()) 
-                    {
-                        // Build the tetrahedron geometry from points. 
-                        auto tetrahedron = 
-                            geophase::make_tetrahedron<geophase::foamVectorPolyhedron>(xC, x0, xI, xJ);
-
-                        // Initialize the tetrahedron intersection. 
-                        geophase::foamVectorPolyhedron tetIntersection {tetrahedron};
-                        geophase::foamVectorPolyhedron invTetIntersection {tetrahedron};
-                        nTrianglesPerCell_ += triangleLabels.size();
-                        for (const auto& triangleL : triangleLabels)
-                        {
-                            // Intersect the tetrahedron with the triangle halfspace. 
-                            tetIntersection = 
-                                intersect_tolerance<geophase::foamPolyhedronIntersection>(
-                                    tetIntersection, 
-                                    foamHalfspace(
-                                        triPoints[triSurf_[triangleL][0]], 
-                                        triNormals[triangleL]
-                                    )
-                            ).polyhedron();
-                            invTetIntersection = 
-                                intersect_tolerance<geophase::foamPolyhedronIntersection>(
-                                    invTetIntersection, 
-                                    foamHalfspace(
-                                        triPoints[triSurf_[triangleL][0]], 
-                                        -1. * triNormals[triangleL]
-                                    )
-                            ).polyhedron();
-                        }
-                        // Add the volume of the intersection to the phase-specific volume.  
-                        // Use the inverted cut volume to correct for surface convexity / non-convexity.
-                        alpha[cellI] += volume_by_surf_tri(tetIntersection);
-                        if (writeGeo_)
-                            cutMeshStream << tetIntersection;
-                    }
-                    else if (dists.all()) // If tetrahedron is inside surface.
-                    {
-                        // Add the mixed product tet volume to the alpha cell value. 
-                        alpha[cellI] += (1. / 6.) * std::abs( 
-                            ((x0 - xC) &  ((xI - xC) ^ (xJ - xC)))
-                        ); 
-                    }
-
+                    // Add the mixed product tet volume to the alpha cell value. 
+                    alpha[cellI] += (1. / 6.) * std::abs( 
+                        ((xF - xC) &  ((xI0 - xC) ^ (xI1 - xC)))
+                    ); 
                 }
+                else if (triangleLabels.size() > 0) 
+                {
+                    // Initialize the tetrahedron intersection. 
+                    geophase::foamVectorPolyhedron tetIntersection {
+                        geophase::make_tetrahedron<geophase::foamVectorPolyhedron>(xC, xF, xI0, xI1)
+                    };
+                    nTrianglesPerCell_ += triangleLabels.size();
+                    for (const auto& triangleL : triangleLabels)
+                    {
+                        tetIntersection = 
+                            intersect_tolerance<geophase::foamPolyhedronIntersection>(
+                                tetIntersection, 
+                                foamHalfspace(
+                                    triPoints[triSurf_[triangleL][0]], 
+                                    triNormals[triangleL]
+                                )
+                        ).polyhedron();
+                    }
+                    // Add the volume of the intersection to the phase-specific volume.  
+                    alpha[cellI] += volume_by_surf_tri(tetIntersection);
+                    if (writeGeo_)
+                        cutMeshStream << tetIntersection;
+                }
+
             }
-            alpha[cellI] /= cellVolumes[cellI];
         }
+        alpha[cellI] /= cellVolumes[cellI];
     }
     nTrianglesPerCell_ /= intersectedCellLabels_.size();
 }
