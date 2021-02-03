@@ -107,14 +107,33 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 # Build the library
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
-add_library("signedDistanceCalculator" SHARED
-    src/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator.cpp
-    src/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
+add_library("triSurfaceImmersion" SHARED
+    src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
+    src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
+    src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
+    src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
+    src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
+    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
+    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator.cpp
+    src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
 )
 
-target_include_directories("signedDistanceCalculator" PUBLIC
-    src/signedDistanceCalculation/signedDistanceCalculator
-    src/signedDistanceCalculation/insideOutsidePropagation
+target_include_directories("triSurfaceImmersion" PUBLIC
+    src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection
+    src/triSurfaceImmersion/geomMeshIntersection/geomReconstructError
+    src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection
+    src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools
+    src/triSurfaceImmersion/include
+    src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization
+    src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement
+    src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator
+    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator
+    src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation
+)
+
+target_include_directories("triSurfaceImmersion" PUBLIC SYSTEM
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
@@ -122,70 +141,23 @@ target_include_directories("signedDistanceCalculator" PUBLIC
     ${of_src_path}/OpenFOAM/lnInclude
 )
 
-add_library("geometricalMeshIntersection" SHARED
-    src/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
-    src/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
-    src/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
-)
-
-target_link_libraries("geometricalMeshIntersection" geophase)
-
-target_include_directories("geometricalMeshIntersection" PUBLIC
-    src/geomMeshIntersection/geomMeshIntersection
-    src/geomMeshIntersection/geomReconstructError
-    src/geomMeshIntersection/geomSurfaceCellMeshIntersection
-    src/geomMeshIntersection/geomTriSurfaceTools
-    src/include
-)
-# Using PUBLIC here removes the need to specify again the required include directories
-# for the applications.
-target_include_directories("geometricalMeshIntersection" SYSTEM PUBLIC
-    ${of_src_path}/finiteVolume/lnInclude
-    ${of_src_path}/surfMesh/lnInclude
-    ${of_src_path}/meshTools/lnInclude
-    ${of_src_path}/OSspecific/POSIX/lnInclude
-    ${of_src_path}/OpenFOAM/lnInclude
-)
-
-add_library("polynomialVofInitialization" SHARED
-    src/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
-    src/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
-    src/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
-    src/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
-)
-target_compile_options("polynomialVofInitialization" PRIVATE "-fopenmp")
-target_include_directories("polynomialVofInitialization" PUBLIC
-    src/polynomialVofInitialization/polynomialVofInitialization
-    src/polynomialVofInitialization/AdaptiveTetCellRefinement
-    src/polynomialVofInitialization/tetVofCalculator
-    src/polynomialVofInitialization/orientedSurfaces
-)
-target_include_directories("polynomialVofInitialization" SYSTEM PUBLIC
-    ${of_src_path}/finiteVolume/lnInclude
-    ${of_src_path}/surfMesh/lnInclude
-    ${of_src_path}/meshTools/lnInclude
-    ${of_src_path}/OSspecific/POSIX/lnInclude
-    ${of_src_path}/OpenFOAM/lnInclude
-)
-target_link_libraries("polynomialVofInitialization"
-    "signedDistanceCalculator"
+target_link_libraries("triSurfaceImmersion"
+    geophase
     ${OpenMP_CXX_LIBRARIES}
 )
 
-# There is nothing to link, it is a header library: check what CMake link does in this case. TM.
-#target_link_libraries("geometricalMeshIntersection${PROJECT_BUILD_TYPE}" geophase)
+# TODO: enable if OPenMP is re-enabled (TT)
+#target_compile_options("triSurfaceImmersion" PRIVATE "-fopenmp")
 
 # Install the libraries 
-install(TARGETS "signedDistanceCalculator" LIBRARY)
-install(TARGETS "geometricalMeshIntersection" LIBRARY)
-install(TARGETS "polynomialVofInitialization" LIBRARY)
+install(TARGETS "triSurfaceImmersion" LIBRARY)
+
 
 # Build executables
-
 add_executable("geophaseUnitTest"
                 applications/geophaseUnitTest/geophaseUnitTest.cpp)
 target_include_directories("geophaseUnitTest" PRIVATE 
-    src/include
+    src/triSurfaceImmersion/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
@@ -206,7 +178,7 @@ set_tests_properties(unitTests PROPERTIES LABELS "UNIT")
 add_executable("polynomialVofTest${PROJECT_BUILD_TYPE}"
                applications/polynomialVofTest/polynomialVofTest.cpp)
 target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
-    "polynomialVofInitialization${PROJECT_BUILD_TYPE}"
+    "triSurfaceImmersion${PROJECT_BUILD_TYPE}"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -218,7 +190,7 @@ target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
 add_executable("cellCellVofInit"
                applications/cellCellVofInit/cellCellVofInit.cpp)
 target_link_libraries("cellCellVofInit"
-    "geometricalMeshIntersection"
+    "triSurfaceImmersion"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -229,7 +201,7 @@ target_link_libraries("cellCellVofInit"
 add_executable("smciVofInit"
                applications/smciVofInit/smciVofInit.cpp)
 target_link_libraries("smciVofInit"
-    "geometricalMeshIntersection"
+    "triSurfaceImmersion"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -240,8 +212,7 @@ target_link_libraries("smciVofInit"
 add_executable("smcaVofInit"
                applications/smcaVofInit/smcaVofInit.cpp)
 target_link_libraries("smcaVofInit"
-    "geometricalMeshIntersection"
-    "polynomialVofInitialization"
+    "triSurfaceImmersion"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -261,7 +232,7 @@ target_include_directories("signedDistanceTestCalc" PRIVATE
     ${of_src_path}/OpenFOAM/lnInclude
 )
 target_link_libraries("signedDistanceTestCalc"
-    "signedDistanceCalculator"
+    "triSurfaceImmersion"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -281,7 +252,7 @@ target_include_directories("signedDistanceInit" PRIVATE
     ${of_src_path}/OpenFOAM/lnInclude
 )
 target_link_libraries("signedDistanceInit"
-    "signedDistanceCalculator"
+    "triSurfaceImmersion"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
