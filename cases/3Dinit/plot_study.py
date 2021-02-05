@@ -4,7 +4,7 @@ from math import pi
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import numpy as np
-from math import ceil,exp
+from math import ceil,exp,log
 
 rcParams["text.usetex"] = True
 rcParams["figure.dpi"] = 300 
@@ -47,6 +47,33 @@ def compute_dependent_data(data, exact_volume, pattern, alg_name, data_write_dir
     data.to_csv(os.path.join(data_write_dir,"Data_Pandas_Dframe-%s-%s.csv" % (pattern, alg_name)), index=False)
     data.to_latex(os.path.join(data_write_dir, "Data_Pandas_Dframe-%s-%s.tex" % (pattern, alg_name)), index=False)
 
+def add_convergence_order(ax, order, xaxis='log', xrelmin=0.3, xrelmax=0.95, yrelmax=0.9):
+    """ Plot a line depicting the given order of convergence.
+
+    Keyword argument:
+    xaxis   -- specify the scaling of the xaxis. Can either be 'linear' or 'log'
+               (default: 'log')
+    xrelmin -- lower relative x-coordinate of the line (default: 0.3)
+    xrelmax -- upper relative x-coordinate of the line (default: 0.95)
+    yrelmax -- upper relative y-coordinate of the line (default: 0.9)
+    """
+    xmin, xmax = plt.xlim()
+    ymin, ymax = plt.ylim()
+    p1y = yrelmax*ymax
+    
+    if xaxis == 'linear':
+        p1x = xrelmin*(xmax - xmin) + xmin
+        p2x = xrelmax*(xmax - xmin) + xmin
+        p2y = p1y/((2.0**order)**(p2x - p1x))
+    elif xaxis == 'log':
+        p1x = exp(xrelmin*(log(xmax) - log(xmin)) + log(xmin))
+        p2x = exp(xrelmax*(log(xmax) - log(xmin)) + log(xmin))
+        p2y = p1y/((p2x/p1x)**order)
+    else:
+        raise ValueError("Error: use either 'log' or 'linear' as axis scaling.")
+
+    ax.plot([p1x, p2x], [p1y,p2y], color='silver', linestyle='dashed')
+
 def plot_convergence(data, pattern, alg_name, data_write_dir):
     n_cells = n_cells_sorted(data)
     fig_conv, ax_conv = plt.subplots()
@@ -57,6 +84,8 @@ def plot_convergence(data, pattern, alg_name, data_write_dir):
                      n_cell_data["VOLUME_ERROR_FROM_EXACT_VOLUME"], 
                      label = r"$N_c = %d$" % n_c, 
                      marker=global_markers[i % len(n_cells)])
+
+    add_convergence_order(ax_conv, 2.0)
 
     ax_conv.set_ylabel(r"$E_v$")
     ax_conv.set_xlabel(r"$\sqrt{N_T}$")
@@ -98,6 +127,7 @@ def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", c
     axis.grid()
     axis.semilogy(data["MAX_REFINEMENT_LEVEL"], data["VOLUME_ERROR_FROM_EXACT_VOLUME"],
               linewidth=0, marker='x', color='k')
+    add_convergence_order(axis, 2.0, xaxis='linear', xrelmin=0.22)
     axis.set_xlabel(r"$l_\mathrm{max}$")
     axis.set_ylabel(r"$E_v$")
     fig.savefig(os.path.join(data_write_dir, "refinement-convergence-%s-SCMA.pdf" % pattern),
