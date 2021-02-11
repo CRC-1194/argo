@@ -124,13 +124,41 @@ def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", c
     compute_dependent_data(data, exact_volume, pattern, "SMCA", data_write_dir)
     fig, axis = plt.subplots()
     fig.set_size_inches(4,3)
-    axis.grid()
+    # Draw line depicting the volume error from surface discretization
+    #discrete_volume = data["VOLUME_FROM_SURFACE_INTEGRAL"][0]
+    #Ed = abs(discrete_volume - exact_volume)/exact_volume
+    #axis.semilogy([min(data["MAX_REFINEMENT_LEVEL"]), max(data["MAX_REFINEMENT_LEVEL"])], [Ed, Ed], color='silver', linestyle='solid')
+
+    # Plot SMCA errors
+    #axis.semilogy(data["MAX_REFINEMENT_LEVEL"], data["VOLUME_ERROR_FROM_EXACT_VOLUME"],
+    #          linewidth=0, marker='x', color='k', label="$V_e = V_a$")
+    #axis.semilogy(data["MAX_REFINEMENT_LEVEL"], data["VOLUME_ERROR_FROM_SURFACE_INTEGRAL"],
+    #          linewidth=0, marker='+', color='g', label="$V_e$ = eq. (31)")
     axis.semilogy(data["MAX_REFINEMENT_LEVEL"], data["VOLUME_ERROR_FROM_EXACT_VOLUME"],
               linewidth=0, marker='x', color='k')
     add_convergence_order(axis, 2.0, xaxis='linear', xrelmin=0.22)
+
+    axis.set_xticks([0, 1, 2, 3])
     axis.set_xlabel(r"$l_\mathrm{max}$")
     axis.set_ylabel(r"$E_v$")
-    fig.savefig(os.path.join(data_write_dir, "refinement-convergence-%s-SCMA.pdf" % pattern),
+    #axis.legend(bbox_to_anchor=[0.99,0.99], loc="upper right", framealpha=0)
+    fig.savefig(os.path.join(data_write_dir, "convergence-%s-SCMA.pdf" % pattern),
+                    bbox_inches='tight')
+
+def plot_smca_cad_refinement_convergence(pattern, data_write_dir="", csv_file="smcaVofInit.csv"):
+    data = read_data(pattern, csv_file)
+    volume = data["VOLUME_FROM_SURFACE_INTEGRAL"][0]
+    compute_dependent_data(data, volume, pattern, "SMCA", data_write_dir)
+    fig, axis = plt.subplots()
+    fig.set_size_inches(4,3)
+    axis.semilogy(data["MAX_REFINEMENT_LEVEL"], data["VOLUME_ERROR_FROM_SURFACE_INTEGRAL"],
+              linewidth=0, marker='x', color='k')
+    add_convergence_order(axis, 2.0, xaxis='linear', xrelmin=0.22)
+
+    axis.set_xticks([0, 1, 2, 3])
+    axis.set_xlabel(r"$l_\mathrm{max}$")
+    axis.set_ylabel(r"$E_v$")
+    fig.savefig(os.path.join(data_write_dir, "cad-convergence-%s-SCMA.pdf" % pattern),
                     bbox_inches='tight')
 
 def plot_study(pattern, alg_name, exact_volume, data_write_dir="", csv_file="surfaceCellVofInit.csv"):

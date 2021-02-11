@@ -28,7 +28,7 @@ surfaceMeshRefinement
 {
     vent
     {
-        surfaceFile "geom2.stl";
+        surfaceFile "inside_vent.stl";
         additionalRefinementLevels 4;
         refinementThickness 4;
     }

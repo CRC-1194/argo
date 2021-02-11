@@ -2,18 +2,9 @@ values
 {
     solver ( smcaVofInit );
 
-    N_CELLS
-    (
-        16
-    );
-
-    TRIANGLE_EDGE_LENGTH 
-    (
-        0.002
-    );
-
     MAX_REFINEMENT_LEVEL
     (
         0 1 2 3
+        //0 1 2 3 4 5 6
     );
 }
