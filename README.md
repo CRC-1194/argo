@@ -94,8 +94,6 @@ There are two scripts, `Allrunscmi` and `Allrunsmca`, that each generate the mes
 
 ![Volume fractions initialized from an experimental fluid interface](./etc/experimental-case-smci.png)
 
-
-
 ## Contributing
 
-The code is maintained at [GitLab](https://gitlab.com/leia-methods/argo). Feedback in the form of contributions, bug reports or feature requests is handled [TODO: Link to gitlab.com service desk](). 
+The code is maintained on [GitLab](https://gitlab.com/leia-methods/argo). Feedback,  requests to join the project, bug reports or feature requests are handled [via this email](mailto:incoming+leia-methods-argo-23940628-issue-@incoming.gitlab.com).
