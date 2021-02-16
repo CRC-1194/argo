@@ -10,32 +10,17 @@ The "argo" project is an [OpenFOAM](https://develop.openfoam.com/Development/ope
 
 * **Dirk Gründing** - *Development* - [MMA, TU Darmstadt](https://www.mma.tu-darmstadt.de/index/mitarbeiter_3/mitarbeiter_details_mma_47488.en.jsp)
 
-## Methods
+## Publications 
 
-### Computing volume fractions and signed distances from arbitrary surfaces on unstructured meshes
+[1] [Tolle, T., Gründing, D., Bothe, D., & Marić, T. (2021). Computing volume fractions and signed distances from arbitrary surfaces on unstructured meshes. arXiv preprint arXiv:2101.08511.](https://arxiv.org/abs/2101.08511)
 
-Implementation of the Surface-Cell Mesh Intersection (SMCI) and Surface-Cell Mesh Approximation (SMCA) algorithms for computing volume fractions on unstructured meshes from arbitrarily shaped surfaces. 
-
-DOI: [arXiv:2101.08511](https://arxiv.org/abs/2101.08511) 
-
-Citation:
-
-```
-@misc{tolle2021computing,
-      title={Computing volume fractions and signed distances from arbitrary surfaces on unstructured meshes}, 
-      author={Tobias Tolle and Dirk Gründing and Dieter Bothe and Tomislav Marić},
-      year={2021},
-      eprint={2101.08511},
-      archivePrefix={arXiv},
-      primaryClass={physics.comp-ph}
-}
-```
+[2] [Hartmann, M., Fricke, M., Weimar, L., Gründing, D., Marić, T., Bothe, D., & Hardt, S. (2021). Breakup Dynamics of Capillary Bridges on Hydrophobic Stripes. International Journal of Multiphase Flow, 103582.](https://doi.org/10.1016/j.ijmultiphaseflow.2021.103582)
 
 ## License
 
 This project is licensed under the GPL3.0 License - see the [LICENSE.md](LICENSE.md) file for details.
 
-## Installation 
+## Installation
 
 These instructions will get your copy of the project up and running on your local machine for development and testing purposes. 
 
@@ -97,7 +82,19 @@ where the flag `-DCMAKE_EXPORT_COMPILE_COMMANDS=on` is optional (it instructs CM
 
 ## Examples 
 
-**TODO**
+### Experimental fluid interface
+
+The case with the experimental surface from [[1](https://arxiv.org/abs/2101.08511)] and [[2](https://doi.org/10.1016/j.ijmultiphaseflow.2021.103582)] is available in 
+
+```
+argo/cases/3D-SFB1194-A02b
+```
+
+There is an `Allrun` script that generates the mesh and computes volume fractions, shown in the below figure 
+
+![Volume fractions initialized from an experimental fluid interface](./etc/experimental-case-smci.png)
+
+
 
 ## Contributing
 
