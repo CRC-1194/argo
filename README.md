@@ -35,8 +35,8 @@ These instructions will get your copy of the project up and running on your loca
 
 Meshing 
 
-    * [gmsh](http://gmsh.info/) meshing software version 4.7.1, used for generating surface meshes
-    * [cfmesh](https://cfmesh.com/cfmesh/), available as OpenFOAM sub-module, used for automatic generation of unstructured volume meshes
+* [gmsh](http://gmsh.info/) meshing software version 4.7.1, used for generating surface meshes
+* [cfmesh](https://cfmesh.com/cfmesh/), available as OpenFOAM sub-module, used for automatic generation of unstructured volume meshes
 
 OpenFOAM
 
