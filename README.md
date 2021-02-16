@@ -90,7 +90,7 @@ The case with the experimental surface from [[1](https://arxiv.org/abs/2101.0851
 argo/cases/3D-SFB1194-A02b
 ```
 
-There is an `Allrun` script that generates the mesh and computes volume fractions, shown in the below figure 
+There are two scripts, `Allrunscmi` and `Allrunsmca`, that each generate the mesh and compute volume fractions, shown in the below figure 
 
 ![Volume fractions initialized from an experimental fluid interface](./etc/experimental-case-smci.png)
 
