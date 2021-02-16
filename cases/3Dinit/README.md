@@ -1,85 +1,70 @@
 # Overview
 
-This is a parameter study for intersecting a 3D sphere mesh with a 3D volume mesh in OpenFOAM (SMCI or CCMI). A third approach approximates volume fractions based on
-the signed distance computed from the sphere mesh in combination with tetrahedral
-cell refinement.
+This directory contains the necessary files to prepare, run and evaluate parameter studies
+with either a spherical or ellipsoidal interface. Such studies allow to analyze the 
+convergence behaviour of the relative global volume error with respect to interface resolution for the 
+SMCI/A algorithm.
 
-You can run the study serially, or on a cluster that is using the SLURM workload manager.
-
-Measured parameter  | Description
---- | ---
-Nt | number of cells or triangles in the tool mesh
-Nb | number of cells in the base mesh
-Ev | volume conservation error
-Ti | initialization time, loading the mesh and fields
-Te | execution time of the mesh intersection operation
-Nx | total number of cell / halfspace intersections 
-Ni | number of interface cells,
-Nk | number of bulk cells.
-Va | volume as approximated by the VoF field
-Ed | volume error relative to the discrete surface volume
+You can run a study serially, or on a cluster that is using the SLURM workload manager.
 
 # Running 
 
-**Note**:
-* ensure you have build, installed and sourced the `geom-vof-init`
-project properly. 
+**Prerequisites**:
+* ensure you have build, installed and sourced the `argo` project properly. 
 * ensure the OpenFOAM environment is set (aka `etc/bashrc` is sourced.)
+* ensure Gmsh, PyFoam and Jupyter Notebook are installed on your system
 
+## Conducting parameter studies
+
+### Reproduce publication results
+To reproduce the plots and their corresponding data from the publication run
 ```
-    pvpython paraview-create-sphere.py 
+./reproduce_publication_results.sh
 ```
+This will also run the SMCA refinement convergence study for the CAD geometry.
+The output in form of CSV and PDF files is written to `./results`. You can specify another directory
+by setting the environment variable `GEOM_VOF_INIT` to the desired path. For a concise summary of
+the results in one place, open and run the Jupyter notebooks `smci-vof-init.ipynb` and 
+`smca-vof-init.ipynb`.  
+To remove the generated directories and files run `./clean_studies_and results.sh`.
 
-Create the 3D tool mesh using cfMesh 
-
+### Create and run specific studies
+Specific studies are created with
 ```
-=======
-Create the `meshed-sphere.vtk` and `cfmesh-sphere.stl` file in the
-toolCase/ directory (requires GMsh)
-
+./create_parameter_study.py ...
 ```
-    ./makeSurfaceMesh
+and then run by
 ```
-
-Create the 3D tool mesh using cfMesh (only required for CCMI)
-
+./run_parameter_study ...
 ```
-    toolCase> cartesianMesh
-```
+where `...` needs to be replaced with appropriate arguments. Please call each script with the `--help` option
+to get a list of available arguments. You can also have a look at the scripts
+`create_smci_smca_verification_study.sh` and `run_smci_smca_verification_study.sh` to see examples on
+how to use them.
+An overview of the available studies and study parameters is given further below.
 
-Clone the cases for the parameter study in serial
+### Study parameters and available studies
+Two interface shapes are available, a _sphere_ and an _ellipsoid_. Their parameters can be found and changed
+in the `templateCase/*.geo.template` files.  
+Three additional parameters can be set in the `*.parameter` file:
+* `N_CELLS`: controls the number volume mesh cells. For the `blockMesh` mesh generator, the resulting number
+    of cells is $n_\text{cells}^3$.
+* `TRIANGLE_EDGE_LENGTH`: controls the triangle size of the surface mesh by setting Gmsh's 
+    `Mesh.CharacteristicLengthMax` in `templateCase/*.geo`.
+* `MAX_REFINEMENT_LEVEL` (only used by SMCA algorithm, but must be present): sets the maximum refinement level used during tetrahedral
+    refinement. A value of `-1` enables the automatic computation of the maximum refinement level.
 
-    ./00-serial-clone-mesh-study algorithm parameterFile
+Currently, the following studies are available:
+* `blockMesh.parameter`: examine algorithm convergence with surface mesh resolution for different
+    volume mesh resolutions. Use with the `blockMesh` mesh generator.
+* `blockMeshSmokeTest.parameter`: same idea as `blockMesh.parameter`, but with reduced number of parameter combinations for faster testing.
+* `polyMesh.parameter`: examine algorithm convergence with surface mesh resolution for different
+    volume mesh resolutions. Use with the `pMesh` mesh generator.
+* `tetMesh.parameter`: examine algorithm convergence with surface mesh resolution for different
+    volume mesh resolutions. Use with the `blockMesh` mesh generator.
+* `smca-refinement-convergence-blockMesh.parameter`: examine the effectiveness of tetrahedral refinement for the SMCA algorithm by varying the maximum refinement level with fixed surface and volume mesh resolution.
 
-or parallel
 
-    ./00-SLURM-clone-mesh-study algorithm parameterFile
-
-Example: 
-
-```
-    ./00-SLURM-clone-mesh-study hexDomain smciDomain.parameter
-    ./00-SLURM-clone-mesh-study hexDomain ccmiDomain.parameter
-```
-
-where *algorithm* is either `smci`, `ccmi` or `povof` and *parameterFile*
-is the name of the studies corresponding parameter file. Note that there are
-three variants of a parameter file, one for each mesh type *hexahedral*,
-*tetrahedral* and *polyhedral*.
-
-Run the parameter variations in serial
-
-    ./01-serial-povof parameterFile
-
-or parallel using one of the following:
-
-```
-    ./01-SLURM-CCMI-intersect
-    ./01-SLURM-SMCI-intersect
-```
-
-Note: a script using SLURM for poVof still needs to be implemented.
-
-# Result processing 
-Evaluation and visualization of the results is done using a Jupyter notebook
-named *analyze-volume-fraction-initialization.ipynb*.
+### Postprocessing / evaluation
+Postprocsessing is performed by two Jupyter notebooks, namely `smci-vof-init.ipynb` and `smca-vof-init.ipynb`.
+Shared functionality, e.g. data aggregation and plotting, is defined in `plot_study.py`.

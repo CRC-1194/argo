@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+
+# PyFoam does requires a constant directory even if it is empty
+mkdir constant
+
 cd ..
 
 pyFoamRunParameterVariation.py \
