@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                |
+| \\      /  F ield         | cfMesh: A library for mesh generation          |
+|  \\    /   O peration     |                                                |
+|   \\  /    A nd           | Author: Franjo Juretic                         |
+|    \\/     M anipulation  | E-mail: franjo.juretic@c-fields.com            |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version   2.0;
+    format    ascii;
+    class     dictionary;
+    location  "system";
+    object    meshDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+surfaceFile "domain_box.fms";
+
+minCellSize 10.0;
+
+maxCellSize 20.0;
+
+boundaryCellSize 10;
+
+surfaceMeshRefinement
+{
+    pores
+    {
+        surfaceFile "CAB_XD_95VC-clean.stl";
+        // Tested up to refinement level 6 on my desktop PC.
+        // This is the limit with 16GB of main memory and results
+        // in around 7M cells (TT)
+        additionalRefinementLevels 4;
+        refinementThickness 2;
+    }
+}
+
+meshQualitySettings
+{
+    maxNonOrthogonality        50;
+}
+
+// ************************************************************************* //
