@@ -1,0 +1,63 @@
+    argList::addNote
+    (
+        "Initialize a volume fraction field from a triangulated surface the SMCI/A algorithm"
+    );
+
+    argList::addOption
+    (
+        "fieldName", 
+        "alpha.water",
+        "Name of the volume fraction field." 
+    ); 
+
+    argList::addOption
+    (
+        "type", 
+        "SMCI/SMCA",
+        "Name of the volume fraction calculator. Default: SMCI." 
+    ); 
+
+    argList::addOption
+    (
+        "refinementLevel", 
+        "label",
+        "Maximum refinement level to be used (SMCA only). Default: auto mode."
+    ); 
+
+    argList::addOption
+    (
+        "narrowBandWidth", 
+        "scalar",
+        "Number of cells in interface normal direction constituting the narrow band. Default: 4.0."
+    ); 
+
+    argList::addOption
+    (
+        "surfaceFile",
+        "Surface mesh file."
+        "File containing the interface description. Requires a consistent, inward normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose. Default: surface.stl"
+    );
+
+    argList::addBoolOption
+    (
+        "invert",
+        "Invert the computed volume fraction field: cells outside of the surface are set to 1."
+    );
+
+    argList::addBoolOption
+    (
+        "writeAllFields",
+        "Write out all fields used by the initialization method."
+    );
+
+    argList::addBoolOption
+    (
+        "writeGeometry",
+        "Write the intersected geometry (SMCI) or the testrahedral decomposition (SMCA)used to compute the volume fractions"
+    );
+
+    argList::addBoolOption
+    (
+        "checkVolume",
+        "Check the volume given by volume fraction compared with the volume of the surface mesh. Works only with closed surfaces."
+    );

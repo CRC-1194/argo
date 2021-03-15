@@ -89,21 +89,21 @@ public:
 
     // Make point to nearest triangle information available to the caller of this
     // member function
-    scalarField signed_distance
+    scalarField signedDistance
                 (
                     DynamicList<pointIndexHit>& point_to_nearest_triangle,
                     const pointField& pf,
                     const scalarField& search_dist_sqr,
                     const scalar out_of_search_domain=0.0
                 ) const;
-    scalarField signed_distance
+    scalarField signedDistance
                 (
                     const pointField& pf,
                     const scalarField& search_dist_sqr,
                     const scalar out_of_search_domain=0.0
                 ) const;
-    std::tuple<pointIndexHit, scalar> signed_distance(const point& p, const scalar search_dist_sqr) const;
-    scalar signed_distance(const point& p) const;
+    std::tuple<pointIndexHit, scalar> signedDistance(const point& p, const scalar search_dist_sqr) const;
+    scalar signedDistance(const point& p) const;
     vector normal_at_surface(const pointIndexHit& hit_info) const;
 
     // Access

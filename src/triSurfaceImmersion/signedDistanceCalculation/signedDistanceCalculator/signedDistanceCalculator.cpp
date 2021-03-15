@@ -82,7 +82,7 @@ signedDistanceCalculator::signedDistanceCalculator(const triSurface& surface)
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-scalarField signedDistanceCalculator::signed_distance
+scalarField signedDistanceCalculator::signedDistance
             (
                 DynamicList<pointIndexHit>& point_to_nearest_triangle,
                 const pointField& pf,
@@ -116,7 +116,7 @@ scalarField signedDistanceCalculator::signed_distance
     return distances;
 }
 
-scalarField signedDistanceCalculator::signed_distance
+scalarField signedDistanceCalculator::signedDistance
             (
                 const pointField& pf,
                 const scalarField& search_dist_sqr,
@@ -126,10 +126,10 @@ scalarField signedDistanceCalculator::signed_distance
     DynamicList<pointIndexHit> point_to_nearest_triangle{};
     point_to_nearest_triangle.reserve(pf.size());
 
-    return signed_distance(point_to_nearest_triangle, pf, search_dist_sqr, out_of_search_domain);
+    return signedDistance(point_to_nearest_triangle, pf, search_dist_sqr, out_of_search_domain);
 }
 
-std::tuple<pointIndexHit, scalar> signedDistanceCalculator::signed_distance
+std::tuple<pointIndexHit, scalar> signedDistanceCalculator::signedDistance
                          (
                             const point& p,
                             const scalar search_dist_sqr
@@ -149,9 +149,9 @@ std::tuple<pointIndexHit, scalar> signedDistanceCalculator::signed_distance
     return std::make_tuple(hit_info, distance);
 }
 
-scalar signedDistanceCalculator::signed_distance(const point& p) const
+scalar signedDistanceCalculator::signedDistance(const point& p) const
 {
-    return std::get<1>(signed_distance(p, 1e15));
+    return std::get<1>(signedDistance(p, 1e15));
 }
 
 vector signedDistanceCalculator::normal_at_surface(const pointIndexHit& hit_info) const
