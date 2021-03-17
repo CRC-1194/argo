@@ -52,7 +52,7 @@ Author
 #include <chrono>
 #include <iomanip>
 
-using namespace Foam::PolynomialVof;
+using namespace Foam::TriSurfaceImmersion;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // Main program:

@@ -50,7 +50,7 @@ Author
 #include <chrono>
 #include <iomanip>
 
-using namespace Foam;
+using namespace Foam::TriSurfaceImmersion;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 pointField generate_points(const boundBox& bb, const scalar bb_scale, const int n)
@@ -107,11 +107,11 @@ int main(int argc, char *argv[])
     };
 
     // New calculation using the class
-    SigDistCalc::signedDistanceCalculator sig_dist_calc{surface};
+    signedDistanceCalculator sig_dist_calc{surface};
     const auto test_points = generate_points(surface_bb, bb_scale_factor, npoints_per_dim);
     const scalarField search_dist_sqr(test_points.size(), r_search*r_search);
 
-    auto signed_distance = sig_dist_calc.signed_distance(test_points, search_dist_sqr, 1e15);
+    auto signed_distance = sig_dist_calc.signedDistance(test_points, search_dist_sqr, 1e15);
 
     // Write point sets and associated fields
     std::string case_path = args.rootPath() + "/" + args.globalCaseName();

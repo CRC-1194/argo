@@ -50,7 +50,7 @@ Author
 #include <string>
 #include <vector>
 
-using namespace Foam::PolynomialVof;
+using namespace Foam::TriSurfaceImmersion;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

@@ -27,8 +27,11 @@ License
 
 #include "volumeFractionCalculator.hpp"
 
+#include "IOobject.H"
 #include "addToRunTimeSelectionTable.H" 
 #include "dictionary.H"
+#include "fvc.H"
+#include "pointMesh.H"
 
 namespace Foam::TriSurfaceImmersion {
 
@@ -52,11 +55,99 @@ namespace Foam::TriSurfaceImmersion {
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+volumeFractionCalculator::volumeFractionCalculator
+(
+    const dictionary& configDict,
+    const fvMesh& mesh,
+    const triSurface& surface
+)
+:
+    mesh_{mesh},
+    runTime_{mesh.time()},
+    surface_{surface},
+    // init fields here
+    cellSqrSearchDist_
+    {
+        IOobject
+        (
+            "cellSqrSearchDist", 
+            runTime_.timeName(), 
+            mesh_, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        fvc::average(pow(mesh.deltaCoeffs(), -2))
+    },
+    cellSignedDist_
+    {
+        IOobject
+        (
+            "cellSignedDist", 
+            runTime_.timeName(), 
+            mesh, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh,
+        dimensionedScalar("cellSignedDist", dimLength,0),
+        "zeroGradient"
+    },
+    cellSignedDist0_{"cellSignedDist0", cellSignedDist_}, 
+    faceSignedDist_{
+        IOobject
+        (
+            "faceSignedDist", 
+            runTime_.timeName(), 
+            mesh, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh,
+        dimensionedScalar("faceSignedDist", dimLength,0)
+    },
+    cellsToPointsInterp_{mesh},
+    pMesh_{mesh_},
+    // init fields here
+    pointSqrSearchDist_ 
+    {
+        IOobject
+        (
+            "pointSqrSearchDist", 
+            runTime_.timeName(), 
+            mesh_, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+
+        pMesh_,
+        dimensionedScalar("pointSqrSearchDist", dimLength,0),
+        "zeroGradient"
+    },
+    pointSignedDist_ 
+    {
+        IOobject
+        (
+            "pointSignedDist", 
+            runTime_.timeName(), 
+            mesh_, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        pMesh_,
+        dimensionedScalar("pointSignedDist", dimLength,0),
+        "zeroGradient"
+    }
+{}
 
 
 // * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
 autoPtr<volumeFractionCalculator>
-volumeFractionCalculator::New(const dictionary& configDict)
+volumeFractionCalculator::New
+(
+    const dictionary& configDict,
+    const fvMesh& mesh,
+    const triSurface& surface
+)
 {
     const word name = configDict.get<word>("type");
 
@@ -66,15 +157,15 @@ volumeFractionCalculator::New(const dictionary& configDict)
     if (cstrIter == DictionaryConstructorTablePtr_->end())
     {
         FatalErrorIn (
-            "curvatureModel::New(const word& name)"
-        )   << "Unknown curvatureModel type "
+            "volumeFractionCalculator::New(const word& name)"
+        )   << "Unknown volumeFractionCalculator type "
             << name << nl << nl
-            << "Valid curvatureModels are : " << endl
+            << "Valid volumeFractionCalculators are : " << endl
             << DictionaryConstructorTablePtr_->sortedToc()
             << exit(FatalError);
     }
 
-    return autoPtr<volumeFractionCalculator>(cstrIter()(configDict));
+    return autoPtr<volumeFractionCalculator>(cstrIter()(configDict, mesh, surface));
 }
 
 
@@ -87,6 +178,9 @@ void volumeFractionCalculator::printTypeName() const
     Info << "VoF calculator type: " << this->type() << endl;
 }
 
+void volumeFractionCalculator::writeFields() const
+{
+}
 
 // * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //
 

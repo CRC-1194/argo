@@ -14,8 +14,7 @@
 // std
 #include <vector>
 
-namespace Foam {
-namespace PolynomialVof {
+namespace Foam::TriSurfaceImmersion {
 
 class polynomialVofInitialization
 {
@@ -34,7 +33,7 @@ class polynomialVofInitialization
         const Time& runTime_;
         const triSurface& surface_;
         triSurfaceSearch triSearch_;
-        SigDistCalc::signedDistanceCalculator sig_dist_calc_;
+        signedDistanceCalculator sig_dist_calc_;
         
         // Factor used to extend the narrow band by N cells. 
         // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
@@ -114,9 +113,6 @@ class polynomialVofInitialization
         void writeFields() const;
 };
 
-// End namespace PolynomialVof
-}
-// End namespace Foam
-}
+} // End namespace Foam::TriSurfaceImmersion
 
 #endif

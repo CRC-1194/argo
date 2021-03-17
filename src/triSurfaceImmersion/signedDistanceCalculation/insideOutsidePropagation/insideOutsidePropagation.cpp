@@ -31,14 +31,13 @@ License
 #include "linear.H"
 #include "skewCorrectedSnGrad.H"
 
-namespace Foam {
-namespace SigDistCalc {
+namespace Foam::TriSurfaceImmersion {
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-tmp<volScalarField> insideOutsidePropagation::propagate_inside_outside(const volScalarField& signed_distance) const
+tmp<volScalarField> insideOutsidePropagation::propagateInsideOutside(const volScalarField& signedDistance)
 {
     // Hardcode Laplacian scheme and solver settings
-    tmp<volScalarField> tmp_in_out_field{new volScalarField{signed_distance}};
+    tmp<volScalarField> tmp_in_out_field{new volScalarField{signedDistance}};
     auto& in_out_field = tmp_in_out_field.ref();
     in_out_field.rename("inside_outside");
 
@@ -47,11 +46,11 @@ tmp<volScalarField> insideOutsidePropagation::propagate_inside_outside(const vol
         IOobject
         (
             "Diffusion coefficient",
-            signed_distance.time().constant(),
-            signed_distance.mesh(),
+            signedDistance.time().constant(),
+            signedDistance.mesh(),
             IOobject::NO_READ
         ),
-        signed_distance.mesh(),
+        signedDistance.mesh(),
         dimensionedScalar("1", dimless, 1.0)
     );
 
@@ -75,11 +74,11 @@ tmp<volScalarField> insideOutsidePropagation::propagate_inside_outside(const vol
         propagationEqn.solve(solverControl);
 
         // Reset signed distance in the narrow band
-        forAll(signed_distance, idx)
+        forAll(signedDistance, idx)
         {
-            if (signed_distance[idx] != 0.0)
+            if (signedDistance[idx] != 0.0)
             {
-                in_out_field[idx] = signed_distance[idx];
+                in_out_field[idx] = signedDistance[idx];
             }
         }
     }
@@ -90,11 +89,7 @@ tmp<volScalarField> insideOutsidePropagation::propagate_inside_outside(const vol
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace SigDistCalc
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // ************************************************************************* //

@@ -40,9 +40,15 @@ SourceFiles
 #define volumeFractionCalculator_H
 
 #include "autoPtr.H"
+#include "surfaceFields.H"
+#include "fvMesh.H"
+#include "pointFields.H"
 #include "runTimeSelectionTables.H"
+#include "Time.H"
+#include "triSurface.H"
 #include "typeInfo.H"
-#include "volFieldsFwd.H"
+#include "volFields.H"
+#include "volPointInterpolation.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -55,7 +61,52 @@ namespace Foam::TriSurfaceImmersion {
 class volumeFractionCalculator
 {
 private:
+
     // Private Data
+    //- A reference to the mesh.  
+    const fvMesh& mesh_; 
+
+    //- A reference to time.
+    const Time& runTime_;  
+
+    //- A reference to the surface mesh
+    const triSurface& surface_;
+
+    // Cell-center distances
+    
+    //- Squared search distance field in cell centers. 
+    volScalarField cellSqrSearchDist_;  
+    //- Signed distance at cell centers. 
+    volScalarField cellSignedDist_; 
+    //- Initial signed distance field given by the octree, used to correct the 
+    // signed distance propagated by the solution of the Laplace equation. 
+    volScalarField cellSignedDist0_;  
+    //- Information used to store the surface proximity information for each cell. 
+    //DynamicList<pointIndexHit> cellNearestTriangle_;
+
+    // Face-center distances 
+    //- Signed distance at face centers. 
+    surfaceScalarField faceSignedDist_; 
+
+    // Point signed distances 
+    
+    //- Inverse Distance Interpolation : cell centers to cell corners. 
+    volPointInterpolation cellsToPointsInterp_;
+
+    pointMesh pMesh_;
+    //- Squared search distance at cell corner points. 
+    pointScalarField pointSqrSearchDist_;  
+    //- Signed distance at cell corner points. 
+    pointScalarField pointSignedDist_;
+    //- Nearest triangle to a cell corner point. 
+    //DynamicList<pointIndexHit> pointNearestTriangle_;
+
+    // Factor used to extend the narrow band by N cells. 
+    // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
+    //const scalar sqrDistFactor_; 
+
+    //const bool writeGeometry_; 
+
 
 protected:
 
@@ -69,9 +120,11 @@ public:
         volumeFractionCalculator,
         Dictionary,
         (
-            const dictionary& configDict
+            const dictionary& configDict,
+            const fvMesh& mesh,
+            const triSurface& surface
         ),
-        (configDict)
+        (configDict, mesh, surface)
     )
 
     // Static Data Members
@@ -90,11 +143,22 @@ public:
 
 
     // Constructors
-    explicit volumeFractionCalculator(const dictionary& configDict) {};
+    explicit volumeFractionCalculator
+    (
+        const dictionary& configDict,
+        const fvMesh& mesh,
+        const triSurface& surface
+    );
 
 
     // Selectors
-    static autoPtr<volumeFractionCalculator> New(const dictionary& configDict);
+    static autoPtr<volumeFractionCalculator>
+    New
+    (
+        const dictionary& configDict,
+        const fvMesh& mesh,
+        const triSurface& surface
+    );
 
 
     //- Destructor
@@ -102,28 +166,56 @@ public:
 
 
     // Member Functions
+    // TODO(TT): remove later
     void printTypeName() const;
 
-    virtual void calcVolumeFraction(volScalarField& ) = 0;
+    //- Access
 
-    // Access
+    inline const Time& time() const;
 
-    // Check
+    inline const fvMesh& mesh() const;
 
-    // Edit
+    inline const triSurface& surface() const;
 
-    // Write
+    inline const volScalarField& cellSqrSearchDist() const; 
 
+    inline const pointScalarField& pointSqrSearchDist() const; 
+
+    inline const volScalarField& cellSignedDist() const; 
+
+    inline const volScalarField& cellSignedDist0() const; 
+
+    virtual const double nTrianglesPerCell() const = 0;
+
+    virtual const label nIntersectedCells() const = 0;
+
+    virtual const label maxRefinementLevel() const = 0;
+
+
+    //- Computation
+
+    void calcSqrSearchDist();  
+
+    void calcSignedDist();  
+
+    virtual void findIntersectedCells() = 0;
+
+    virtual void calcVolumeFraction(volScalarField& alpha) = 0;
+
+
+    //- Write 
+
+    virtual void writeFields() const;
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace Foam::TriSurfaceImmersion
+#include "volumeFractionCalculatorI.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-//#include "volumeFractionCalculatorI.H"
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

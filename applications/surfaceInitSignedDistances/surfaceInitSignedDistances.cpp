@@ -49,6 +49,8 @@ Description
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+using namespace Foam::TriSurfaceImmersion;
+
 int main(int argc, char *argv[])
 {
     #include "createOptions.hpp"
@@ -98,17 +100,17 @@ int main(int argc, char *argv[])
     // Initialization
     #include "createFields.hpp"
     triSurface surface{surfaceFile};
-    SigDistCalc::signedDistanceCalculator sig_dist_calc{surface};
+    signedDistanceCalculator sig_dist_calc{surface};
 
     if (searchDistanceFactor <= 0.0)
     {
         searchDistanceFactor = mesh.bounds().mag();
     }
-    signedDistance.primitiveFieldRef() = sig_dist_calc.signed_distance(mesh.C(), sqrSearchDist*searchDistanceFactor*searchDistanceFactor, 0.0);
+    signedDistance.primitiveFieldRef() = sig_dist_calc.signedDistance(mesh.C(), sqrSearchDist*searchDistanceFactor*searchDistanceFactor, 0.0);
 
     if (propagateInsideOutside)
     {
-        signedDistance = SigDistCalc::insideOutsidePropagation{}.propagate_inside_outside(signedDistance);
+        signedDistance = insideOutsidePropagation::propagateInsideOutside(signedDistance);
     }
     
     if (invertInsideOutside)

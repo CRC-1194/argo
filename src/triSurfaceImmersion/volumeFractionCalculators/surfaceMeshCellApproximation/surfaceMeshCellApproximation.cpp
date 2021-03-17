@@ -52,9 +52,14 @@ namespace Foam::TriSurfaceImmersion {
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-surfaceMeshCellApproximation::surfaceMeshCellApproximation(const dictionary& configDict)
+surfaceMeshCellApproximation::surfaceMeshCellApproximation
+(
+    const dictionary& configDict,
+    const fvMesh& mesh,
+    const triSurface& surface
+)
 :
-    volumeFractionCalculator{configDict}
+    volumeFractionCalculator{configDict, mesh, surface}
     {}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
@@ -62,6 +67,9 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 {
 }
 
+void surfaceMeshCellApproximation::findIntersectedCells()
+{
+}
 
 }  // namespace Foam::TriSurfaceImmersion
 

@@ -58,7 +58,8 @@ class surfaceMeshCellIntersection
 private:
 
     // Private Data
-
+    label nTrianglesPerCell_;
+    label nIntersectedCells_;
 
 public:
 
@@ -78,7 +79,12 @@ public:
 
 
     // Constructors
-    explicit surfaceMeshCellIntersection(const dictionary& configDict);
+    surfaceMeshCellIntersection
+    (
+        const dictionary& configDict,
+        const fvMesh& mesh,
+        const triSurface& surface
+    );
 
 
     //- Destructor
@@ -86,27 +92,30 @@ public:
 
 
     // Member Functions
+
+    //- Access
+
+    inline const double nTrianglesPerCell() const override;
+
+    inline const label nIntersectedCells() const override;
+
+    inline const label maxRefinementLevel() const override;
+
+    //- Computation
+
     void calcVolumeFraction(volScalarField& alpha) override; 
 
-    // Access
-
-    // Check
-
-    // Edit
-
-    // Write
-
-
+    void findIntersectedCells() override;
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-}  // namespace Foam::TriSurfaceImmersion
+#include "surfaceMeshCellIntersectionI.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-//#include "surfaceMeshCellIntersectionI.H"
+}  // namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

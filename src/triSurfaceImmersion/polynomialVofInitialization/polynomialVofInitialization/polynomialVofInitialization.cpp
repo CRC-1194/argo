@@ -13,8 +13,7 @@
 #include <map>
 #include <omp.h>
 
-namespace Foam {
-namespace PolynomialVof {
+namespace Foam::TriSurfaceImmersion {
 
 // Private member functions
 void polynomialVofInitialization::setBulkFractions(volScalarField& alpha) const
@@ -93,7 +92,7 @@ void polynomialVofInitialization::calcVertexSignedDistance()
             {
                 // Vertices are guaranteed to be close to the interface.
                 // So the search distance can be large (TT)
-                auto [hit_info, distance] = sig_dist_calc_.signed_distance(points[v_id], 1e15);
+                auto [hit_info, distance] = sig_dist_calc_.signedDistance(points[v_id], 1e15);
                 vertexNearestTriangle_[v_id] = hit_info;
                 vertexSignedDistance_[v_id] = distance;
             }
@@ -114,7 +113,7 @@ void polynomialVofInitialization::calcFaceSignedDistance()
         {
             if (faceSignedDistance_[face_id] == 1.0e15)
             {
-                faceSignedDistance_[face_id] = sig_dist_calc_.signed_distance(points[face_id]);
+                faceSignedDistance_[face_id] = sig_dist_calc_.signedDistance(points[face_id]);
             }
         }
     }
@@ -342,9 +341,9 @@ void polynomialVofInitialization::calcSqrSearchDist()
 
 void polynomialVofInitialization::calcSignedDist()
 {
-    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_, 0.0);
+    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signedDistance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_, 0.0);
 
-    signedDistance_ = SigDistCalc::insideOutsidePropagation{}.propagate_inside_outside(signedDistance0_);
+    signedDistance_ = insideOutsidePropagation::propagateInsideOutside(signedDistance0_);
 }
 
 void polynomialVofInitialization::initializeDistances()
@@ -432,7 +431,4 @@ void polynomialVofInitialization::writeFields() const
     interfaceCells.write();
 }
 
-// End namespace PolynomialVof
-}
-// End namespace Foam
-}
+} // End namespace Foam::TriSurfaceImmersion

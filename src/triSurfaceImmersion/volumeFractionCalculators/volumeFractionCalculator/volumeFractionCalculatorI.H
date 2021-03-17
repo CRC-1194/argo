@@ -2,10 +2,10 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2011 OpenCFD Ltd.
+    \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-                            | Copyright (C) 2019 AUTHOR,AFFILIATION
+    Copyright (C) 2021 AUTHOR,AFFILIATION
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -23,62 +23,48 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-Class
-    Foam::triSurfaceAdapter
-
-Description
-
-SourceFiles
-    triSurfaceAdapterI.H
-    triSurfaceAdapter.C
-    triSurfaceAdapterIO.C
-
 \*---------------------------------------------------------------------------*/
 
-#ifndef triSurfaceAdapter_H
-#define triSurfaceAdapter_H
-
-#include "triSurface.H"
-#include "triSurfaceSearch.H"
+#ifndef volumeFractionCalculatorI_H
+#define volumeFractionCalculatorI_H
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
-
-
-/*---------------------------------------------------------------------------*\
-                         Class triSurfaceAdapter Declaration
-\*---------------------------------------------------------------------------*/
-
-class triSurfaceAdapter
+const Time& volumeFractionCalculator::time() const
 {
-    // Private data
-    const triSurface& surface_;
-    const triSurfaceSearch& search_;
-    const vector span_;
-    scalar ref_length_;
+    return runTime_;
+}
 
+const fvMesh& volumeFractionCalculator::mesh() const
+{
+    return mesh_;
+}
 
-    // Private Member Functions
-    scalar compute_ref_length();
+const triSurface& volumeFractionCalculator::surface() const
+{
+    return surface_;
+}
 
-public:
+const volScalarField& volumeFractionCalculator::cellSqrSearchDist() const
+{
+    return cellSqrSearchDist_;
+}
 
+const pointScalarField& volumeFractionCalculator::pointSqrSearchDist() const
+{
+    return pointSqrSearchDist_;
+}
 
-    // Constructors
-    triSurfaceAdapter(const triSurface&, const triSurfaceSearch&, vector); 
+const volScalarField& volumeFractionCalculator::cellSignedDist() const
+{
+    return cellSignedDist_;
+}
 
-    // Member Functions
-    scalar signedDistance(const point& trialPoint) const;
-    scalar referenceLength() const;
-
-};
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam::TriSurfaceImmersion
+const volScalarField& volumeFractionCalculator::cellSignedDist0() const
+{
+    return cellSignedDist0_;
+}
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

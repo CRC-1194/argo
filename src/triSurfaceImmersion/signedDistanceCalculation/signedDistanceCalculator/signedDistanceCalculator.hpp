@@ -56,8 +56,7 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam {
-namespace SigDistCalc{
+namespace Foam::TriSurfaceImmersion {
 
 
 /*---------------------------------------------------------------------------*\
@@ -68,55 +67,51 @@ class signedDistanceCalculator
 {
     // Private Data
     const triSurface& surface_;
-    triSurfaceSearch surface_search_;
-    vectorField vertex_normals_;
+    triSurfaceSearch surfaceSearch_;
+    vectorField vertexNormals_;
 
 
     // Private Member Functions
-    void compute_vertex_normals();
+    void computeVertexNormals();
 
 public:
 
     // Constructors
-    signedDistanceCalculator(const triSurface& surface);
-
-
-    //- Destructor
-    ~signedDistanceCalculator() = default;
+    explicit signedDistanceCalculator(const triSurface& surface);
 
 
     // Member Functions
 
     // Make point to nearest triangle information available to the caller of this
     // member function
-    scalarField signedDistance
-                (
-                    DynamicList<pointIndexHit>& point_to_nearest_triangle,
-                    const pointField& pf,
-                    const scalarField& search_dist_sqr,
-                    const scalar out_of_search_domain=0.0
-                ) const;
-    scalarField signedDistance
-                (
-                    const pointField& pf,
-                    const scalarField& search_dist_sqr,
-                    const scalar out_of_search_domain=0.0
-                ) const;
-    std::tuple<pointIndexHit, scalar> signedDistance(const point& p, const scalar search_dist_sqr) const;
+    scalarField 
+    signedDistance
+    (
+        DynamicList<pointIndexHit>& pointToNearestTriangle,
+        const pointField& pf,
+        const scalarField& searchDistSqr,
+        scalar outOfSearchDomain=0.0
+    ) const;
+
+    scalarField
+    signedDistance
+    (
+        const pointField& pf,
+        const scalarField& searchDistSqr,
+        scalar outOfSearchDomain=0.0
+    ) const;
+
+    std::tuple<pointIndexHit, scalar> signedDistance(const point& p, scalar searchDistSqr) const;
     scalar signedDistance(const point& p) const;
-    vector normal_at_surface(const pointIndexHit& hit_info) const;
+    vector normalAtSurface(const pointIndexHit& hitInfo) const;
 
     // Access
-    const vectorField& vertex_normals() const;
+    const vectorField& vertexNormals() const;
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace PolynomialVof 
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

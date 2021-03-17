@@ -62,8 +62,7 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam {
-namespace SigDistCalc {
+namespace Foam::TriSurfaceImmersion {
 
 
 /*---------------------------------------------------------------------------*\
@@ -75,24 +74,14 @@ class insideOutsidePropagation
 
 public:
 
-    // Constructors
-
-    //- Destructor
-    ~insideOutsidePropagation() = default;
-
-
     // Member Functions
-    tmp<volScalarField> propagate_inside_outside(const volScalarField& signed_distance) const;
+    static tmp<volScalarField> propagateInsideOutside(const volScalarField& signedDistance);
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace SigDistCalc
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

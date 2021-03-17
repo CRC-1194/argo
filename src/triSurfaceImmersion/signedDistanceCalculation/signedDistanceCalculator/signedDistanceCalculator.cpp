@@ -25,15 +25,14 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "triSurfaceTools.H"
-
 #include "signedDistanceCalculator.hpp"
 
-namespace Foam {
-namespace SigDistCalc{
+#include "triSurfaceTools.H"
+
+namespace Foam::TriSurfaceImmersion {
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-void signedDistanceCalculator::compute_vertex_normals()
+void signedDistanceCalculator::computeVertexNormals()
 {
     /* The vertex normals are computed as a weighted sum of normals 
      * of the adjacent triangles. The weights are the triangle angles at the
@@ -62,10 +61,10 @@ void signedDistanceCalculator::compute_vertex_normals()
             vector v2{vertices[vid_c] - vertices[vid_a]};
             scalar alpha{Foam::acos(std::clamp((v1 & v2)/(mag(v1)*mag(v2)), -1.0, 1.0))};
 
-            vertex_normals_[v_id] += alpha*tri_normals[fid];
+            vertexNormals_[v_id] += alpha*tri_normals[fid];
         }
 
-        vertex_normals_[v_id] /= mag(vertex_normals_[v_id]);
+        vertexNormals_[v_id] /= mag(vertexNormals_[v_id]);
     }
 }
 
@@ -74,41 +73,42 @@ void signedDistanceCalculator::compute_vertex_normals()
 signedDistanceCalculator::signedDistanceCalculator(const triSurface& surface)
 :
     surface_{surface},
-    surface_search_{surface},
-    vertex_normals_(surface.nPoints(), vector{0,0,0})
+    surfaceSearch_{surface},
+    vertexNormals_(surface.nPoints(), vector{0,0,0})
 {
-    compute_vertex_normals();
+    computeVertexNormals();
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-scalarField signedDistanceCalculator::signedDistance
-            (
-                DynamicList<pointIndexHit>& point_to_nearest_triangle,
-                const pointField& pf,
-                const scalarField& search_dist_sqr,
-                const scalar out_of_search_domain
-            ) const
+scalarField 
+signedDistanceCalculator::signedDistance
+(
+    DynamicList<pointIndexHit>& pointToNearestTriangle,
+    const pointField& pf,
+    const scalarField& searchDistSqr,
+    const scalar outOfSearchDomain
+) const
 {
-    scalarField distances(pf.size(), out_of_search_domain);
+    scalarField distances(pf.size(), outOfSearchDomain);
 
     // Use the octree and the square search distance to build the 
     // surface mesh / point field proximity information list. 
-    point_to_nearest_triangle.reserve(pf.size());
-    surface_search_.findNearest(
+    pointToNearestTriangle.reserve(pf.size());
+    surfaceSearch_.findNearest(
         pf,
-        search_dist_sqr,
-        point_to_nearest_triangle
+        searchDistSqr,
+        pointToNearestTriangle
     );
 
-    forAll(point_to_nearest_triangle, p_id)
+    forAll(pointToNearestTriangle, p_id)
     {
-        const pointIndexHit& hit_info = point_to_nearest_triangle[p_id];
+        const pointIndexHit& hitInfo = pointToNearestTriangle[p_id];
 
-        if (hit_info.hit()) 
+        if (hitInfo.hit()) 
         {
-            vector delta_v{pf[p_id] - hit_info.hitPoint()};
-            auto snormal = normal_at_surface(hit_info);
+            vector delta_v{pf[p_id] - hitInfo.hitPoint()};
+            auto snormal = normalAtSurface(hitInfo);
             distances[p_id] = mag(delta_v)*sign(snormal & delta_v);
         }
     }
@@ -116,37 +116,39 @@ scalarField signedDistanceCalculator::signedDistance
     return distances;
 }
 
-scalarField signedDistanceCalculator::signedDistance
-            (
-                const pointField& pf,
-                const scalarField& search_dist_sqr,
-                const scalar out_of_search_domain
-            ) const
+scalarField
+signedDistanceCalculator::signedDistance
+(
+    const pointField& pf,
+    const scalarField& searchDistSqr,
+    const scalar outOfSearchDomain
+) const
 {
-    DynamicList<pointIndexHit> point_to_nearest_triangle{};
-    point_to_nearest_triangle.reserve(pf.size());
+    DynamicList<pointIndexHit> pointToNearestTriangle{};
+    pointToNearestTriangle.reserve(pf.size());
 
-    return signedDistance(point_to_nearest_triangle, pf, search_dist_sqr, out_of_search_domain);
+    return signedDistance(pointToNearestTriangle, pf, searchDistSqr, outOfSearchDomain);
 }
 
-std::tuple<pointIndexHit, scalar> signedDistanceCalculator::signedDistance
-                         (
-                            const point& p,
-                            const scalar search_dist_sqr
-                         ) const
+std::tuple<pointIndexHit, scalar>
+signedDistanceCalculator::signedDistance
+(
+    const point& p,
+    const scalar searchDistSqr
+) const
 {
     scalar distance{1e15};
 
-    const auto hit_info = surface_search_.nearest(p, vector{Foam::sqrt(search_dist_sqr), 0, 0});
+    const auto hitInfo = surfaceSearch_.nearest(p, vector{Foam::sqrt(searchDistSqr), 0, 0});
 
-    if (hit_info.hit())
+    if (hitInfo.hit())
     {
-        vector delta_v{p - hit_info.hitPoint()};
-        auto snormal = normal_at_surface(hit_info);
+        vector delta_v{p - hitInfo.hitPoint()};
+        auto snormal = normalAtSurface(hitInfo);
         distance = mag(delta_v)*sign(snormal & delta_v);
     }
 
-    return std::make_tuple(hit_info, distance);
+    return std::make_tuple(hitInfo, distance);
 }
 
 scalar signedDistanceCalculator::signedDistance(const point& p) const
@@ -154,7 +156,8 @@ scalar signedDistanceCalculator::signedDistance(const point& p) const
     return std::get<1>(signedDistance(p, 1e15));
 }
 
-vector signedDistanceCalculator::normal_at_surface(const pointIndexHit& hit_info) const
+vector
+signedDistanceCalculator::normalAtSurface(const pointIndexHit& hitInfo) const
 {
     vector normal{0,0,0};
 
@@ -165,12 +168,12 @@ vector signedDistanceCalculator::normal_at_surface(const pointIndexHit& hit_info
     // - origin: point a (first point of triangle)
     // - x-axis: point a to point b (second point of triangle)
     // - y-axis: cross product of triangle normal and ex
-    const auto tri_hit = surface_.localFaces()[hit_info.index()];
+    const auto tri_hit = surface_.localFaces()[hitInfo.index()];
     const auto a_to_b = v[tri_hit[1]] - v[tri_hit[0]];
     const auto a_to_c = v[tri_hit[2]] - v[tri_hit[0]];
-    const auto a_to_hit = hit_info.hitPoint() - v[tri_hit[0]];
+    const auto a_to_hit = hitInfo.hitPoint() - v[tri_hit[0]];
     const auto ex = a_to_b/mag(a_to_b);
-    const auto ey = fnormals[hit_info.index()] ^ ex;
+    const auto ey = fnormals[hitInfo.index()] ^ ex;
     const vector b{a_to_b & ex, 0, 0};
     const vector c{a_to_c & ex, a_to_c & ey, 0};
     const vector h_l{a_to_hit & ex, a_to_hit & ey, 0};
@@ -179,24 +182,20 @@ vector signedDistanceCalculator::normal_at_surface(const pointIndexHit& hit_info
     // - 1) the origin (0,0)
     // - 2) a point on the x-axis (t,0)
     // - 3) an arbitrary point (u,v)
-    normal = vertex_normals_[tri_hit[0]]*(1.0 - h_l.x()/b.x() + h_l.y()/c.y()*(c.x()/b.x() - 1.0)) +
-             vertex_normals_[tri_hit[1]]*(h_l.x()/b.x() - h_l.y()*c.x()/(b.x()*c.y())) +
-             vertex_normals_[tri_hit[2]]*(h_l.y()/c.y());
+    normal = vertexNormals_[tri_hit[0]]*(1.0 - h_l.x()/b.x() + h_l.y()/c.y()*(c.x()/b.x() - 1.0)) +
+             vertexNormals_[tri_hit[1]]*(h_l.x()/b.x() - h_l.y()*c.x()/(b.x()*c.y())) +
+             vertexNormals_[tri_hit[2]]*(h_l.y()/c.y());
 
     return normal;
 }
 
-const vectorField& signedDistanceCalculator::vertex_normals() const
+const vectorField& signedDistanceCalculator::vertexNormals() const
 {
-    return vertex_normals_;
+    return vertexNormals_;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace PolynomialVof 
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // ************************************************************************* //

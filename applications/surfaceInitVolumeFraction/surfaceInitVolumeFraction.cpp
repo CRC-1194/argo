@@ -140,10 +140,10 @@ int main(int argc, char *argv[])
 
     // Compute the volume fraction field.
     auto ctime0 = std::chrono::steady_clock::now();
-    auto vofCalcPtr = TriSurfaceImmersion::volumeFractionCalculator::New(initDict);
+    auto vofCalcPtr =
+        TriSurfaceImmersion::volumeFractionCalculator::New(initDict, mesh, surface);
     vofCalcPtr->printTypeName();
-    //polynomialVofInitialization polyVofInit{mesh, surface, narrowBandWidth, IOobject::AUTO_WRITE, refinementLevel}; 
-    //polyVofInit.calcVolFraction(alpha, writeTets);
+    vofCalcPtr->calcVolumeFraction(alpha);
     auto ctime1 = std::chrono::steady_clock::now();
     auto calcTime = 
         std::chrono::duration_cast<std::chrono::microseconds>(ctime1-ctime0).count();
