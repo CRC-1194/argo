@@ -158,6 +158,7 @@ int main(int argc, char *argv[])
     // Begin testing and debugging
     if (writeAllFields)
     {
+        vofCalcPtr->writeFields();
         //polyVofInit.writeFields();
     }
 

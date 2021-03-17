@@ -25,45 +25,27 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef volumeFractionCalculatorI_H
-#define volumeFractionCalculatorI_H
 
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#include "volumeFractionCalculator.hpp"
-const Time& volumeFractionCalculator::time() const
-{
-    return runTime_;
-}
-
-const fvMesh& volumeFractionCalculator::mesh() const
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+const fvMesh& searchDistanceCalculator::mesh() const
 {
     return mesh_;
 }
 
-const triSurface& volumeFractionCalculator::surface() const
+scalar searchDistanceCalculator::searchDistFactor() const
 {
-    return surface_;
+    return searchDistFactor_;
 }
 
-const volScalarField& volumeFractionCalculator::cellSignedDist() const
+const volScalarField& searchDistanceCalculator::cellSqrSearchDist() const
 {
-    return cellSignedDist_;
+    return cellSqrSearchDist_;
 }
 
-const volScalarField& volumeFractionCalculator::cellSignedDist0() const
+const pointScalarField& searchDistanceCalculator::pointSqrSearchDist() const
 {
-    return cellSignedDist0_;
+    return pointSqrSearchDist_;
 }
 
-bool volumeFractionCalculator::writeGeometry() const
-{
-    return writeGeometry_;
-}
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#endif
 
 // ************************************************************************* //

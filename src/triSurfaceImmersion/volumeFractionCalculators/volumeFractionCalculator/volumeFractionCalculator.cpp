@@ -33,6 +33,8 @@ License
 #include "fvc.H"
 #include "pointMesh.H"
 
+#include "insideOutsidePropagation.hpp"
+
 namespace Foam::TriSurfaceImmersion {
 
     defineTypeNameAndDebug(volumeFractionCalculator, 0);
@@ -65,19 +67,9 @@ volumeFractionCalculator::volumeFractionCalculator
     mesh_{mesh},
     runTime_{mesh.time()},
     surface_{surface},
-    // init fields here
-    cellSqrSearchDist_
-    {
-        IOobject
-        (
-            "cellSqrSearchDist", 
-            runTime_.timeName(), 
-            mesh_, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        fvc::average(pow(mesh.deltaCoeffs(), -2))
-    },
+    pMesh_{mesh},
+    searchDistCalc_{mesh, configDict.get<scalar>("narrowBandWidth")},
+    sigDistCalc_{surface_},
     cellSignedDist_
     {
         IOobject
@@ -105,24 +97,6 @@ volumeFractionCalculator::volumeFractionCalculator
         mesh,
         dimensionedScalar("faceSignedDist", dimLength,0)
     },
-    cellsToPointsInterp_{mesh},
-    pMesh_{mesh_},
-    // init fields here
-    pointSqrSearchDist_ 
-    {
-        IOobject
-        (
-            "pointSqrSearchDist", 
-            runTime_.timeName(), 
-            mesh_, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-
-        pMesh_,
-        dimensionedScalar("pointSqrSearchDist", dimLength,0),
-        "zeroGradient"
-    },
     pointSignedDist_ 
     {
         IOobject
@@ -136,7 +110,8 @@ volumeFractionCalculator::volumeFractionCalculator
         pMesh_,
         dimensionedScalar("pointSignedDist", dimLength,0),
         "zeroGradient"
-    }
+    },
+    writeGeometry_(configDict.get<Switch>("writeGeometry"))
 {}
 
 
@@ -178,8 +153,35 @@ void volumeFractionCalculator::printTypeName() const
     Info << "VoF calculator type: " << this->type() << endl;
 }
 
+void volumeFractionCalculator::calcSignedDist()
+{
+    cellSignedDist0_.primitiveFieldRef() =
+        sigDistCalc_.signedDistance
+        (
+            mesh_.C(),
+            searchDistCalc_.cellSqrSearchDist(),
+            0.0
+        );
+    
+    cellSignedDist_ = 
+        insideOutsidePropagation::propagateInsideOutside(cellSignedDist0_);
+
+    pointSignedDist_.primitiveFieldRef() =
+        sigDistCalc_.signedDistance
+        (
+            mesh_.points(),
+            searchDistCalc_.pointSqrSearchDist(),
+            0.0
+        );
+}
+
 void volumeFractionCalculator::writeFields() const
 {
+    Info << "Writing fields..." << endl;
+    searchDistCalc_.writeFields();
+    cellSignedDist0_.write();
+    cellSignedDist_.write();
+    pointSignedDist_.write();
 }
 
 // * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //

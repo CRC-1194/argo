@@ -115,8 +115,9 @@ add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
-    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
+    src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator/searchDistanceCalculator.cpp
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation/surfaceMeshCellApproximation.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection/surfaceMeshCellIntersection.cpp
@@ -132,8 +133,9 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
-    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation
+    src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection

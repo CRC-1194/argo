@@ -40,15 +40,17 @@ SourceFiles
 #define volumeFractionCalculator_H
 
 #include "autoPtr.H"
-#include "surfaceFields.H"
 #include "fvMesh.H"
 #include "pointFields.H"
 #include "runTimeSelectionTables.H"
+#include "surfaceFields.H"
 #include "Time.H"
 #include "triSurface.H"
 #include "typeInfo.H"
 #include "volFields.H"
-#include "volPointInterpolation.H"
+
+#include "searchDistanceCalculator.hpp"
+#include "signedDistanceCalculator.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -72,10 +74,13 @@ private:
     //- A reference to the surface mesh
     const triSurface& surface_;
 
-    // Cell-center distances
+    //- Point mesh required to construct point fields
+    pointMesh pMesh_;
+
+    // Signed distances
+    searchDistanceCalculator searchDistCalc_;
+    signedDistanceCalculator sigDistCalc_;
     
-    //- Squared search distance field in cell centers. 
-    volScalarField cellSqrSearchDist_;  
     //- Signed distance at cell centers. 
     volScalarField cellSignedDist_; 
     //- Initial signed distance field given by the octree, used to correct the 
@@ -84,18 +89,9 @@ private:
     //- Information used to store the surface proximity information for each cell. 
     //DynamicList<pointIndexHit> cellNearestTriangle_;
 
-    // Face-center distances 
     //- Signed distance at face centers. 
     surfaceScalarField faceSignedDist_; 
 
-    // Point signed distances 
-    
-    //- Inverse Distance Interpolation : cell centers to cell corners. 
-    volPointInterpolation cellsToPointsInterp_;
-
-    pointMesh pMesh_;
-    //- Squared search distance at cell corner points. 
-    pointScalarField pointSqrSearchDist_;  
     //- Signed distance at cell corner points. 
     pointScalarField pointSignedDist_;
     //- Nearest triangle to a cell corner point. 
@@ -105,7 +101,7 @@ private:
     // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
     //const scalar sqrDistFactor_; 
 
-    //const bool writeGeometry_; 
+    const bool writeGeometry_; 
 
 
 protected:
@@ -177,13 +173,11 @@ public:
 
     inline const triSurface& surface() const;
 
-    inline const volScalarField& cellSqrSearchDist() const; 
-
-    inline const pointScalarField& pointSqrSearchDist() const; 
-
     inline const volScalarField& cellSignedDist() const; 
 
     inline const volScalarField& cellSignedDist0() const; 
+
+    inline bool writeGeometry() const;
 
     virtual const double nTrianglesPerCell() const = 0;
 
@@ -193,8 +187,6 @@ public:
 
 
     //- Computation
-
-    void calcSqrSearchDist();  
 
     void calcSignedDist();  
 

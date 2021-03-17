@@ -65,6 +65,7 @@ surfaceMeshCellApproximation::surfaceMeshCellApproximation
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 {
+    this->calcSignedDist();
 }
 
 void surfaceMeshCellApproximation::findIntersectedCells()

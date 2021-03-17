@@ -45,6 +45,7 @@ Description
 #include "triSurface.H"
 
 #include "insideOutsidePropagation.hpp"
+#include "searchDistanceCalculator.hpp"
 #include "signedDistanceCalculator.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -100,13 +101,15 @@ int main(int argc, char *argv[])
     // Initialization
     #include "createFields.hpp"
     triSurface surface{surfaceFile};
+    searchDistanceCalculator searchDistCalc{mesh, searchDistanceFactor};
     signedDistanceCalculator sig_dist_calc{surface};
 
     if (searchDistanceFactor <= 0.0)
     {
         searchDistanceFactor = mesh.bounds().mag();
     }
-    signedDistance.primitiveFieldRef() = sig_dist_calc.signedDistance(mesh.C(), sqrSearchDist*searchDistanceFactor*searchDistanceFactor, 0.0);
+    signedDistance.primitiveFieldRef() =
+        sig_dist_calc.signedDistance(mesh.C(), searchDistCalc.cellSqrSearchDist(), 0.0);
 
     if (propagateInsideOutside)
     {
