@@ -89,7 +89,7 @@ public:
 
 
     //- Destructor
-    ~surfaceMeshCellApproximation() override = default;
+    //~surfaceMeshCellApproximation() override = default;
 
 
     // Member Functions

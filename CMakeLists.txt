@@ -109,7 +109,7 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 #       Check which type is required / reasonable for this project (TT)
 add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
-    src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
+    #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
@@ -126,7 +126,7 @@ add_library("triSurfaceImmersion" SHARED
 target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection
     src/triSurfaceImmersion/geomMeshIntersection/geomReconstructError
-    src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection
+    #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools
     src/triSurfaceImmersion/include
     src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization
@@ -206,16 +206,16 @@ target_link_libraries("cellCellVofInit"
     m
 )
 
-add_executable("smciVofInit"
-               applications/smciVofInit/smciVofInit.cpp)
-target_link_libraries("smciVofInit"
-    "triSurfaceImmersion"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
+#add_executable("smciVofInit"
+#               applications/smciVofInit/smciVofInit.cpp)
+#target_link_libraries("smciVofInit"
+#    "triSurfaceImmersion"
+#    ${OF_FINITEVOLUME}
+#    ${OF_MESHTOOLS}
+#    ${OF_OPENFOAM}
+#    dl
+#    m
+#)
 
 add_executable("smcaVofInit"
                applications/smcaVofInit/smcaVofInit.cpp)
@@ -313,7 +313,7 @@ install(TARGETS
         # Refactored
         "surfaceInitVolumeFraction"
         # Pre-refactor
-        "smciVofInit"  
+        #"smciVofInit"  
         "cellCellVofInit"
         "geophaseUnitTest"
         "smcaVofInit"

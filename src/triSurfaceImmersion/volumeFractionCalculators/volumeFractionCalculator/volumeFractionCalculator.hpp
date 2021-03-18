@@ -51,6 +51,7 @@ SourceFiles
 
 #include "searchDistanceCalculator.hpp"
 #include "signedDistanceCalculator.hpp"
+#include "volFieldsFwd.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -84,23 +85,14 @@ private:
     //- Signed distance at cell centers. 
     volScalarField cellSignedDist_; 
     //- Initial signed distance field given by the octree, used to correct the 
-    // signed distance propagated by the solution of the Laplace equation. 
+    //  signed distance propagated by the solution of the Laplace equation. 
     volScalarField cellSignedDist0_;  
-    //- Information used to store the surface proximity information for each cell. 
-    //DynamicList<pointIndexHit> cellNearestTriangle_;
-
-    //- Signed distance at face centers. 
-    surfaceScalarField faceSignedDist_; 
 
     //- Signed distance at cell corner points. 
     pointScalarField pointSignedDist_;
-    //- Nearest triangle to a cell corner point. 
-    //DynamicList<pointIndexHit> pointNearestTriangle_;
 
-    // Factor used to extend the narrow band by N cells. 
-    // If sqrDistanceFactor = 2, the narrow band is extended by 2 cells. 
-    //const scalar sqrDistFactor_; 
-
+    //- Write additional geometric objects used in the computation of
+    //  volume fraction of interface cells
     const bool writeGeometry_; 
 
 
@@ -109,6 +101,7 @@ protected:
 
 public:
 
+    // Static Data Members
     TypeName("volumeFractionCalculatorInterface");
 
     declareRunTimeSelectionTable (
@@ -122,20 +115,6 @@ public:
         ),
         (configDict, mesh, surface)
     )
-
-    // Static Data Members
-
-
-    // Generated Methods
-
-//        //- Default construct
-//        volumeFractionCalculator() = default;
-//
-//        //- Copy construct
-//        volumeFractionCalculator(const volumeFractionCalculator&) = default;
-//
-//        //- Copy assignment
-//        volumeFractionCalculator& operator=(const volumeFractionCalculator&) = default;
 
 
     // Constructors
@@ -157,14 +136,7 @@ public:
     );
 
 
-    //- Destructor
-    virtual ~volumeFractionCalculator() = default;
-
-
     // Member Functions
-    // TODO(TT): remove later
-    void printTypeName() const;
-
     //- Access
 
     inline const Time& time() const;
@@ -176,6 +148,10 @@ public:
     inline const volScalarField& cellSignedDist() const; 
 
     inline const volScalarField& cellSignedDist0() const; 
+
+    inline const pointScalarField& pointSignedDist() const;
+
+    inline const signedDistanceCalculator& signedDistCalc() const;
 
     inline bool writeGeometry() const;
 
@@ -191,6 +167,8 @@ public:
     void calcSignedDist();  
 
     virtual void findIntersectedCells() = 0;
+
+    void bulkVolumeFraction(volScalarField& alpha);
 
     virtual void calcVolumeFraction(volScalarField& alpha) = 0;
 

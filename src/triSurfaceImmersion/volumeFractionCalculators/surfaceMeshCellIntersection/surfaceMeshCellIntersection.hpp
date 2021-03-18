@@ -32,7 +32,8 @@ Description
     to compute volume fractions of interface cells.
 
 SourceFiles
-    surfaceMeshCellIntersection.C
+    surfaceMeshCellIntersection.cpp
+    surfaceMeshCellIntersectionI.hpp
 
 \*---------------------------------------------------------------------------*/
 
@@ -58,24 +59,18 @@ class surfaceMeshCellIntersection
 private:
 
     // Private Data
+    using dynamicLabelList = DynamicList<label>; 
+    dynamicLabelList intersectedCellLabels_;
+
     label nTrianglesPerCell_;
-    label nIntersectedCells_;
+
+    // Private Member Functions
+    void interfaceCellVolumeFraction(volScalarField& alpha);
 
 public:
 
     // Static Data Members
     TypeName ("SMCI")
-
-    // Generated Methods
-
-//        //- Default construct
-//        surfaceMeshCellIntersection() = default;
-//
-//        //- Copy construct
-//        surfaceMeshCellIntersection(const surfaceMeshCellIntersection&) = default;
-//
-//        //- Copy assignment
-//        surfaceMeshCellIntersection& operator=(const surfaceMeshCellIntersection&) = default;
 
 
     // Constructors
@@ -85,10 +80,6 @@ public:
         const fvMesh& mesh,
         const triSurface& surface
     );
-
-
-    //- Destructor
-    //~surfaceMeshCellIntersection() override = default;
 
 
     // Member Functions
@@ -106,12 +97,15 @@ public:
     void calcVolumeFraction(volScalarField& alpha) override; 
 
     void findIntersectedCells() override;
+
+    //- Write
+    void writeFields() const override;
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "surfaceMeshCellIntersectionI.H"
+#include "surfaceMeshCellIntersectionI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

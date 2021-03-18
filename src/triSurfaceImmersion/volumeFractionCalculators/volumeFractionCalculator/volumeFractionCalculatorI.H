@@ -31,6 +31,7 @@ License
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+#include "pointFieldsFwd.H"
 #include "volumeFractionCalculator.hpp"
 const Time& volumeFractionCalculator::time() const
 {
@@ -55,6 +56,16 @@ const volScalarField& volumeFractionCalculator::cellSignedDist() const
 const volScalarField& volumeFractionCalculator::cellSignedDist0() const
 {
     return cellSignedDist0_;
+}
+
+const Foam::pointScalarField& volumeFractionCalculator::pointSignedDist() const
+{
+    return pointSignedDist_;
+}
+
+const signedDistanceCalculator& volumeFractionCalculator::signedDistCalc() const
+{
+    return sigDistCalc_;
 }
 
 bool volumeFractionCalculator::writeGeometry() const

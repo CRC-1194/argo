@@ -34,26 +34,12 @@ License
 #include "pointMesh.H"
 
 #include "insideOutsidePropagation.hpp"
+#include "volFieldsFwd.H"
 
 namespace Foam::TriSurfaceImmersion {
 
     defineTypeNameAndDebug(volumeFractionCalculator, 0);
     defineRunTimeSelectionTable(volumeFractionCalculator, Dictionary)
-
-
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -85,18 +71,6 @@ volumeFractionCalculator::volumeFractionCalculator
         "zeroGradient"
     },
     cellSignedDist0_{"cellSignedDist0", cellSignedDist_}, 
-    faceSignedDist_{
-        IOobject
-        (
-            "faceSignedDist", 
-            runTime_.timeName(), 
-            mesh, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh,
-        dimensionedScalar("faceSignedDist", dimLength,0)
-    },
     pointSignedDist_ 
     {
         IOobject
@@ -144,15 +118,7 @@ volumeFractionCalculator::New
 }
 
 
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void volumeFractionCalculator::printTypeName() const
-{
-    Info << "VoF calculator type: " << this->type() << endl;
-}
-
 void volumeFractionCalculator::calcSignedDist()
 {
     cellSignedDist0_.primitiveFieldRef() =
@@ -175,17 +141,23 @@ void volumeFractionCalculator::calcSignedDist()
         );
 }
 
+void volumeFractionCalculator::bulkVolumeFraction(volScalarField& alpha)
+{
+    forAll(cellSignedDist_, cellI)
+    {
+        alpha[cellI] = pos(cellSignedDist_[cellI]);
+    }
+}
+
 void volumeFractionCalculator::writeFields() const
 {
-    Info << "Writing fields..." << endl;
     searchDistCalc_.writeFields();
     cellSignedDist0_.write();
     cellSignedDist_.write();
     pointSignedDist_.write();
 }
 
-// * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //
-
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam::TriSurfaceImmersion
 

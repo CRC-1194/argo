@@ -55,8 +55,8 @@ Description
 // Argo headers
 #include "volumeFractionCalculator.hpp"
 
-// TODO: fix usage of name space (TT)
-using namespace Foam; //::TriSurfaceImmersion;
+// TODO (TT): fix usage of name space
+using namespace Foam::TriSurfaceImmersion;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -140,9 +140,7 @@ int main(int argc, char *argv[])
 
     // Compute the volume fraction field.
     auto ctime0 = std::chrono::steady_clock::now();
-    auto vofCalcPtr =
-        TriSurfaceImmersion::volumeFractionCalculator::New(initDict, mesh, surface);
-    vofCalcPtr->printTypeName();
+    auto vofCalcPtr = volumeFractionCalculator::New(initDict, mesh, surface);
     vofCalcPtr->calcVolumeFraction(alpha);
     auto ctime1 = std::chrono::steady_clock::now();
     auto calcTime = 
@@ -159,7 +157,6 @@ int main(int argc, char *argv[])
     if (writeAllFields)
     {
         vofCalcPtr->writeFields();
-        //polyVofInit.writeFields();
     }
 
     if (checkVolume)

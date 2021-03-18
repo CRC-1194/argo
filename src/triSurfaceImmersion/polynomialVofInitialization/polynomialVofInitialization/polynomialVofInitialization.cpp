@@ -420,8 +420,8 @@ void polynomialVofInitialization::writeFields() const
     signedDistance0_.write();
 
     // Write identified interface cells as field
-    volScalarField interfaceCells{"interface_cells", signedDistance_};
-    interfaceCells = dimensionedScalar{"interface_cells", dimLength, 0};
+    volScalarField interfaceCells{"interfaceCells", signedDistance_};
+    interfaceCells = dimensionedScalar{"interfaceCells", dimLength, 0};
 
     for(const auto idx : interfaceCells_)
     {

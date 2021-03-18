@@ -26,9 +26,16 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "surfaceMeshCellIntersection.hpp"
-#include "volumeFractionCalculator.hpp"
+
+#include <bitset>
+#include <cassert>
+#include <cmath>
+#include <limits>
 
 #include "addToRunTimeSelectionTable.H"
+#include "volFieldsFwd.H"
+
+#include "Geophase.hpp"
 
 namespace Foam::TriSurfaceImmersion {
 
@@ -36,19 +43,128 @@ namespace Foam::TriSurfaceImmersion {
     addToRunTimeSelectionTable(volumeFractionCalculator, surfaceMeshCellIntersection, Dictionary);
 
 
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+void surfaceMeshCellIntersection::interfaceCellVolumeFraction(volScalarField& alpha)
+{
+    const auto& mesh = this->mesh();
+    const auto& meshCells = mesh.cells(); 
+    const auto& cellCenters = mesh.C();  
+    const auto& cellVolumes = mesh.V(); 
 
+    const auto& faces = mesh.faces(); 
+    const auto& faceCenters = mesh.Cf();
 
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
+    const auto& meshPoints = mesh.points();
+
+    const auto& sigDistCalc = this->signedDistCalc();
+    const auto& cellSignedDist = this->cellSignedDist();
+    const auto& pointSignedDist = this->pointSignedDist();
+
+    const auto& octree = signedDistCalc().surfaceSearch().tree();
+    const auto& triSurf = this->surface();
+    const auto& triPoints = this->surface().points(); 
+    const auto& triNormals = this->surface().faceNormals(); 
+
+    // Encode tetrahedron signed distances into a bitset. For 4 tetrahedron
+    // points: 1110 == positive, positive, positive, negative distance.
+    // Barycentric triangulation of the cell is used: 
+    // - First distance is the distance at the cell center. 
+    // - Second, third and fourth distances are at two cell corner points. 
+    std::bitset<4> dists(pow(2,5) - 1);
+
+    // Legacy VTK output of the cut mesh geometry. 
+    geophase::vtkPolyDataOStream cutMeshStream(
+        geophase::vtk_file_name("cutMesh", this->time().timeIndex())
+    ); 
+
+    // Correct the volume fractions geometrically in intersected cells. 
+    nTrianglesPerCell_ = 0;
+
+    forAll(intersectedCellLabels_, cellJ) 
+    {
+        const auto cellI = intersectedCellLabels_[cellJ];
+        alpha[cellI] = 0;
+        const auto& cutCell = meshCells[cellI];  
+
+        // Cell center and its distance as tetrahedron input.
+        const auto& xC = cellCenters[cellI];
+        const auto& distC = cellSignedDist[cellI];
+        dists[0] = !std::signbit(distC);
+
+        // For all faces of the cut cell, 
+        forAll(cutCell, faceL)
+        {
+            const label faceG = cutCell[faceL];
+
+            // Face center & distance for tetrahedron input.
+            const auto& xF = faceCenters[faceG]; 
+            const scalar distF = sigDistCalc.signedDistance(faceCenters[faceG]); //faceSignedDist_[faceG]; 
+            dists[1] = !std::signbit(distF); 
+
+            const face& nBandFace = faces[faceG];
+            for (label I = 0; I < nBandFace.size(); ++I)
+            {
+                // Current face-point & dist for tetrahedron input 
+                const label pointI0 = nBandFace[I]; 
+                const scalar distI0 = pointSignedDist[pointI0]; 
+                dists[2] = !std::signbit(distI0);
+                const point& xI0 = meshPoints[pointI0];
+
+                // Next face-point & distance for tetrahedron input 
+                const label pointI1 = nBandFace[(I+1) % nBandFace.size()]; 
+                const scalar distI1 = pointSignedDist[pointI1]; 
+                dists[3] = !std::signbit(distI1);
+                const point& xI1 = meshPoints[pointI1];
+
+                // Tetrahedron centroid.
+                const vector xT = 0.25 * (xC + xF + xI0 + xI1); 
+
+                // Tetrahedron sphere radius.
+                const scalar radiusT = max(
+                        max(mag(xC - xT), mag(xF - xT)), 
+                        max(mag(xI0 - xT), mag(xI1 - xT))
+                ); 
+
+                // Triangles interesecting tetrahedron sphere. 
+                auto triangleLabels = octree.findSphere(xT, radiusT*radiusT); 
+                if (dists.all()) // If tetrahedron is inside surface.
+                {
+                    // Add the mixed product tet volume to the alpha cell value. 
+                    alpha[cellI] += (1. / 6.) * std::abs( 
+                        ((xF - xC) &  ((xI0 - xC) ^ (xI1 - xC)))
+                    ); 
+                }
+                else if (!triangleLabels.empty()) 
+                {
+                    // Initialize the tetrahedron intersection. 
+                    geophase::foamVectorPolyhedron tetIntersection {
+                        geophase::make_tetrahedron<geophase::foamVectorPolyhedron>(xC, xF, xI0, xI1)
+                    };
+                    nTrianglesPerCell_ += triangleLabels.size();
+                    for (const auto& triangleL : triangleLabels)
+                    {
+                        tetIntersection = 
+                            intersect_tolerance<geophase::foamPolyhedronIntersection>(
+                                tetIntersection, 
+                                foamHalfspace(
+                                    triPoints[triSurf[triangleL][0]], 
+                                    triNormals[triangleL]
+                                )
+                        ).polyhedron();
+                    }
+                    // Add the volume of the intersection to the phase-specific volume.  
+                    alpha[cellI] += volume_by_surf_tri(tetIntersection);
+                    if (this->writeGeometry())
+                    {
+                        cutMeshStream << tetIntersection;
+                    }
+                }
+            }
+        }
+        alpha[cellI] /= cellVolumes[cellI];
+    }
+    nTrianglesPerCell_ /= intersectedCellLabels_.size();
+}
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -59,17 +175,65 @@ surfaceMeshCellIntersection::surfaceMeshCellIntersection
     const triSurface& surface
 )
 :
-    volumeFractionCalculator{configDict, mesh, surface}
+    volumeFractionCalculator{configDict, mesh, surface},
+    intersectedCellLabels_(0),
+    nTrianglesPerCell_{0}
     {}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellIntersection::calcVolumeFraction(volScalarField& alpha)
 {
+    this->calcSignedDist();
+    this->bulkVolumeFraction(alpha);
+    findIntersectedCells();
+    interfaceCellVolumeFraction(alpha);
+    writeFields();
 }
 
 void surfaceMeshCellIntersection::findIntersectedCells()
 {
+    const auto& mesh = this->mesh();
+    const auto& cellSignedDist = this->cellSignedDist();
+    const auto& pointSignedDist = this->pointSignedDist();
+    const auto& meshCellPoints = mesh.cellPoints();
+    const auto& meshCellEdges = mesh.cellEdges();
+
+    intersectedCellLabels_.resize(0);
+
+    forAll(cellSignedDist, cellI)
+    {
+        const auto& cellDist = cellSignedDist[cellI];  
+        const auto& cellPoints = meshCellPoints[cellI]; 
+
+        forAll(cellPoints, pointI)
+        {
+            if ((pointSignedDist[cellPoints[pointI]] * cellDist) < 0)
+            {
+                intersectedCellLabels_.append(cellI); 
+                break;
+            }
+        }
+    }
+    assert((intersectedCellLabels_.size() < mesh.nCells())); 
+    assert(intersectedCellLabels_.size() > 0);
 }
+
+void surfaceMeshCellIntersection::writeFields() const{
+    this->volumeFractionCalculator::writeFields();
+
+    // Write identified interface cells as field
+    volScalarField interfaceCells{"interface_cells", this->cellSignedDist()};
+    interfaceCells = dimensionedScalar{"interface_cells", dimLength, 0};
+
+    for(const auto cellI : intersectedCellLabels_)
+    {
+        interfaceCells[cellI] = 1.0;
+    }
+
+    interfaceCells.write();
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 }  // namespace Foam::TriSurfaceImmersion
 

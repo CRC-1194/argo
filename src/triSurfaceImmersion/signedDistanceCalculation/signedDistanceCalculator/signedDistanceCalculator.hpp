@@ -82,6 +82,7 @@ public:
 
     // Member Functions
 
+    //- Computation
     // Make point to nearest triangle information available to the caller of this
     // member function
     scalarField 
@@ -105,8 +106,9 @@ public:
     scalar signedDistance(const point& p) const;
     vector normalAtSurface(const pointIndexHit& hitInfo) const;
 
-    // Access
+    //- Access
     const vectorField& vertexNormals() const;
+    const triSurfaceSearch& surfaceSearch() const;
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

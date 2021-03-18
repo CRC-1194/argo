@@ -37,7 +37,7 @@ const double surfaceMeshCellIntersection::nTrianglesPerCell() const
 
 const label surfaceMeshCellIntersection::nIntersectedCells() const
 {
-    return nIntersectedCells_;
+    return intersectedCellLabels_.size();
 }
 
 const label surfaceMeshCellIntersection::maxRefinementLevel() const

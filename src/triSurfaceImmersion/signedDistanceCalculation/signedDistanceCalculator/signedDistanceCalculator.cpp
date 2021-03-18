@@ -27,6 +27,8 @@ License
 
 #include "signedDistanceCalculator.hpp"
 
+#include "triSurface.H"
+#include "triSurfaceSearch.H"
 #include "triSurfaceTools.H"
 
 namespace Foam::TriSurfaceImmersion {
@@ -192,6 +194,11 @@ signedDistanceCalculator::normalAtSurface(const pointIndexHit& hitInfo) const
 const vectorField& signedDistanceCalculator::vertexNormals() const
 {
     return vertexNormals_;
+}
+
+const triSurfaceSearch& signedDistanceCalculator::surfaceSearch() const
+{
+    return surfaceSearch_;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
