@@ -159,9 +159,9 @@ int main(int argc, char *argv[])
 
     adaptiveTetCellRefinement<orientedPlane> tet_refiner{plane, points, signed_distance, tets, refinement_level};
 
-    auto refined_tets = tet_refiner.resulting_tets();
+    auto refined_tets = tet_refiner.resultingTets();
 
-    tet_refiner.print_level_infos();
+    tet_refiner.printLevelInfos();
 
 
     Info << "Volume plausibility check" << endl;
@@ -180,13 +180,13 @@ int main(int argc, char *argv[])
     // VoF calculation
     tetVofCalculator vof_calc{};
 
-    auto volume_fractions = vof_calc.vof(refined_tets, tet_refiner.signed_distance());
+    auto volume_fractions = vof_calc.vof(refined_tets, tet_refiner.signedDistance());
 
-    auto plus_volume = vof_calc.accumulated_omega_plus_volume(refined_tets, tet_refiner.signed_distance(), tet_refiner.points());
+    auto plus_volume = vof_calc.accumulated_omega_plus_volume(refined_tets, tet_refiner.signedDistance(), tet_refiner.points());
 
     Info << "Plus volume fraction = " << plus_volume/vol_exact << endl;
 
-    save_to_vtk(refined_tets, tet_refiner.points(), tet_refiner.signed_distance(), volume_fractions);
+    save_to_vtk(refined_tets, tet_refiner.points(), tet_refiner.signedDistance(), volume_fractions);
 
     Info<< "End" << endl;
 

@@ -73,10 +73,8 @@ private:
 
     std::vector<point> points_;
     std::vector<scalar> signed_distance_;
-
     std::vector<indexedTet> tets_;
     std::vector<bool> refinement_required_;
-
     std::map<edge, label> edge_to_point_id_;
 
     // NOTE: the second entry in the tuple denotes the index of the first element
@@ -85,8 +83,6 @@ private:
     std::vector<indexTuple> level_to_tetid_range_;
 
     label max_refinement_level_;
-    const label cell_ID_;
-    const bool write_tets_;
 
     bool decomposition_performed_ = false;
     const label n_tets_from_decomposition = 8;
@@ -97,13 +93,13 @@ private:
     label compute_max_refinement_level();
 
     void compute_decomposition();
-    label flag_tets_for_refinement(const int level);
+    label flag_tets_for_refinement(int level);
     bool has_to_be_refined(const indexedTet& tet) const;
     std::tuple<scalar, label> maxiumum_distance_sqr_and_pointid(const indexedTet& tet) const;
     scalar distance_squared(const point& p_a, const point& p_b) const;
-    void update_tet_container_sizes(const int level, const int n_new_tets);
+    void update_tet_container_sizes(int level, int n_new_tets);
 
-    void update_edge_to_point_map(const int level);
+    void update_edge_to_point_map(int level);
     void add_to_map(std::array<edge, 6> tet_edges);
     std::array<edge, 6> edges(const indexedTet& tet) const;
 
@@ -126,26 +122,25 @@ public:
     adaptiveTetCellRefinement
     (
         const T& surface,
-        const std::vector<point> points,
-        const std::vector<scalar> signed_distance,
-        const std::vector<indexedTet> tets,
-        const label max_refine_level = -1,
-        const bool write_tets = false,
-        const label cell_ID = 0
+        std::vector<point> points,
+        std::vector<scalar> signed_distance,
+        std::vector<indexedTet> tets,
+        label max_refine_level = -1
     );
     
 
     // Member Functions
     const std::vector<point>& points();
-    const std::vector<scalar>& signed_distance();
-    std::vector<indexedTet> resulting_tets();
-    label refinement_level() const;
+    const std::vector<scalar>& signedDistance();
+    std::vector<indexedTet> resultingTets();
+    label refinementLevel() const;
 
-    void print_level_infos() const;
-    void print_tets() const;
-    void print_points() const;
+    void printLevelInfos() const;
+    void printTets() const;
+    void printPoints() const;
 
-    std::vector<label> refinement_levels(const label n_tets);
+    std::vector<label> refinementLevels(label n_tets);
+    void writeTets(label cellID);
 };
 
 

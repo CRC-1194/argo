@@ -32,7 +32,8 @@ Description
     surface-mesh-cell-approximation.
 
 SourceFiles
-    volumeFractionCalculator.C
+    volumeFractionCalculator.cpp
+    volumeFractionCalculatorI.hpp
 
 \*---------------------------------------------------------------------------*/
 
@@ -42,6 +43,7 @@ SourceFiles
 #include "autoPtr.H"
 #include "fvMesh.H"
 #include "pointFields.H"
+#include "pointIndexHit.H"
 #include "runTimeSelectionTables.H"
 #include "surfaceFields.H"
 #include "Time.H"
@@ -79,6 +81,7 @@ private:
     pointMesh pMesh_;
 
     // Signed distances
+    //- Search distance calculator: controls narrow band thickness
     searchDistanceCalculator searchDistCalc_;
     signedDistanceCalculator sigDistCalc_;
     
@@ -87,9 +90,13 @@ private:
     //- Initial signed distance field given by the octree, used to correct the 
     //  signed distance propagated by the solution of the Laplace equation. 
     volScalarField cellSignedDist0_;  
+    //- Nearest surface triangle to a cell centre in the narrow band
+    DynamicList<pointIndexHit> cellNearestTriangle_;
 
     //- Signed distance at cell corner points. 
     pointScalarField pointSignedDist_;
+    //- Nearest surface triangle to a cell centre in the narrow band
+    DynamicList<pointIndexHit> pointNearestTriangle_;
 
     //- Write additional geometric objects used in the computation of
     //  volume fraction of interface cells
@@ -149,9 +156,15 @@ public:
 
     inline const volScalarField& cellSignedDist0() const; 
 
+    inline const DynamicList<pointIndexHit>& cellNearestTriangle() const;
+
     inline const pointScalarField& pointSignedDist() const;
 
+    inline const DynamicList<pointIndexHit>& pointNearestTriangle() const;
+
     inline const signedDistanceCalculator& signedDistCalc() const;
+
+    inline const searchDistanceCalculator& searchDistCalc() const;
 
     inline bool writeGeometry() const;
 
@@ -164,7 +177,7 @@ public:
 
     //- Computation
 
-    void calcSignedDist();  
+    void calcSignedDist();
 
     virtual void findIntersectedCells() = 0;
 
@@ -181,7 +194,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "volumeFractionCalculatorI.H"
+#include "volumeFractionCalculatorI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

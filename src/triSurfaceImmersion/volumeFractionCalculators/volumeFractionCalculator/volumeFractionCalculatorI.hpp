@@ -25,24 +25,65 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef surfaceMeshCellApproximationI_H
-#define surfaceMeshCellApproximationI_H
+#ifndef volumeFractionCalculatorI_H
+#define volumeFractionCalculatorI_H
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-const double surfaceMeshCellApproximation::nTrianglesPerCell() const
+
+const Time& volumeFractionCalculator::time() const
 {
-    return nTrianglesPerCell_;
+    return runTime_;
 }
 
-const label surfaceMeshCellApproximation::nIntersectedCells() const
+const fvMesh& volumeFractionCalculator::mesh() const
 {
-    return nIntersectedCells_;
+    return mesh_;
 }
 
-const label surfaceMeshCellApproximation::maxRefinementLevel() const
+const triSurface& volumeFractionCalculator::surface() const
 {
-    return maxRefinementLevel_;
+    return surface_;
+}
+
+const volScalarField& volumeFractionCalculator::cellSignedDist() const
+{
+    return cellSignedDist_;
+}
+
+const volScalarField& volumeFractionCalculator::cellSignedDist0() const
+{
+    return cellSignedDist0_;
+}
+
+const DynamicList<pointIndexHit>& volumeFractionCalculator::cellNearestTriangle() const
+{
+    return cellNearestTriangle_;
+}
+
+const Foam::pointScalarField& volumeFractionCalculator::pointSignedDist() const
+{
+    return pointSignedDist_;
+}
+
+const DynamicList<pointIndexHit>& volumeFractionCalculator::pointNearestTriangle() const
+{
+    return pointNearestTriangle_;
+}
+
+const signedDistanceCalculator& volumeFractionCalculator::signedDistCalc() const
+{
+    return sigDistCalc_;
+}
+
+const searchDistanceCalculator& volumeFractionCalculator::searchDistCalc() const
+{
+    return searchDistCalc_;
+}
+
+bool volumeFractionCalculator::writeGeometry() const
+{
+    return writeGeometry_;
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

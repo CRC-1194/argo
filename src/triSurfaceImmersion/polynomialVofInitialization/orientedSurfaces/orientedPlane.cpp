@@ -42,7 +42,8 @@ orientedPlane::orientedPlane(const point& refPoint, const vector& normal, scalar
 :
     ref_point_{refPoint},
     unit_normal_{normal},
-    ref_length_{refLength}
+    ref_length_{refLength},
+    distance_origin_{0.0}
 {
     updateDistanceToOrigin();
 }

@@ -25,52 +25,24 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef volumeFractionCalculatorI_H
-#define volumeFractionCalculatorI_H
+#ifndef surfaceMeshCellApproximationI_H
+#define surfaceMeshCellApproximationI_H
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#include "pointFieldsFwd.H"
-#include "volumeFractionCalculator.hpp"
-const Time& volumeFractionCalculator::time() const
+const double surfaceMeshCellApproximation::nTrianglesPerCell() const
 {
-    return runTime_;
+    return this->surface().size()/interfaceCellIDs_.size();
 }
 
-const fvMesh& volumeFractionCalculator::mesh() const
+const label surfaceMeshCellApproximation::nIntersectedCells() const
 {
-    return mesh_;
+    return interfaceCellIDs_.size();
 }
 
-const triSurface& volumeFractionCalculator::surface() const
+const label surfaceMeshCellApproximation::maxRefinementLevel() const
 {
-    return surface_;
-}
-
-const volScalarField& volumeFractionCalculator::cellSignedDist() const
-{
-    return cellSignedDist_;
-}
-
-const volScalarField& volumeFractionCalculator::cellSignedDist0() const
-{
-    return cellSignedDist0_;
-}
-
-const Foam::pointScalarField& volumeFractionCalculator::pointSignedDist() const
-{
-    return pointSignedDist_;
-}
-
-const signedDistanceCalculator& volumeFractionCalculator::signedDistCalc() const
-{
-    return sigDistCalc_;
-}
-
-bool volumeFractionCalculator::writeGeometry() const
-{
-    return writeGeometry_;
+    return maxUsedRefinementLevel_;
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

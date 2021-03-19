@@ -187,7 +187,6 @@ void surfaceMeshCellIntersection::calcVolumeFraction(volScalarField& alpha)
     this->bulkVolumeFraction(alpha);
     findIntersectedCells();
     interfaceCellVolumeFraction(alpha);
-    writeFields();
 }
 
 void surfaceMeshCellIntersection::findIntersectedCells()

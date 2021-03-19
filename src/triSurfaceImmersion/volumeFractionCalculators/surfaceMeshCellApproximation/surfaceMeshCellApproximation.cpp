@@ -26,9 +26,13 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "surfaceMeshCellApproximation.hpp"
-#include "volumeFractionCalculator.hpp"
+
+#include <cassert>
 
 #include "addToRunTimeSelectionTable.H"
+
+#include "tetVofCalculator.hpp"
+#include "triSurfaceAdapter.hpp"
 
 namespace Foam::TriSurfaceImmersion {
 
@@ -46,6 +50,159 @@ namespace Foam::TriSurfaceImmersion {
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+bool surfaceMeshCellApproximation::intersectionPossible(const label cellID) const
+{
+    const auto& points = this->mesh().points();
+    const auto& cellPointIDs = this->mesh().cellPoints()[cellID];
+    const auto distSqr = pow(this->cellSignedDist0()[cellID], 2.0);
+    const auto centre = this->mesh().C()[cellID];
+
+    // Idea: if all vertices of a cell have a distance less than the signed distance
+    // of the centre to the interface, then there is no intersection possible (TT)
+    for(const auto pointI : cellPointIDs)
+    {
+        auto v = points[pointI] - centre;
+        if ((v & v) >= distSqr)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+surfaceMeshCellApproximation::cellDecompositionTuple 
+surfaceMeshCellApproximation::decomposeCell(const label cellID) const
+{
+    const auto& mesh = this->mesh();
+    const auto& thisCell = mesh.cells()[cellID];
+    const auto& cellVertexIDs = mesh.cellPoints()[cellID];
+    const auto& vertices = mesh.points();
+    const auto& pointSignedDist = this->pointSignedDist();
+    const auto& cellSignedDist = this->cellSignedDist0();
+
+    std::vector<indexedTet> tets(nTets(cellID));
+    // Using a barycentric decomposition, the number of unique points
+    // is the sum of n_cell_vertices + n_cell_faces + 1 (the cell centre) (TT).
+    std::vector<point> points(cellVertexIDs.size() + thisCell.size() + 1);
+    std::vector<scalar> sd(points.size());
+    std::map<label, label> globalToLocal{};
+    
+    // Add vertices to points and their signed distance
+    forAll(cellVertexIDs, I)
+    {
+        points[I] = vertices[cellVertexIDs[I]];
+        sd[I] = pointSignedDist[cellVertexIDs[I]];
+        globalToLocal[cellVertexIDs[I]] = I;
+    }
+
+    // Add the cell centre
+    label centre_id = cellVertexIDs.size();
+    points[centre_id] = mesh.C()[cellID];
+    sd[centre_id] = cellSignedDist[cellID];
+
+    // Add face centres and build the indexed tets
+    const auto& faces = mesh.faces();
+    label face_centre_id = centre_id + 1;
+    label idx_tet = 0;
+    for (const auto face_id : thisCell)
+    {
+        points[face_centre_id] = mesh.Cf()[face_id];
+        sd[face_centre_id] = this->signedDistCalc().signedDistance(mesh.Cf()[face_id]);
+
+        for (const auto& anEdge : faces[face_id].edges())
+        {
+            tets[idx_tet] = indexedTet{centre_id, face_centre_id,
+                             globalToLocal[anEdge[0]], globalToLocal[anEdge[1]]};
+            ++idx_tet;
+        }
+        ++face_centre_id;
+    }
+
+    // Signed distance plausibility check
+    for (uint idx = 0; idx != points.size(); ++idx)
+    {
+        assert(mag(sd[idx]) < mesh.bounds().mag());
+    }
+
+    return std::make_tuple(tets, points, sd);
+}
+
+label surfaceMeshCellApproximation::nTets(const label cellID) const
+{
+    label nTet = 0;
+
+    const auto& thisCell = this->mesh().cells()[cellID];
+    const auto& faces = this->mesh().faces();
+
+    for (const auto faceID : thisCell)
+    {
+        nTet += faces[faceID].nEdges();
+    }
+
+    return nTet;
+}
+
+
+surfaceMeshCellApproximation::searchSphere
+surfaceMeshCellApproximation::cellInterfaceSearchSphere(const label cellID) const
+{
+    const auto& cellToVertex = this->mesh().cellPoints()[cellID];
+    const auto& cellNearestTriangle = this->cellNearestTriangle();
+    const auto& pointNearestTriangle = this->pointNearestTriangle();
+
+    std::vector<vector> closestPoints(cellToVertex.size());
+
+    for (auto idx = 0; idx != cellToVertex.size(); ++idx)
+    {
+        closestPoints[idx] = pointNearestTriangle[cellToVertex[idx]].hitPoint();
+    }
+
+    point centre = std::accumulate(closestPoints.begin(), closestPoints.end(), vector{0,0,0})/closestPoints.size();
+
+    scalar radiusSquared = 0.0;
+
+    for (const auto& v : closestPoints)
+    {
+        radiusSquared = std::max(radiusSquared, (v - centre)&(v - centre)); 
+    }
+
+    // Special case: all cell vertices have the same closest point.
+    //      Thus, the bounding sphere of this point set has a radius of
+    //      zero. In this case, relate the search radius to the edge length
+    //      of the closest triangle. (TT)
+    if (radiusSquared < SMALL)
+    {
+        const auto& v = this->surface().points();
+        const auto& t = this->surface()[cellNearestTriangle[cellID].index()];
+        radiusSquared = ((v[t[0]] - centre)&(v[t[0]] - centre)) +
+                        ((v[t[1]] - centre)&(v[t[1]] - centre)) +
+                        ((v[t[2]] - centre)&(v[t[2]] - centre));
+    }
+
+    assert(radiusSquared > 1.0e-15 && "Radius of search square is zero.");
+
+    return searchSphere{centre, radiusSquared};
+}
+
+triSurface surfaceMeshCellApproximation::surfaceSubset(const label cellID) const
+{
+    auto boundingSphere = cellInterfaceSearchSphere(cellID);
+    auto trisInSphere = this->signedDistCalc().surfaceSearch().tree().findSphere(boundingSphere.centre, boundingSphere.radiusSquared);
+    boolList includeTri(this->surface().size(), false);
+    labelList pointMap{};
+    labelList faceMap{};
+    for (const auto idx : trisInSphere)
+    {
+        includeTri[idx] = true;
+    }
+
+    assert(trisInSphere.size() > 0 && "Surface subset is empty set.");
+
+    // Return a signed distance calculator, reuse the computed normal field.
+    // Write surface subsets with normal field for inspection
+    return this->surface().subsetMesh(includeTri, pointMap, faceMap);
+}
 
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
@@ -59,18 +216,100 @@ surfaceMeshCellApproximation::surfaceMeshCellApproximation
     const triSurface& surface
 )
 :
-    volumeFractionCalculator{configDict, mesh, surface}
+    volumeFractionCalculator{configDict, mesh, surface},
+    interfaceCellIDs_{},
+    maxAllowedRefinementLevel_{configDict.get<label>("refinementLevel")}
     {}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 {
     this->calcSignedDist();
+    this->bulkVolumeFraction(alpha);
+    findIntersectedCells();
+
+    Info << "Computing volume fraction for interface cells..." << endl;
+    Info << "Number of cells flagged as interface cells: "
+         << interfaceCellIDs_.size() << endl;
+
+    const auto& V = this->mesh().V();
+    label max_refine = 0;
+
+    // TODO (TT): OpenMP disbaled for now. Loop does not execute correct with
+    // more than two threads. See issue on GitLab.
+    //#pragma omp parallel for reduction(max:max_refine)
+    for (const auto cellID : interfaceCellIDs_)
+    {
+        auto subsetSurface = surfaceSubset(cellID);
+        triSurfaceSearch subsetSearch{subsetSurface};
+        scalar s = 2.0*Foam::sqrt(this->searchDistCalc().cellSqrSearchDist()[cellID]);
+        triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
+        
+        // TODO (TT): Add referenceLength member function to signedDistanceCalculator class
+        // and use this with global surface instead of subset surface + triSurfaceAdapter.
+        // Then check performance difference and if it is worthwhile to implement
+        // the subset functionality.
+        // Alternatively: check if there is a way to tell the octree search where to start.
+        // If so, use the cellcentres closest point as start.
+        auto [tets, points, signed_dist] = decomposeCell(cellID);
+
+        adaptiveTetCellRefinement<triSurfaceAdapter> refiner
+                                                     {
+                                                         adapter,
+                                                         points,
+                                                         signed_dist,
+                                                         tets,
+                                                         maxAllowedRefinementLevel_
+                                                     };
+        tetVofCalculator vofCalc{};
+        alpha[cellID] = vofCalc.accumulated_omega_plus_volume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cellID]; 
+
+        // Limit volume fraction field
+        alpha[cellID] = max(min(alpha[cellID], 1.0), 0.0);
+
+        max_refine = std::max(refiner.refinementLevel(), max_refine);
+
+        if(this->writeGeometry())
+        {
+            refiner.writeTets(cellID);
+        }
+    }
+
+    maxUsedRefinementLevel_ = max_refine;
+
+    Info << "Finished volume fraction calculation" << endl;
 }
 
 void surfaceMeshCellApproximation::findIntersectedCells()
 {
+    const auto& cellNearestTriangle = this->cellNearestTriangle();
+
+    forAll(cellNearestTriangle, cellI)
+    {
+        if (cellNearestTriangle[cellI].hit() && intersectionPossible(cellI))
+        {
+            interfaceCellIDs_.push_back(cellI);
+        }
+    }
 }
+
+void surfaceMeshCellApproximation::writeFields() const
+{
+    this->volumeFractionCalculator::writeFields();
+
+    // Write identified interface cells as field
+    volScalarField interfaceCells{"interfaceCells", this->cellSignedDist()};
+    interfaceCells = dimensionedScalar{"interfaceCells", dimLength, 0};
+
+    for(const auto idx : interfaceCellIDs_)
+    {
+        interfaceCells[idx] = 1.0;
+    }
+
+    interfaceCells.write();
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 }  // namespace Foam::TriSurfaceImmersion
 

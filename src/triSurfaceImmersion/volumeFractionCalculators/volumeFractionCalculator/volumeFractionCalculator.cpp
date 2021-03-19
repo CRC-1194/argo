@@ -27,10 +27,12 @@ License
 
 #include "volumeFractionCalculator.hpp"
 
+#include "DynamicList.H"
 #include "IOobject.H"
 #include "addToRunTimeSelectionTable.H" 
 #include "dictionary.H"
 #include "fvc.H"
+#include "pointIndexHit.H"
 #include "pointMesh.H"
 
 #include "insideOutsidePropagation.hpp"
@@ -71,6 +73,7 @@ volumeFractionCalculator::volumeFractionCalculator
         "zeroGradient"
     },
     cellSignedDist0_{"cellSignedDist0", cellSignedDist_}, 
+    cellNearestTriangle_{},
     pointSignedDist_ 
     {
         IOobject
@@ -85,6 +88,7 @@ volumeFractionCalculator::volumeFractionCalculator
         dimensionedScalar("pointSignedDist", dimLength,0),
         "zeroGradient"
     },
+    pointNearestTriangle_{},
     writeGeometry_(configDict.get<Switch>("writeGeometry"))
 {}
 
@@ -119,11 +123,13 @@ volumeFractionCalculator::New
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void volumeFractionCalculator::calcSignedDist()
+void
+volumeFractionCalculator::calcSignedDist()
 {
     cellSignedDist0_.primitiveFieldRef() =
         sigDistCalc_.signedDistance
         (
+            cellNearestTriangle_,
             mesh_.C(),
             searchDistCalc_.cellSqrSearchDist(),
             0.0
@@ -135,6 +141,7 @@ void volumeFractionCalculator::calcSignedDist()
     pointSignedDist_.primitiveFieldRef() =
         sigDistCalc_.signedDistance
         (
+            pointNearestTriangle_,
             mesh_.points(),
             searchDistCalc_.pointSqrSearchDist(),
             0.0

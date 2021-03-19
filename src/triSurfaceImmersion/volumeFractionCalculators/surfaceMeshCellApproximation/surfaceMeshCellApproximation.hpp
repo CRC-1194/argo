@@ -32,14 +32,19 @@ Description
     to compute volume fractions of interface cells.
 
 SourceFiles
-    surfaceMeshCellApproximation.C
+    surfaceMeshCellApproximation.cpp
+    surfaceMeshCellApproximationI.hpp
 
 \*---------------------------------------------------------------------------*/
 
 #ifndef surfaceMeshCellApproximation_H
 #define surfaceMeshCellApproximation_H
 
+#include <vector>
+
 #include "volFieldsFwd.H"
+
+#include "AdaptiveTetCellRefinement.hpp"
 #include "volumeFractionCalculator.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -47,8 +52,7 @@ SourceFiles
 namespace Foam::TriSurfaceImmersion {
 
 
-/*---------------------------------------------------------------------------*\
-                 Class surfaceMeshCellApproximation Declaration
+/*---------------------------------------------------------------------------*\ Class surfaceMeshCellApproximation Declaration
 \*---------------------------------------------------------------------------*/
 
 class surfaceMeshCellApproximation
@@ -58,9 +62,25 @@ class surfaceMeshCellApproximation
 private:
 
     // Private Data
-    label nIntersectedCells_;
-    label nTrianglesPerCell_;
-    label maxRefinementLevel_;
+    std::vector<label> interfaceCellIDs_;
+    label maxAllowedRefinementLevel_;
+    label maxUsedRefinementLevel_ = 0;
+
+    using cellDecompositionTuple =
+        std::tuple<std::vector<indexedTet>, std::vector<point>, std::vector<scalar>>;
+    struct searchSphere
+    {
+        vector centre;
+        scalar radiusSquared;
+    };
+    
+    // Member functions
+    bool intersectionPossible(label cellID) const;
+    cellDecompositionTuple decomposeCell(label cellID) const;
+    label nTets(label cellID) const;
+    searchSphere cellInterfaceSearchSphere(label cellID) const;
+    triSurface surfaceSubset(label cellID) const;
+
 
 public:
 
@@ -107,12 +127,16 @@ public:
     void calcVolumeFraction(volScalarField& alpha) override; 
 
     void findIntersectedCells() override;
+
+    //- Write
+
+    void writeFields() const override;
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "surfaceMeshCellApproximationI.H"
+#include "surfaceMeshCellApproximationI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
