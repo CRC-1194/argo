@@ -34,46 +34,46 @@ License
 namespace Foam::TriSurfaceImmersion {
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-label tetVofCalculator::count_negative_entries() const
+label tetVofCalculator::countNegativeDistances() const
 {
-    label n_negative_entries = 0;
-
-    for (const auto entry : signed_distance_buffer_)
-    {
-        if (entry < 0.0) ++n_negative_entries;
-    }
-
-    return n_negative_entries;
+    return std::count_if
+            (
+                signedDistanceBuffer_.begin(),
+                signedDistanceBuffer_.end(),
+                [](const scalar d){return d < 0.0;}
+            );
 }
 
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-scalar tetVofCalculator::volume(const indexedTet& t, const std::vector<point>& p) const
+scalar tetVofCalculator::volume
+(
+    const indexedTet& t,
+    const std::vector<point>& p
+)
 {
     return mag((p[t[1]] - p[t[0]]) & ((p[t[2]] - p[t[0]])^(p[t[3]] - p[t[0]])))/6.0;
 }
 
+
 scalar tetVofCalculator::vof
-       (
-            const indexedTet& tet,
-            const std::vector<scalar>& signed_distance
-       ) const
+(
+    const indexedTet& tet,
+    const std::vector<scalar>& signedDistance
+) const
 {
     // This function implements the actual model of Detrixhe and Aslam (TT)
     scalar volFraction = 0.0;
 
-    for (int idx = 0; idx !=4; ++idx)
+    for (int idx = 0; idx != 4; ++idx)
     {
-        signed_distance_buffer_[idx] = signed_distance[tet[idx]];
+        signedDistanceBuffer_[idx] = signedDistance[tet[idx]];
     }
 
-    std::sort(signed_distance_buffer_.begin(), signed_distance_buffer_.end());
-    const auto& d = signed_distance_buffer_;
+    std::sort(signedDistanceBuffer_.begin(), signedDistanceBuffer_.end());
+    const auto& d = signedDistanceBuffer_;
 
-    auto negative_distances = count_negative_entries();
+    auto negative_distances = countNegativeDistances();
 
     if (negative_distances == 4)
     {
@@ -82,13 +82,13 @@ scalar tetVofCalculator::vof
     else if (negative_distances == 3)
     {
         volFraction = std::pow(d[3],3) /
-               ((d[3] - d[0]) * (d[3] - d[1]) * (d[3] - d[2]));
+            ((d[3]-d[0]) * (d[3]-d[1]) * (d[3]-d[2]));
     }
     else if (negative_distances == 2)
     {
         volFraction = ( d[0]*d[1] * (d[2]*d[2] + d[2]*d[3] + d[3]*d[3])
-                + d[2]*d[3] * (d[2]*d[3] - (d[0]+d[1])*(d[2]+d[3])) )
-                / ((d[0]-d[2]) * (d[1]-d[2]) * (d[0]-d[3]) * (d[1]-d[3]));
+            + d[2]*d[3] * (d[2]*d[3] - (d[0]+d[1])*(d[2]+d[3])) )
+            / ((d[0]-d[2]) * (d[1]-d[2]) * (d[0]-d[3]) * (d[1]-d[3]));
     }
     else if (negative_distances == 1)
     {
@@ -104,59 +104,60 @@ scalar tetVofCalculator::vof
     return volFraction;
 }
 
-scalar tetVofCalculator::omega_plus_volume
-       (
-            const indexedTet& tet,
-            const std::vector<scalar>& signed_distance,
-            const std::vector<point>& points
-       ) const
+scalar tetVofCalculator::omegaPlusVolume
+(
+    const indexedTet& tet,
+    const std::vector<scalar>& signedDistance,
+    const std::vector<point>& points
+) const
 {
-    auto volume_fraction = vof(tet, signed_distance);
-
-    return volume_fraction*volume(tet, points);
+    return vof(tet, signedDistance)*volume(tet, points);
 }
+
 
 std::vector<scalar> tetVofCalculator::vof
-                    (
-                        const std::vector<indexedTet>& tets,
-                        const std::vector<scalar>& signed_distance
-                    ) const
+(
+    const std::vector<indexedTet>& tets,
+    const std::vector<scalar>& signedDistance
+) const
 {
-    std::vector<scalar> volume_fractions(tets.size());
+    std::vector<scalar> volumeFractions(tets.size());
 
-    for (uint idx = 0; idx != tets.size(); ++idx)
+    forAll(tets, tetI)
     {
-        volume_fractions[idx] = vof(tets[idx], signed_distance);
+        volumeFractions[tetI] = vof(tets[tetI], signedDistance);
     }
 
-    return volume_fractions;
+    return volumeFractions;
 }
 
-std::vector<scalar> tetVofCalculator::omega_plus_volume
-                    (
-                        const std::vector<indexedTet>& tets,
-                        const std::vector<scalar>& signed_distance,
-                        const std::vector<point>& points
-                    ) const
+
+std::vector<scalar> tetVofCalculator::omegaPlusVolumes
+(
+    const std::vector<indexedTet>& tets,
+    const std::vector<scalar>& signedDistance,
+    const std::vector<point>& points
+) const
 {
     std::vector<scalar> plus_volumes(tets.size());
 
-    for (uint idx = 0; idx != tets.size(); ++idx)
+    forAll(tets, tetI)
     {
-        plus_volumes[idx] = omega_plus_volume(tets[idx], signed_distance, points);
+        plus_volumes[tetI] = omegaPlusVolume(tets[tetI], signedDistance, points);
     }
 
     return plus_volumes;
 }
 
-scalar tetVofCalculator::accumulated_omega_plus_volume
-       (
-            const std::vector<indexedTet>& tets,
-            const std::vector<scalar>& signed_distance,
-            const std::vector<point>& points
-       ) const
+
+scalar tetVofCalculator::accumulatedOmegaPlusVolume
+(
+    const std::vector<indexedTet>& tets,
+    const std::vector<scalar>& signedDistance,
+    const std::vector<point>& points
+) const
 {
-    auto v = omega_plus_volume(tets, signed_distance, points);
+    auto v = omegaPlusVolumes(tets, signedDistance, points);
     return std::accumulate(v.begin(), v.end(), 0.0);
 }
 

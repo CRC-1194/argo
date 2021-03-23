@@ -111,7 +111,7 @@ add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
     #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
-    src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
+    #src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
@@ -129,7 +129,7 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools
     src/triSurfaceImmersion/include
-    src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization
+    #src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization
     src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
@@ -183,28 +183,28 @@ target_link_libraries("geophaseUnitTest"
 add_test(NAME unitTests COMMAND geophaseUnitTest)
 set_tests_properties(unitTests PROPERTIES LABELS "UNIT")
 
-add_executable("polynomialVofTest${PROJECT_BUILD_TYPE}"
-               applications/polynomialVofTest/polynomialVofTest.cpp)
-target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
-    "triSurfaceImmersion${PROJECT_BUILD_TYPE}"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
+#add_executable("polynomialVofTest${PROJECT_BUILD_TYPE}"
+#               applications/polynomialVofTest/polynomialVofTest.cpp)
+#target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
+#    "triSurfaceImmersion${PROJECT_BUILD_TYPE}"
+#    ${OF_FINITEVOLUME}
+#    ${OF_MESHTOOLS}
+#    ${OF_OPENFOAM}
+#    dl
+#    m
+#)
 
 # Preprocessing
-add_executable("cellCellVofInit"
-               applications/cellCellVofInit/cellCellVofInit.cpp)
-target_link_libraries("cellCellVofInit"
-    "triSurfaceImmersion"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
+#add_executable("cellCellVofInit"
+#               applications/cellCellVofInit/cellCellVofInit.cpp)
+#target_link_libraries("cellCellVofInit"
+#    "triSurfaceImmersion"
+#    ${OF_FINITEVOLUME}
+#    ${OF_MESHTOOLS}
+#    ${OF_OPENFOAM}
+#    dl
+#    m
+#)
 
 #add_executable("smciVofInit"
 #               applications/smciVofInit/smciVofInit.cpp)
@@ -217,16 +217,16 @@ target_link_libraries("cellCellVofInit"
 #    m
 #)
 
-add_executable("smcaVofInit"
-               applications/smcaVofInit/smcaVofInit.cpp)
-target_link_libraries("smcaVofInit"
-    "triSurfaceImmersion"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
+#add_executable("smcaVofInit"
+#               applications/smcaVofInit/smcaVofInit.cpp)
+#target_link_libraries("smcaVofInit"
+#    "triSurfaceImmersion"
+#    ${OF_FINITEVOLUME}
+#    ${OF_MESHTOOLS}
+#    ${OF_OPENFOAM}
+#    dl
+#    m
+#)
 
 # 
 add_executable("surfaceInitVolumeFraction"
@@ -314,12 +314,12 @@ install(TARGETS
         "surfaceInitVolumeFraction"
         # Pre-refactor
         #"smciVofInit"  
-        "cellCellVofInit"
+        #"cellCellVofInit"
         "geophaseUnitTest"
-        "smcaVofInit"
+        #"smcaVofInit"
         "surfaceInitSignedDistances"
         "signedDistanceTestCalc"
-        "polynomialVofTest"
+        #"polynomialVofTest"
         "foamPerturbMesh"
         "computeLiquidVolume"
         RUNTIME)

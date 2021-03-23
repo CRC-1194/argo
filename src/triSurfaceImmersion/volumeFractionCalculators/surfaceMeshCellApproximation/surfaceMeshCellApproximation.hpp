@@ -52,7 +52,8 @@ SourceFiles
 namespace Foam::TriSurfaceImmersion {
 
 
-/*---------------------------------------------------------------------------*\ Class surfaceMeshCellApproximation Declaration
+/*---------------------------------------------------------------------------*\ 
+               Class surfaceMeshCellApproximation Declaration
 \*---------------------------------------------------------------------------*/
 
 class surfaceMeshCellApproximation
@@ -61,11 +62,7 @@ class surfaceMeshCellApproximation
 {
 private:
 
-    // Private Data
-    std::vector<label> interfaceCellIDs_;
-    label maxAllowedRefinementLevel_;
-    label maxUsedRefinementLevel_ = 0;
-
+    // Private types
     using cellDecompositionTuple =
         std::tuple<std::vector<indexedTet>, std::vector<point>, std::vector<scalar>>;
     struct searchSphere
@@ -73,6 +70,11 @@ private:
         vector centre;
         scalar radiusSquared;
     };
+
+    // Private data
+    std::vector<label> interfaceCellIDs_;
+    label maxAllowedRefinementLevel_;
+    label maxUsedRefinementLevel_ = 0;
     
     // Member functions
     bool intersectionPossible(label cellID) const;
@@ -87,17 +89,6 @@ public:
     // Static Data Members
     TypeName ("SMCA")
 
-    // Generated Methods
-
-//        //- Default construct
-//        surfaceMeshCellApproximation() = default;
-//
-//        //- Copy construct
-//        surfaceMeshCellApproximation(const surfaceMeshCellApproximation&) = default;
-//
-//        //- Copy assignment
-//        surfaceMeshCellApproximation& operator=(const surfaceMeshCellApproximation&) = default;
-
 
     // Constructors
     surfaceMeshCellApproximation
@@ -106,10 +97,6 @@ public:
         const fvMesh& mesh,
         const triSurface& surface
     );
-
-
-    //- Destructor
-    //~surfaceMeshCellApproximation() override = default;
 
 
     // Member Functions

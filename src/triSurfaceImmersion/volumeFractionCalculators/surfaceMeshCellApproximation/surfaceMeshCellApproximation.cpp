@@ -40,15 +40,6 @@ namespace Foam::TriSurfaceImmersion {
     addToRunTimeSelectionTable(volumeFractionCalculator, surfaceMeshCellApproximation, Dictionary);
 
 
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 bool surfaceMeshCellApproximation::intersectionPossible(const label cellID) const
 {
@@ -143,7 +134,6 @@ label surfaceMeshCellApproximation::nTets(const label cellID) const
     return nTet;
 }
 
-
 surfaceMeshCellApproximation::searchSphere
 surfaceMeshCellApproximation::cellInterfaceSearchSphere(const label cellID) const
 {
@@ -205,9 +195,6 @@ triSurface surfaceMeshCellApproximation::surfaceSubset(const label cellID) const
 }
 
 
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 surfaceMeshCellApproximation::surfaceMeshCellApproximation
 (
@@ -228,9 +215,9 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
     this->bulkVolumeFraction(alpha);
     findIntersectedCells();
 
-    Info << "Computing volume fraction for interface cells..." << endl;
-    Info << "Number of cells flagged as interface cells: "
-         << interfaceCellIDs_.size() << endl;
+    Info<< "Computing volume fraction for interface cells..." << endl;
+    Info<< "Number of cells flagged as interface cells: "
+        << interfaceCellIDs_.size() << endl;
 
     const auto& V = this->mesh().V();
     label max_refine = 0;
@@ -262,7 +249,7 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
                                                          maxAllowedRefinementLevel_
                                                      };
         tetVofCalculator vofCalc{};
-        alpha[cellID] = vofCalc.accumulated_omega_plus_volume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cellID]; 
+        alpha[cellID] = vofCalc.accumulatedOmegaPlusVolume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cellID]; 
 
         // Limit volume fraction field
         alpha[cellID] = max(min(alpha[cellID], 1.0), 0.0);
@@ -277,7 +264,7 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 
     maxUsedRefinementLevel_ = max_refine;
 
-    Info << "Finished volume fraction calculation" << endl;
+    Info<< "Finished volume fraction calculation" << endl;
 }
 
 void surfaceMeshCellApproximation::findIntersectedCells()
