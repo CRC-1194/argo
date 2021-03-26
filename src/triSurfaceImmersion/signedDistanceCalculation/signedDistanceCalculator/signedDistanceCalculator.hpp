@@ -43,7 +43,7 @@ Description
     interpolated from the triangle vertices by a linear shape function.
 
 SourceFiles
-    signedDistanceCalculator.C
+    signedDistanceCalculator.cpp
 
 \*---------------------------------------------------------------------------*/
 
@@ -52,6 +52,7 @@ SourceFiles
 
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
+#include "vectorField.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -78,6 +79,11 @@ public:
 
     // Constructors
     explicit signedDistanceCalculator(const triSurface& surface);
+    signedDistanceCalculator
+    (
+        const triSurface& surface,
+        const vectorField& vertexNormals
+    );
 
 
     // Member Functions
@@ -85,8 +91,7 @@ public:
     //- Computation
     // Make point to nearest triangle information available to the caller of this
     // member function
-    scalarField 
-    signedDistance
+    scalarField signedDistance
     (
         DynamicList<pointIndexHit>& pointToNearestTriangle,
         const pointField& pf,
@@ -94,17 +99,21 @@ public:
         scalar outOfSearchDomain=0.0
     ) const;
 
-    scalarField
-    signedDistance
+    scalarField signedDistance
     (
         const pointField& pf,
         const scalarField& searchDistSqr,
         scalar outOfSearchDomain=0.0
     ) const;
 
-    std::tuple<pointIndexHit, scalar> signedDistance(const point& p, scalar searchDistSqr) const;
+    std::tuple<pointIndexHit, scalar> signedDistance
+    (
+        const point& p,
+        scalar searchDistSqr
+    ) const;
     scalar signedDistance(const point& p) const;
     vector normalAtSurface(const pointIndexHit& hitInfo) const;
+    scalar referenceLength() const;
 
     //- Access
     const vectorField& vertexNormals() const;

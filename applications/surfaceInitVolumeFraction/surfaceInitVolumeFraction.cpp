@@ -204,8 +204,8 @@ int main(int argc, char *argv[])
                 << Valpha << "," 
                 << Vsurf << "," 
                 << Evsurf << ","
-                << calcTime << "," << "\n";
-                //<< polyVofInit.maxRefinementLevel() << "\n";
+                << calcTime << ","
+                << vofCalcPtr->maxRefinementLevel() << "\n";
         }
     }
 

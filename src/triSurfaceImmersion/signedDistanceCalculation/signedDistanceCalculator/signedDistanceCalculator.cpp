@@ -82,6 +82,27 @@ signedDistanceCalculator::signedDistanceCalculator(const triSurface& surface)
 }
 
 
+signedDistanceCalculator::signedDistanceCalculator
+(
+    const triSurface& surface,
+    const vectorField& vertexNormals
+)
+:
+    surface_{surface},
+    surfaceSearch_{surface},
+    vertexNormals_{vertexNormals}
+{
+    if (surface_.nPoints() != vertexNormals.size())
+    {
+        FatalErrorIn (
+            "signedDistanceCalculator::signedDistanceCalculator"
+        )   << "Size of vertex normal field does not match number of points:" 
+            << nl << "Points: " << surface_.nPoints()
+            << nl << "Normals: " << vertexNormals_.size()
+            << exit(FatalError);
+    }
+}
+
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 scalarField 
 signedDistanceCalculator::signedDistance
@@ -189,6 +210,22 @@ signedDistanceCalculator::normalAtSurface(const pointIndexHit& hitInfo) const
              vertexNormals_[tri_hit[2]]*(h_l.y()/c.y());
 
     return normal;
+}
+
+scalar signedDistanceCalculator::referenceLength() const
+{
+    // Use minimum edge length as reference length
+    const auto& edges = surface_.edges();
+    const auto& vertices = surface_.localPoints();
+
+    scalar min_length = 1.0e15;
+
+    for (const auto& anEdge : edges)
+    {
+        min_length = min(min_length, mag(vertices[anEdge.start()] - vertices[anEdge.end()]));
+    }
+
+    return min_length;
 }
 
 const vectorField& signedDistanceCalculator::vertexNormals() const

@@ -81,7 +81,7 @@ private:
     cellDecompositionTuple decomposeCell(label cellID) const;
     label nTets(label cellID) const;
     searchSphere cellInterfaceSearchSphere(label cellID) const;
-    triSurface surfaceSubset(label cellID) const;
+    triSurface surfaceSubset(vectorField& vertexNormals, label cellID) const;
 
 
 public:

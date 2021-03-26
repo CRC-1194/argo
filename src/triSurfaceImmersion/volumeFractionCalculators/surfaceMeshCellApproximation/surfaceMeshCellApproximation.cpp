@@ -31,6 +31,7 @@ License
 
 #include "addToRunTimeSelectionTable.H"
 
+#include "signedDistanceCalculator.hpp"
 #include "tetVofCalculator.hpp"
 #include "triSurfaceAdapter.hpp"
 
@@ -175,7 +176,12 @@ surfaceMeshCellApproximation::cellInterfaceSearchSphere(const label cellID) cons
     return searchSphere{centre, radiusSquared};
 }
 
-triSurface surfaceMeshCellApproximation::surfaceSubset(const label cellID) const
+// TODO (TT): if this works as intended, restructure!
+triSurface surfaceMeshCellApproximation::surfaceSubset
+(
+    vectorField& vertexNormals,
+    const label cellID
+) const
 {
     auto boundingSphere = cellInterfaceSearchSphere(cellID);
     auto trisInSphere = this->signedDistCalc().surfaceSearch().tree().findSphere(boundingSphere.centre, boundingSphere.radiusSquared);
@@ -191,7 +197,18 @@ triSurface surfaceMeshCellApproximation::surfaceSubset(const label cellID) const
 
     // Return a signed distance calculator, reuse the computed normal field.
     // Write surface subsets with normal field for inspection
-    return this->surface().subsetMesh(includeTri, pointMap, faceMap);
+    //return this->surface().subsetMesh(includeTri, pointMap, faceMap);
+    auto subset = this->surface().subsetMesh(includeTri, pointMap, faceMap);
+
+    // Extract vertex normal field subset
+    vertexNormals.resize(pointMap.size());
+    const auto& globalVertexNormals = this->signedDistCalc().vertexNormals();
+    forAll(pointMap, I)
+    {
+        vertexNormals[I] = globalVertexNormals[pointMap[I]];
+    }
+
+    return subset;
 }
 
 
@@ -222,15 +239,17 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
     const auto& V = this->mesh().V();
     label max_refine = 0;
 
+    vectorField surfaceVertexNormals{};
     // TODO (TT): OpenMP disbaled for now. Loop does not execute correct with
     // more than two threads. See issue on GitLab.
     //#pragma omp parallel for reduction(max:max_refine)
     for (const auto cellID : interfaceCellIDs_)
     {
-        auto subsetSurface = surfaceSubset(cellID);
-        triSurfaceSearch subsetSearch{subsetSurface};
-        scalar s = 2.0*Foam::sqrt(this->searchDistCalc().cellSqrSearchDist()[cellID]);
-        triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
+        auto subsetSurface = surfaceSubset(surfaceVertexNormals, cellID);
+        //triSurfaceSearch subsetSearch{subsetSurface};
+        //scalar s = 2.0*Foam::sqrt(this->searchDistCalc().cellSqrSearchDist()[cellID]);
+        //triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
+        signedDistanceCalculator subsetCalc{subsetSurface, surfaceVertexNormals};
         
         // TODO (TT): Add referenceLength member function to signedDistanceCalculator class
         // and use this with global surface instead of subset surface + triSurfaceAdapter.
@@ -240,9 +259,10 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
         // If so, use the cellcentres closest point as start.
         auto [tets, points, signed_dist] = decomposeCell(cellID);
 
-        adaptiveTetCellRefinement<triSurfaceAdapter> refiner
+        adaptiveTetCellRefinement<signedDistanceCalculator> refiner
                                                      {
-                                                         adapter,
+                                                         //adapter,
+                                                         subsetCalc,
                                                          points,
                                                          signed_dist,
                                                          tets,
