@@ -112,6 +112,7 @@ add_library("triSurfaceImmersion" SHARED
     #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
     #src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
+    src/triSurfaceImmersion/implicitSurfaces/implicitSurfaces.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
@@ -128,6 +129,7 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/geomMeshIntersection/geomReconstructError
     #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools
+    src/triSurfaceImmersion/implicitSurfaces
     src/triSurfaceImmersion/include
     #src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization
     src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement
