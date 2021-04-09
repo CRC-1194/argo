@@ -74,7 +74,6 @@ namespace Foam::TriSurfaceImmersion {
             );
 
             static autoPtr<implicitSurface> New(
-                const word& name, 
                 const dictionary& configDict
             );
 
@@ -88,6 +87,7 @@ namespace Foam::TriSurfaceImmersion {
             virtual scalar value(const vector&) const = 0;
             virtual scalar operator()(const vector&) const = 0;
             virtual vector closestPoint(const vector&) const = 0;
+            virtual scalar signedDistance(const vector&) const;
             virtual vector grad(const vector&) const = 0;
     };
 

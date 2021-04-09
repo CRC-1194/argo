@@ -32,6 +32,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 
 #include "signedDistanceCalculator.hpp"
+#include "refinementCriteria.hpp"
 #include "tetVofCalculator.hpp"
 #include "triSurfaceAdapter.hpp"
 
@@ -259,15 +260,14 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
         // If so, use the cellcentres closest point as start.
         auto [tets, points, signed_dist] = decomposeCell(cellID);
 
-        adaptiveTetCellRefinement<signedDistanceCalculator> refiner
-                                                     {
-                                                         //adapter,
-                                                         subsetCalc,
-                                                         points,
-                                                         signed_dist,
-                                                         tets,
-                                                         maxAllowedRefinementLevel_
-                                                     };
+        adaptiveTetCellRefinement<signedDistanceCalculator,boundingBallCriterion> refiner
+        {
+            subsetCalc,
+            points,
+            signed_dist,
+            tets,
+            maxAllowedRefinementLevel_
+        };
         tetVofCalculator vofCalc{};
         alpha[cellID] = vofCalc.accumulatedOmegaPlusVolume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cellID]; 
 

@@ -113,6 +113,7 @@ add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
     #src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
     src/triSurfaceImmersion/implicitSurfaces/implicitSurfaces.cpp
+    #src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement/refinementCriteria.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp

@@ -50,10 +50,19 @@ Description
 
 // OpenFOAM headers
 #include "fvCFD.H"
+#include "fvcAverage.H"
+#include "pointFieldsFwd.H"
+#include "pointMesh.H"
+#include "surfaceInterpolate.H"
 #include "triSurface.H"
 
 // Argo headers
 #include "volumeFractionCalculator.hpp"
+
+// Headers for prototype
+#include "AdaptiveTetCellRefinement.hpp"
+#include "implicitSurfaces.hpp"
+#include "refinementCriteria.hpp"
 
 // TODO (TT): fix usage of name space
 using namespace Foam::TriSurfaceImmersion;
@@ -135,6 +144,9 @@ int main(int argc, char *argv[])
 
     // Initialization
     #include "createFields.hpp"
+    // Dirty hacking for prototype
+    if (vofCalcType == "SMCI" || vofCalcType == "SMCA")
+    {
     triSurface surface{surfaceFile};
     alpha = dimensionedScalar("alpha", dimless, 0); 
 
@@ -207,6 +219,88 @@ int main(int argc, char *argv[])
                 << calcTime << ","
                 << vofCalcPtr->maxRefinementLevel() << "\n";
         }
+    }
+    }
+    else
+    {
+        // Begin of prototype for implicit surfaces
+        auto implicitSurfacePtr = implicitSurface::New(initDict);
+
+        const auto& C = mesh.C();
+        pointMesh pMesh{mesh};
+
+        pointScalarField pointLevelSet
+        {
+            IOobject
+            (
+                "pointLevelSet", 
+                runTime.timeName(), 
+                mesh, 
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            pMesh,
+            dimensionedScalar("pointSignedDist", dimLength,0),
+            "zeroGradient"
+        };
+
+        const auto& ccp = mesh.points();
+
+        forAll(ccp, I)
+        {
+            pointLevelSet[I] = implicitSurfacePtr->value(ccp[I]);
+        }
+
+        const auto& cellToPoints = mesh.cellPoints();
+
+        volScalarField isInterfaceCell
+        {
+            IOobject
+            (
+                "isInterfaceCell", 
+                runTime.timeName(), 
+                mesh, 
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh,
+            dimensionedScalar("cellSignedDist", dimLength,0),
+            "zeroGradient"
+        };
+
+        forAll(cellToPoints, I)
+        {
+            const auto& cellCorners = cellToPoints[I];
+            auto signLS = sign(pointLevelSet[cellCorners[0]]);
+            label intersected = 0;
+
+            for (const auto ccid : cellCorners)
+            {
+                if (sign(pointLevelSet[ccid]) != signLS)
+                {
+                    intersected = 1;
+                    break;
+                }
+            }
+
+            isInterfaceCell[I] = intersected;
+        }
+        
+        forAll(C, I)
+        {
+            alpha[I] = implicitSurfacePtr->signedDistance(C[I]);
+        }
+
+        volScalarField narrowBand{"narrowBand", isInterfaceCell};
+
+        for (int iter = 0; iter != 2; ++iter)
+        {
+            narrowBand = fvc::average(fvc::interpolate(narrowBand));
+        }
+
+        alpha.write();
+        isInterfaceCell.write();
+        narrowBand.write();
     }
 
     Info<< nl;

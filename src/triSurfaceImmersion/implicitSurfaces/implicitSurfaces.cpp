@@ -71,10 +71,10 @@ autoPtr<implicitSurface> implicitSurface::New
 
 autoPtr<implicitSurface> implicitSurface::New 
 (
-    const word& name, 
     const dictionary& configDict
 )
 {
+    const auto name = configDict.get<word>("type");
     // Find the constructor pointer for the model in the constructor table.
     DictionaryConstructorTable::iterator cstrIter =
         DictionaryConstructorTablePtr_->find(name);
@@ -96,6 +96,11 @@ autoPtr<implicitSurface> implicitSurface::New
         (cstrIter()(configDict));
 }
 
+
+scalar implicitSurface::signedDistance(const vector& x) const
+{
+    return sign(this->value(x))*mag(x - this->closestPoint(x));
+}
 
 // * * * * * * * * * * * * Class plane  * * * * * * * * * * * //
 

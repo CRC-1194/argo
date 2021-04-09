@@ -59,7 +59,7 @@ namespace Foam::TriSurfaceImmersion {
 
 using indexedTet = std::array<label, 4>;
 
-template<class T>
+template<class Surface, template<class Surface2> class RefinementCriterion>
 class adaptiveTetCellRefinement
 {
 private:
@@ -69,10 +69,11 @@ private:
     using edge = indexTuple;
 
     // Private data
-    const T& surface_;
+    const Surface& surface_;
+    RefinementCriterion<Surface> criterion_;
 
     std::vector<point> points_;
-    std::vector<scalar> signed_distance_;
+    std::vector<scalar> levelSetValues_;
     std::vector<indexedTet> tets_;
     std::vector<bool> refinement_required_;
     std::map<edge, label> edge_to_point_id_;
@@ -91,29 +92,26 @@ private:
     // Private Member Functions
     std::array<scalar, 6> edge_lengths(const indexedTet& tet) const;
     label compute_max_refinement_level();
-
     void compute_decomposition();
     label flag_tets_for_refinement(int level);
-    bool has_to_be_refined(const indexedTet& tet) const;
-    std::tuple<scalar, label> maxiumum_distance_sqr_and_pointid(const indexedTet& tet) const;
-    scalar distance_squared(const point& p_a, const point& p_b) const;
+    //bool has_to_be_refined(const indexedTet& tet) const;
+    //std::tuple<scalar, label> maxiumum_distance_sqr_and_pointid(const indexedTet& tet) const;
+    //scalar distance_squared(const point& p_a, const point& p_b) const;
     void update_tet_container_sizes(int level, int n_new_tets);
-
     void update_edge_to_point_map(int level);
     void add_to_map(std::array<edge, 6> tet_edges);
     std::array<edge, 6> edges(const indexedTet& tet) const;
-
     void create_refined_tets(int level);
     void decompose_and_add_new_tets(const indexedTet& tet, label start_id);
-
-    void compute_signed_distances(int level);
-    void save_decomposition_as_vtk(
-            const std::vector<indexedTet>& tets,
-            const std::vector<point>& points,
-            const std::vector<scalar>& signed_distance,
-            const std::vector<label>& refinement_levels,
-            std::string file_name
-         ) const;
+    void computeLevelSetValues(int level);
+    void save_decomposition_as_vtk
+    (
+        const std::vector<indexedTet>& tets,
+        const std::vector<point>& points,
+        const std::vector<scalar>& signed_distance,
+        const std::vector<label>& refinement_levels,
+        std::string file_name
+    ) const;
 
 
 public:
@@ -121,9 +119,9 @@ public:
     // Constructors
     adaptiveTetCellRefinement
     (
-        const T& surface,
+        const Surface& surface,
         std::vector<point> points,
-        std::vector<scalar> signed_distance,
+        std::vector<scalar> levelSetValues,
         std::vector<indexedTet> tets,
         label max_refine_level = -1
     );
@@ -133,16 +131,16 @@ public:
     const std::vector<point>& points();
     const std::vector<scalar>& signedDistance();
     std::vector<indexedTet> resultingTets();
+
     label refinementLevel() const;
+    std::vector<label> refinementLevels(label n_tets);
+    void writeTets(label cellID);
 
     void printLevelInfos() const;
     void printTets() const;
     void printPoints() const;
 
-    std::vector<label> refinementLevels(label n_tets);
-    void writeTets(label cellID);
 };
-
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
