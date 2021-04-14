@@ -119,7 +119,8 @@ add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator/searchDistanceCalculator.cpp
-    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator.cpp
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator/signedDistanceCalculator.cpp
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc/triSurfaceDistCalc.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation/surfaceMeshCellApproximation.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection/surfaceMeshCellIntersection.cpp
@@ -138,7 +139,8 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator
-    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection
@@ -244,25 +246,25 @@ target_link_libraries("surfaceInitVolumeFraction"
 )
 
 
-add_executable("signedDistanceTestCalc"
-               applications/signedDistanceTestCalc/signedDistanceTestCalc.cpp)
-target_include_directories("signedDistanceTestCalc" PRIVATE
-    applications/signedDistanceTestCalc
-    ${of_src_path}/finiteVolume/lnInclude
-    ${of_src_path}/surfMesh/lnInclude
-    ${of_src_path}/meshTools/lnInclude
-    ${of_src_path}/fileFormats/lnInclude
-    ${of_src_path}/OSspecific/POSIX/lnInclude
-    ${of_src_path}/OpenFOAM/lnInclude
-)
-target_link_libraries("signedDistanceTestCalc"
-    "triSurfaceImmersion"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_OPENFOAM}
-    dl
-    m
-)
+#add_executable("signedDistanceTestCalc"
+#               applications/signedDistanceTestCalc/signedDistanceTestCalc.cpp)
+#target_include_directories("signedDistanceTestCalc" PRIVATE
+#    applications/signedDistanceTestCalc
+#    ${of_src_path}/finiteVolume/lnInclude
+#    ${of_src_path}/surfMesh/lnInclude
+#    ${of_src_path}/meshTools/lnInclude
+#    ${of_src_path}/fileFormats/lnInclude
+#    ${of_src_path}/OSspecific/POSIX/lnInclude
+#    ${of_src_path}/OpenFOAM/lnInclude
+#)
+#target_link_libraries("signedDistanceTestCalc"
+#    "triSurfaceImmersion"
+#    ${OF_FINITEVOLUME}
+#    ${OF_MESHTOOLS}
+#    ${OF_OPENFOAM}
+#    dl
+#    m
+#)
 
 add_executable("surfaceInitSignedDistances"
                applications/surfaceInitSignedDistances/surfaceInitSignedDistances.cpp)
@@ -321,7 +323,7 @@ install(TARGETS
         "geophaseUnitTest"
         #"smcaVofInit"
         "surfaceInitSignedDistances"
-        "signedDistanceTestCalc"
+        #"signedDistanceTestCalc"
         #"polynomialVofTest"
         "foamPerturbMesh"
         "computeLiquidVolume"

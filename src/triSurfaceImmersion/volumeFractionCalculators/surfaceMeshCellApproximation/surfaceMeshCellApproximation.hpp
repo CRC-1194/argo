@@ -42,6 +42,7 @@ SourceFiles
 
 #include <vector>
 
+#include "signedDistanceCalculator.hpp"
 #include "volFieldsFwd.H"
 
 #include "AdaptiveTetCellRefinement.hpp"
@@ -72,6 +73,7 @@ private:
     };
 
     // Private data
+    autoPtr<signedDistanceCalculator> sigDistCalcPtr_;
     std::vector<label> interfaceCellIDs_;
     label maxAllowedRefinementLevel_;
     label maxUsedRefinementLevel_ = 0;
@@ -80,8 +82,8 @@ private:
     bool intersectionPossible(label cellID) const;
     cellDecompositionTuple decomposeCell(label cellID) const;
     label nTets(label cellID) const;
-    searchSphere cellInterfaceSearchSphere(label cellID) const;
-    triSurface surfaceSubset(vectorField& vertexNormals, label cellID) const;
+    //searchSphere cellInterfaceSearchSphere(label cellID) const;
+    //triSurface surfaceSubset(vectorField& vertexNormals, label cellID) const;
 
 
 public:
@@ -94,8 +96,7 @@ public:
     surfaceMeshCellApproximation
     (
         const dictionary& configDict,
-        const fvMesh& mesh,
-        const triSurface& surface
+        const fvMesh& mesh
     );
 
 
@@ -108,6 +109,8 @@ public:
     inline const label nIntersectedCells() const override;
 
     inline const label maxRefinementLevel() const override;
+
+    const signedDistanceCalculator& sigDistCalc() const override;
 
     //- Computation
 

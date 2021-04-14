@@ -32,7 +32,7 @@ License
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 const double surfaceMeshCellApproximation::nTrianglesPerCell() const
 {
-    return this->surface().size()/interfaceCellIDs_.size();
+    return sigDistCalcPtr_->nSurfaceElements()/interfaceCellIDs_.size();
 }
 
 const label surfaceMeshCellApproximation::nIntersectedCells() const
@@ -43,6 +43,11 @@ const label surfaceMeshCellApproximation::nIntersectedCells() const
 const label surfaceMeshCellApproximation::maxRefinementLevel() const
 {
     return maxUsedRefinementLevel_;
+}
+
+const signedDistanceCalculator& surfaceMeshCellApproximation::sigDistCalc() const
+{
+    return *sigDistCalcPtr_;
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

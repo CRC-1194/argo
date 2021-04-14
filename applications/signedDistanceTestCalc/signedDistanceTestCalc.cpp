@@ -45,7 +45,7 @@ Author
 #include "OFstream.H"
 
 #include "legacyVtkOutput.H"
-#include "signedDistanceCalculator.hpp"
+#include "triSurfaceDistCalc.hpp"
 
 #include <chrono>
 #include <iomanip>
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     };
 
     // New calculation using the class
-    signedDistanceCalculator sig_dist_calc{surface};
+    triSurfaceDistCalc sig_dist_calc{surface};
     const auto test_points = generate_points(surface_bb, bb_scale_factor, npoints_per_dim);
     const scalarField search_dist_sqr(test_points.size(), r_search*r_search);
 

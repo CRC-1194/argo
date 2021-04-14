@@ -42,11 +42,12 @@ Description
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
+#include "signedDistanceCalculator.hpp"
 #include "triSurface.H"
 
 #include "insideOutsidePropagation.hpp"
 #include "searchDistanceCalculator.hpp"
-#include "signedDistanceCalculator.hpp"
+#include "triSurfaceDistCalc.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -89,6 +90,13 @@ int main(int argc, char *argv[])
     propagateInsideOutside = args.found("propagateInsideOutside");
     invertInsideOutside = args.found("invert");
 
+    // A negative search distance factor means to compute signed distances in the entire
+    // domain (TT)
+    if (searchDistanceFactor <= 0.0)
+    {
+        searchDistanceFactor = mesh.bounds().mag();
+    }
+
     // Print configuration
     Info << "Configuration:"
          << "\n\tfieldName: " << fieldName
@@ -98,22 +106,22 @@ int main(int argc, char *argv[])
          << "\n\tinvert inside outside: " << invertInsideOutside
          << endl;
 
+    // TODO: add comand line arguments to initDict as in VoF Init
+
     // Initialization
     #include "createFields.hpp"
-    triSurface surface{surfaceFile};
-    searchDistanceCalculator searchDistCalc{mesh, searchDistanceFactor};
-    signedDistanceCalculator sig_dist_calc{surface};
-
-    if (searchDistanceFactor <= 0.0)
-    {
-        searchDistanceFactor = mesh.bounds().mag();
-    }
-    signedDistance.primitiveFieldRef() =
-        sig_dist_calc.signedDistance(mesh.C(), searchDistCalc.cellSqrSearchDist(), 0.0);
+    //triSurface surface{surfaceFile};
+    //searchDistanceCalculator searchDistCalc{mesh, searchDistanceFactor};
+    //triSurfaceDistCalc sig_dist_calc{surface};
+    autoPtr<signedDistanceCalculator> sigDistCalcPtr{signedDistanceCalculator::New(initDict, mesh)};
 
     if (propagateInsideOutside)
     {
-        signedDistance = insideOutsidePropagation::propagateInsideOutside(signedDistance);
+        signedDistance = sigDistCalcPtr->cellSignedDist();
+    }
+    else
+    {
+        signedDistance = sigDistCalcPtr->cellSignedDist0();
     }
     
     if (invertInsideOutside)

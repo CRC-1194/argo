@@ -26,8 +26,8 @@ License
 \*---------------------------------------------------------------------------*/
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-template<class Surface, template<class Surface2> class RefinementCriterion>
-std::array<scalar, 6> adaptiveTetCellRefinement<Surface, RefinementCriterion>::edge_lengths(const indexedTet& tet) const
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+std::array<scalar, 6> adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::edge_lengths(const indexedTet& tet) const
 {
     std::array<scalar, 6> lengths{};
     const auto tet_edges = edges(tet);
@@ -42,8 +42,8 @@ std::array<scalar, 6> adaptiveTetCellRefinement<Surface, RefinementCriterion>::e
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-label adaptiveTetCellRefinement<Surface, RefinementCriterion>::compute_max_refinement_level()
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+label adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::compute_max_refinement_level()
 {
     // TODO (TT): use average edge length of tets for now and see, how
     // it works.
@@ -56,7 +56,7 @@ label adaptiveTetCellRefinement<Surface, RefinementCriterion>::compute_max_refin
     }
 
     avg_length /= 6*tets_.size();
-    auto ref_length = surface_.referenceLength();
+    auto ref_length = levelSet_.referenceLength();
     label level = 0;
 
     while (avg_length > ref_length)
@@ -69,8 +69,8 @@ label adaptiveTetCellRefinement<Surface, RefinementCriterion>::compute_max_refin
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::compute_decomposition()
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::compute_decomposition()
 {
     if (decomposition_performed_)
     {
@@ -90,8 +90,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::compute_decomposit
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-label adaptiveTetCellRefinement<Surface, RefinementCriterion>::flag_tets_for_refinement(const int level) 
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+label adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::flag_tets_for_refinement(const int level) 
 {
     const auto [start, end] = level_to_tetid_range_[level];
 
@@ -112,8 +112,8 @@ label adaptiveTetCellRefinement<Surface, RefinementCriterion>::flag_tets_for_ref
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::update_tet_container_sizes(const int level, const int n_new_tets)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::update_tet_container_sizes(const int level, const int n_new_tets)
 {
     // Update vector sizes related to the number of tets
     level_to_tetid_range_[level + 1] = indexTuple{tets_.size(), tets_.size() + n_new_tets};
@@ -131,8 +131,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::update_tet_contain
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::add_to_map(const std::array<edge, 6> tet_edges)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::add_to_map(const std::array<edge, 6> tet_edges)
 {
     for (const auto tet_edge : tet_edges)
     {
@@ -141,8 +141,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::add_to_map(const s
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::update_edge_to_point_map(const int level)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::update_edge_to_point_map(const int level)
 {
     edge_to_point_id_.clear();
 
@@ -176,8 +176,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::update_edge_to_poi
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-std::array<std::tuple<label, label>, 6> adaptiveTetCellRefinement<Surface, RefinementCriterion>::edges(const indexedTet& tet) const
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+std::array<std::tuple<label, label>, 6> adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::edges(const indexedTet& tet) const
 {
     return std::array<edge, 6>{
         edge{tet[0], tet[1]}, edge{tet[0], tet[2]}, edge{tet[0], tet[3]},
@@ -187,8 +187,8 @@ std::array<std::tuple<label, label>, 6> adaptiveTetCellRefinement<Surface, Refin
 }
 
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::create_refined_tets(int level)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::create_refined_tets(int level)
 {
     const auto [start, end] = level_to_tetid_range_[level];
     auto refined_tet_id = end;
@@ -203,8 +203,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::create_refined_tet
     }
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::decompose_and_add_new_tets(const indexedTet& tet, const label start_id)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::decompose_and_add_new_tets(const indexedTet& tet, const label start_id)
 {
     auto tet_edges = edges(tet);
 
@@ -256,19 +256,19 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::decompose_and_add_
     }
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::computeLevelSetValues(const int level)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::computeLevelSetValues(const int level)
 {
     const auto [start, end] = level_to_pointid_range_[level + 1];
 
     for (auto idx = start; idx != end; ++idx)
     {
-        levelSetValues_[idx] = criterion_.levelSetValue(surface_, points_[idx]);
+        levelSetValues_[idx] = criterion_.levelSetValue(levelSet_, points_[idx]);
     }
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::save_decomposition_as_vtk
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::save_decomposition_as_vtk
 (
     const std::vector<indexedTet>& tets,
     const std::vector<point>& points,
@@ -339,17 +339,17 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::save_decomposition
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-template<class Surface, template<class Surface2> class RefinementCriterion>
-adaptiveTetCellRefinement<Surface, RefinementCriterion>::adaptiveTetCellRefinement
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::adaptiveTetCellRefinement
 (
-    const Surface& surface,
+    const LevelSet& levelSet,
     const std::vector<point> points,
     const std::vector<scalar> levelSetValues,
     const std::vector<indexedTet> tets,
     const label max_refine_level
 )
     :
-    surface_{surface},
+    levelSet_{levelSet},
     criterion_{},
     points_{points},
     levelSetValues_{levelSetValues},
@@ -374,24 +374,24 @@ adaptiveTetCellRefinement<Surface, RefinementCriterion>::adaptiveTetCellRefineme
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-template<class Surface, template<class Surface2> class RefinementCriterion>
-const std::vector<point>& adaptiveTetCellRefinement<Surface, RefinementCriterion>::points()
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+const std::vector<point>& adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::points()
 {
     compute_decomposition();
 
     return points_;
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-const std::vector<scalar>& adaptiveTetCellRefinement<Surface, RefinementCriterion>::signedDistance()
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+const std::vector<scalar>& adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::signedDistance()
 {
     compute_decomposition();
 
     return levelSetValues_;
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-std::vector<indexedTet> adaptiveTetCellRefinement<Surface, RefinementCriterion>::resultingTets()
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+std::vector<indexedTet> adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::resultingTets()
 {
     std::vector<indexedTet> final_tets{};
 
@@ -414,14 +414,14 @@ std::vector<indexedTet> adaptiveTetCellRefinement<Surface, RefinementCriterion>:
     return final_tets;
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-label adaptiveTetCellRefinement<Surface, RefinementCriterion>::refinementLevel() const
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+label adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::refinementLevel() const
 {
     return max_refinement_level_;
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::printLevelInfos() const
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printLevelInfos() const
 {
     Info << "Number of tets and points per level\n";
 
@@ -435,8 +435,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::printLevelInfos() 
     }
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::printTets() const
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printTets() const
 {
     Info << "Indexed tets (n = " << tets_.size() << " in total):\n";
 
@@ -449,8 +449,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::printTets() const
     }
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::printPoints() const
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printPoints() const
 {
     Info << "Points:\n";
 
@@ -462,8 +462,8 @@ void adaptiveTetCellRefinement<Surface, RefinementCriterion>::printPoints() cons
     }
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-std::vector<label> adaptiveTetCellRefinement<Surface, RefinementCriterion>::refinementLevels(const label n_tets)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+std::vector<label> adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::refinementLevels(const label n_tets)
 {
     std::vector<label> tet_ref_levels(n_tets);
 
@@ -488,8 +488,8 @@ std::vector<label> adaptiveTetCellRefinement<Surface, RefinementCriterion>::refi
     return tet_ref_levels;
 }
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
-void adaptiveTetCellRefinement<Surface, RefinementCriterion>::writeTets(const label cellID)
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::writeTets(const label cellID)
 {
     compute_decomposition();
 

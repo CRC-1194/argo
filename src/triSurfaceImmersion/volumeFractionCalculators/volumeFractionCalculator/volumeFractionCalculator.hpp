@@ -45,6 +45,7 @@ SourceFiles
 #include "pointFields.H"
 #include "pointIndexHit.H"
 #include "runTimeSelectionTables.H"
+#include "signedDistanceCalculator.hpp"
 #include "surfaceFields.H"
 #include "Time.H"
 #include "triSurface.H"
@@ -52,7 +53,7 @@ SourceFiles
 #include "volFields.H"
 
 #include "searchDistanceCalculator.hpp"
-#include "signedDistanceCalculator.hpp"
+#include "triSurfaceDistCalc.hpp"
 #include "volFieldsFwd.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -74,36 +75,12 @@ private:
     //- A reference to time.
     const Time& runTime_;  
 
-    //- A reference to the surface mesh
-    const triSurface& surface_;
-
     //- Point mesh required to construct point fields
     pointMesh pMesh_;
-
-    // Signed distances
-    //- Search distance calculator: controls narrow band thickness
-    searchDistanceCalculator searchDistCalc_;
-    signedDistanceCalculator sigDistCalc_;
-    
-    //- Signed distance at cell centers. 
-    volScalarField cellSignedDist_; 
-    //- Initial signed distance field given by the octree, used to correct the 
-    //  signed distance propagated by the solution of the Laplace equation. 
-    volScalarField cellSignedDist0_;  
-    //- Nearest surface triangle to a cell centre in the narrow band
-    DynamicList<pointIndexHit> cellNearestTriangle_;
-
-    //- Signed distance at cell corner points. 
-    pointScalarField pointSignedDist_;
-    //- Nearest surface triangle to a cell centre in the narrow band
-    DynamicList<pointIndexHit> pointNearestTriangle_;
 
     //- Write additional geometric objects used in the computation of
     //  volume fraction of interface cells
     const bool writeGeometry_; 
-
-
-protected:
 
 
 public:
@@ -117,10 +94,9 @@ public:
         Dictionary,
         (
             const dictionary& configDict,
-            const fvMesh& mesh,
-            const triSurface& surface
+            const fvMesh& mesh
         ),
-        (configDict, mesh, surface)
+        (configDict, mesh)
     )
 
 
@@ -128,8 +104,7 @@ public:
     explicit volumeFractionCalculator
     (
         const dictionary& configDict,
-        const fvMesh& mesh,
-        const triSurface& surface
+        const fvMesh& mesh
     );
 
 
@@ -138,8 +113,7 @@ public:
     New
     (
         const dictionary& configDict,
-        const fvMesh& mesh,
-        const triSurface& surface
+        const fvMesh& mesh
     );
 
 
@@ -150,22 +124,6 @@ public:
 
     inline const fvMesh& mesh() const;
 
-    inline const triSurface& surface() const;
-
-    inline const volScalarField& cellSignedDist() const; 
-
-    inline const volScalarField& cellSignedDist0() const; 
-
-    inline const DynamicList<pointIndexHit>& cellNearestTriangle() const;
-
-    inline const pointScalarField& pointSignedDist() const;
-
-    inline const DynamicList<pointIndexHit>& pointNearestTriangle() const;
-
-    inline const signedDistanceCalculator& signedDistCalc() const;
-
-    inline const searchDistanceCalculator& searchDistCalc() const;
-
     inline bool writeGeometry() const;
 
     virtual const double nTrianglesPerCell() const = 0;
@@ -174,21 +132,21 @@ public:
 
     virtual const label maxRefinementLevel() const = 0;
 
+    virtual const signedDistanceCalculator& sigDistCalc() const = 0;
+
 
     //- Computation
 
-    void calcSignedDist();
-
     virtual void findIntersectedCells() = 0;
 
-    void bulkVolumeFraction(volScalarField& alpha);
+    void bulkVolumeFraction(volScalarField& alpha) const;
 
     virtual void calcVolumeFraction(volScalarField& alpha) = 0;
 
 
     //- Write 
 
-    virtual void writeFields() const;
+    virtual void writeFields() const = 0;
 };
 
 

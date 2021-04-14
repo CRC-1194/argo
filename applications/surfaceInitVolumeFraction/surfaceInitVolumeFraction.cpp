@@ -64,7 +64,6 @@ Description
 #include "implicitSurfaces.hpp"
 #include "refinementCriteria.hpp"
 
-// TODO (TT): fix usage of name space
 using namespace Foam::TriSurfaceImmersion;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -144,15 +143,10 @@ int main(int argc, char *argv[])
 
     // Initialization
     #include "createFields.hpp"
-    // Dirty hacking for prototype
-    if (vofCalcType == "SMCI" || vofCalcType == "SMCA")
-    {
-    triSurface surface{surfaceFile};
-    alpha = dimensionedScalar("alpha", dimless, 0); 
 
     // Compute the volume fraction field.
     auto ctime0 = std::chrono::steady_clock::now();
-    auto vofCalcPtr = volumeFractionCalculator::New(initDict, mesh, surface);
+    auto vofCalcPtr = volumeFractionCalculator::New(initDict, mesh);
     vofCalcPtr->calcVolumeFraction(alpha);
     auto ctime1 = std::chrono::steady_clock::now();
     auto calcTime = 
@@ -173,25 +167,9 @@ int main(int argc, char *argv[])
 
     if (checkVolume)
     {
-        // This is taken from surfaceCellVofInit (TT)
         if (Pstream::myProcNo() == 0) // Only compute on master rank in parallel. Thanks to TM.
         {
-            scalar Vsurf = 0; 
-
-            const auto& surfacePoints = surface.points(); 
-            forAll(surface, triangleI) 
-            {
-                const auto& Sf = surface.Sf()[triangleI]; 
-                const auto& triangle = surface[triangleI]; 
-                Vsurf += dot(
-                    -Sf,  // Surface normals are oriented into the phase. 
-                    (surfacePoints[triangle[0]] + 
-                    surfacePoints[triangle[1]] + 
-                    surfacePoints[triangle[2]])
-                );
-            }
-
-            Vsurf = 1./9.*mag(Vsurf); 
+            scalar Vsurf = vofCalcPtr->sigDistCalc().surfaceEnclosedVolume(); 
 
             scalar Valpha = gSum((mesh.V() * alpha)()); 
             scalar Evsurf = std::abs(Valpha - Vsurf) / Vsurf; 
@@ -211,7 +189,7 @@ int main(int argc, char *argv[])
                 << "CPU_TIME_MICROSECONDS," 
                 << "MAX_REFINEMENT_LEVEL" << "\n"
                 << mesh.nCells() << "," 
-                << surface.size() << "," 
+                << vofCalcPtr->sigDistCalc().nSurfaceElements() << "," 
                 << std::setprecision(20) 
                 << Valpha << "," 
                 << Vsurf << "," 
@@ -219,88 +197,6 @@ int main(int argc, char *argv[])
                 << calcTime << ","
                 << vofCalcPtr->maxRefinementLevel() << "\n";
         }
-    }
-    }
-    else
-    {
-        // Begin of prototype for implicit surfaces
-        auto implicitSurfacePtr = implicitSurface::New(initDict);
-
-        const auto& C = mesh.C();
-        pointMesh pMesh{mesh};
-
-        pointScalarField pointLevelSet
-        {
-            IOobject
-            (
-                "pointLevelSet", 
-                runTime.timeName(), 
-                mesh, 
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            pMesh,
-            dimensionedScalar("pointSignedDist", dimLength,0),
-            "zeroGradient"
-        };
-
-        const auto& ccp = mesh.points();
-
-        forAll(ccp, I)
-        {
-            pointLevelSet[I] = implicitSurfacePtr->value(ccp[I]);
-        }
-
-        const auto& cellToPoints = mesh.cellPoints();
-
-        volScalarField isInterfaceCell
-        {
-            IOobject
-            (
-                "isInterfaceCell", 
-                runTime.timeName(), 
-                mesh, 
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            mesh,
-            dimensionedScalar("cellSignedDist", dimLength,0),
-            "zeroGradient"
-        };
-
-        forAll(cellToPoints, I)
-        {
-            const auto& cellCorners = cellToPoints[I];
-            auto signLS = sign(pointLevelSet[cellCorners[0]]);
-            label intersected = 0;
-
-            for (const auto ccid : cellCorners)
-            {
-                if (sign(pointLevelSet[ccid]) != signLS)
-                {
-                    intersected = 1;
-                    break;
-                }
-            }
-
-            isInterfaceCell[I] = intersected;
-        }
-        
-        forAll(C, I)
-        {
-            alpha[I] = implicitSurfacePtr->signedDistance(C[I]);
-        }
-
-        volScalarField narrowBand{"narrowBand", isInterfaceCell};
-
-        for (int iter = 0; iter != 2; ++iter)
-        {
-            narrowBand = fvc::average(fvc::interpolate(narrowBand));
-        }
-
-        alpha.write();
-        isInterfaceCell.write();
-        narrowBand.write();
     }
 
     Info<< nl;

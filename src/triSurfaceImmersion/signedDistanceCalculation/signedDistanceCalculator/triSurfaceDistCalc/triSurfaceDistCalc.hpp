@@ -47,12 +47,16 @@ SourceFiles
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef signedDistanceCalculator_H
-#define signedDistanceCalculator_H
+#ifndef triSurfaceDistCalc_H
+#define triSurfaceDistCalc_H
+
+#include "signedDistanceCalculator.hpp"
 
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "vectorField.H"
+
+#include "searchDistanceCalculator.hpp"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -64,26 +68,35 @@ namespace Foam::TriSurfaceImmersion {
                          Class signedDistanceCalculator Declaration
 \*---------------------------------------------------------------------------*/
 
-class signedDistanceCalculator
+class triSurfaceDistCalc
+:
+    public signedDistanceCalculator
 {
     // Private Data
-    const triSurface& surface_;
+    searchDistanceCalculator searchDistCalc_;
+    triSurface surface_;
     triSurfaceSearch surfaceSearch_;
     vectorField vertexNormals_;
 
 
     // Private Member Functions
     void computeVertexNormals();
+    void computeSignedDistances();
 
 public:
 
+    TypeName("triSurfaceDist");
+
     // Constructors
-    explicit signedDistanceCalculator(const triSurface& surface);
-    signedDistanceCalculator
+    /*
+    explicit triSurfaceDistCalc(const triSurface& surface);
+    triSurfaceDistCalc
     (
         const triSurface& surface,
         const vectorField& vertexNormals
     );
+    */
+    triSurfaceDistCalc(const dictionary& configDict, const fvMesh& mesh);
 
 
     // Member Functions
@@ -111,13 +124,19 @@ public:
         const point& p,
         scalar searchDistSqr
     ) const;
-    scalar signedDistance(const point& p) const;
     vector normalAtSurface(const pointIndexHit& hitInfo) const;
-    scalar referenceLength() const;
 
     //- Access
     const vectorField& vertexNormals() const;
     const triSurfaceSearch& surfaceSearch() const;
+    const triSurface& surface() const;
+
+    // Inherited interface functions
+    scalar signedDistance(const point& p) const override;
+    scalar referenceLength() const override;
+    label nSurfaceElements() const override;
+    scalar surfaceEnclosedVolume() const override;
+    void writeFields() const override;
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

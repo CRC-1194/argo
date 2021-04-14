@@ -41,6 +41,7 @@ SourceFiles
 #include "orientedPlane.hpp"
 
 #include "fvCFD.H"
+#include "tmp.H"
 
 #include <algorithm>
 #include <array>
@@ -59,7 +60,7 @@ namespace Foam::TriSurfaceImmersion {
 
 using indexedTet = std::array<label, 4>;
 
-template<class Surface, template<class Surface2> class RefinementCriterion>
+template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
 class adaptiveTetCellRefinement
 {
 private:
@@ -69,8 +70,8 @@ private:
     using edge = indexTuple;
 
     // Private data
-    const Surface& surface_;
-    RefinementCriterion<Surface> criterion_;
+    const LevelSet& levelSet_;
+    RefinementCriterion<LevelSet> criterion_;
 
     std::vector<point> points_;
     std::vector<scalar> levelSetValues_;
@@ -94,9 +95,6 @@ private:
     label compute_max_refinement_level();
     void compute_decomposition();
     label flag_tets_for_refinement(int level);
-    //bool has_to_be_refined(const indexedTet& tet) const;
-    //std::tuple<scalar, label> maxiumum_distance_sqr_and_pointid(const indexedTet& tet) const;
-    //scalar distance_squared(const point& p_a, const point& p_b) const;
     void update_tet_container_sizes(int level, int n_new_tets);
     void update_edge_to_point_map(int level);
     void add_to_map(std::array<edge, 6> tet_edges);
@@ -119,7 +117,7 @@ public:
     // Constructors
     adaptiveTetCellRefinement
     (
-        const Surface& surface,
+        const LevelSet& levelSet,
         std::vector<point> points,
         std::vector<scalar> levelSetValues,
         std::vector<indexedTet> tets,

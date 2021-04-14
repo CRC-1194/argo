@@ -45,6 +45,11 @@ const label surfaceMeshCellIntersection::maxRefinementLevel() const
     return 0;
 }
 
+const signedDistanceCalculator& surfaceMeshCellIntersection::sigDistCalc() const
+{
+    return sigDistCalc_;
+}
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 #endif

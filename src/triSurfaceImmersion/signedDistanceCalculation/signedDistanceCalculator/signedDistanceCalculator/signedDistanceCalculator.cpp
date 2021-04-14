@@ -25,43 +25,78 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "volumeFractionCalculator.hpp"
-
-#include "DynamicList.H"
-#include "IOobject.H"
-#include "addToRunTimeSelectionTable.H" 
-#include "dictionary.H"
-#include "fvc.H"
-#include "pointIndexHit.H"
-#include "pointMesh.H"
-
-#include "insideOutsidePropagation.hpp"
 #include "signedDistanceCalculator.hpp"
-#include "volFieldsFwd.H"
+
+#include "dictionary.H"
 
 namespace Foam::TriSurfaceImmersion {
 
-    defineTypeNameAndDebug(volumeFractionCalculator, 0);
-    defineRunTimeSelectionTable(volumeFractionCalculator, Dictionary)
+    defineTypeNameAndDebug(signedDistanceCalculator, 0);
+    defineRunTimeSelectionTable(signedDistanceCalculator, Dictionary)
+
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+
+// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
+
+
+// * * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * //
+
+
+// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+
+
+// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-volumeFractionCalculator::volumeFractionCalculator
-(
+
+signedDistanceCalculator::signedDistanceCalculator(
     const dictionary& configDict,
     const fvMesh& mesh
 )
 :
+    dict_{configDict},
     mesh_{mesh},
-    runTime_{mesh.time()},
     pMesh_{mesh},
-    writeGeometry_(configDict.get<Switch>("writeGeometry"))
+    narrowBandWidth_{configDict.get<scalar>("narrowBandWidth")},
+    cellSignedDist_
+    {
+        IOobject
+        (
+            "cellSignedDist", 
+            mesh.time().timeName(), 
+            mesh, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh,
+        dimensionedScalar("cellSignedDist", dimLength,0),
+        "zeroGradient"
+    },
+    cellSignedDist0_{"cellSignedDist0", cellSignedDist_}, 
+    cellNearestTriangle_{},
+    pointSignedDist_ 
+    {
+        IOobject
+        (
+            "pointSignedDist", 
+            mesh.time().timeName(), 
+            mesh_, 
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        pMesh_,
+        dimensionedScalar("pointSignedDist", dimLength,0),
+        "zeroGradient"
+    },
+    pointNearestTriangle_{}
 {}
 
 
 // * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
-autoPtr<volumeFractionCalculator>
-volumeFractionCalculator::New
+
+autoPtr<signedDistanceCalculator> signedDistanceCalculator::New
 (
     const dictionary& configDict,
     const fvMesh& mesh
@@ -75,26 +110,35 @@ volumeFractionCalculator::New
     if (cstrIter == DictionaryConstructorTablePtr_->end())
     {
         FatalErrorIn (
-            "volumeFractionCalculator::New(const word& name)"
-        )   << "Unknown volumeFractionCalculator type "
+            "signedDistanceCalculator::New(const word& name)"
+        )   << "Unknown signedDistanceCalculator type "
             << name << nl << nl
-            << "Valid volumeFractionCalculators are : " << endl
+            << "Valid signedDistanceCalculators are : " << endl
             << DictionaryConstructorTablePtr_->sortedToc()
             << exit(FatalError);
     }
 
-    return autoPtr<volumeFractionCalculator>(cstrIter()(configDict, mesh));
+    return autoPtr<signedDistanceCalculator>(cstrIter()(configDict, mesh));
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void volumeFractionCalculator::bulkVolumeFraction(volScalarField& alpha) const
+void signedDistanceCalculator::outOfNarrowBandValue(const scalar value)
 {
-    alpha = pos(this->sigDistCalc().cellSignedDist());
+    outOfNarrowBandValue_ = value;
 }
+
+void signedDistanceCalculator::writeFields() const
+{
+    cellSignedDist0_.write();
+    cellSignedDist_.write();
+    pointSignedDist_.write();
+}
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam::TriSurfaceImmersion
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // ************************************************************************* //

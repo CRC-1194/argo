@@ -56,14 +56,13 @@ void surfaceMeshCellIntersection::interfaceCellVolumeFraction(volScalarField& al
 
     const auto& meshPoints = mesh.points();
 
-    const auto& sigDistCalc = this->signedDistCalc();
-    const auto& cellSignedDist = this->cellSignedDist();
-    const auto& pointSignedDist = this->pointSignedDist();
+    const auto& cellSignedDist = sigDistCalc_.cellSignedDist();
+    const auto& pointSignedDist = sigDistCalc_.pointSignedDist();
 
-    const auto& octree = signedDistCalc().surfaceSearch().tree();
-    const auto& triSurf = this->surface();
-    const auto& triPoints = this->surface().points(); 
-    const auto& triNormals = this->surface().faceNormals(); 
+    const auto& octree = sigDistCalc_.surfaceSearch().tree();
+    const auto& triSurf = sigDistCalc_.surface();
+    const auto& triPoints = triSurf.points(); 
+    const auto& triNormals = triSurf.faceNormals(); 
 
     // Encode tetrahedron signed distances into a bitset. For 4 tetrahedron
     // points: 1110 == positive, positive, positive, negative distance.
@@ -98,7 +97,7 @@ void surfaceMeshCellIntersection::interfaceCellVolumeFraction(volScalarField& al
 
             // Face center & distance for tetrahedron input.
             const auto& xF = faceCenters[faceG]; 
-            const scalar distF = sigDistCalc.signedDistance(faceCenters[faceG]); //faceSignedDist_[faceG]; 
+            const scalar distF = sigDistCalc_.signedDistance(faceCenters[faceG]); //faceSignedDist_[faceG]; 
             dists[1] = !std::signbit(distF); 
 
             const face& nBandFace = faces[faceG];
@@ -171,11 +170,11 @@ void surfaceMeshCellIntersection::interfaceCellVolumeFraction(volScalarField& al
 surfaceMeshCellIntersection::surfaceMeshCellIntersection
 (
     const dictionary& configDict,
-    const fvMesh& mesh,
-    const triSurface& surface
+    const fvMesh& mesh
 )
 :
-    volumeFractionCalculator{configDict, mesh, surface},
+    volumeFractionCalculator{configDict, mesh},
+    sigDistCalc_{configDict.subDict("distCalc"), mesh},
     intersectedCellLabels_(0),
     nTrianglesPerCell_{0}
     {}
@@ -183,7 +182,6 @@ surfaceMeshCellIntersection::surfaceMeshCellIntersection
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellIntersection::calcVolumeFraction(volScalarField& alpha)
 {
-    this->calcSignedDist();
     this->bulkVolumeFraction(alpha);
     findIntersectedCells();
     interfaceCellVolumeFraction(alpha);
@@ -192,8 +190,8 @@ void surfaceMeshCellIntersection::calcVolumeFraction(volScalarField& alpha)
 void surfaceMeshCellIntersection::findIntersectedCells()
 {
     const auto& mesh = this->mesh();
-    const auto& cellSignedDist = this->cellSignedDist();
-    const auto& pointSignedDist = this->pointSignedDist();
+    const auto& cellSignedDist = sigDistCalc_.cellSignedDist();
+    const auto& pointSignedDist = sigDistCalc_.pointSignedDist();
     const auto& meshCellPoints = mesh.cellPoints();
     const auto& meshCellEdges = mesh.cellEdges();
 
@@ -218,10 +216,10 @@ void surfaceMeshCellIntersection::findIntersectedCells()
 }
 
 void surfaceMeshCellIntersection::writeFields() const{
-    this->volumeFractionCalculator::writeFields();
+    sigDistCalc_.writeFields();
 
     // Write identified interface cells as field
-    volScalarField interfaceCells{"interface_cells", this->cellSignedDist()};
+    volScalarField interfaceCells{"interface_cells", sigDistCalc_.cellSignedDist()};
     interfaceCells = dimensionedScalar{"interface_cells", dimLength, 0};
 
     for(const auto cellI : intersectedCellLabels_)

@@ -32,6 +32,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 
 #include "signedDistanceCalculator.hpp"
+#include "triSurfaceDistCalc.hpp"
 #include "refinementCriteria.hpp"
 #include "tetVofCalculator.hpp"
 #include "triSurfaceAdapter.hpp"
@@ -47,7 +48,7 @@ bool surfaceMeshCellApproximation::intersectionPossible(const label cellID) cons
 {
     const auto& points = this->mesh().points();
     const auto& cellPointIDs = this->mesh().cellPoints()[cellID];
-    const auto distSqr = pow(this->cellSignedDist0()[cellID], 2.0);
+    const auto distSqr = pow(sigDistCalcPtr_->cellSignedDist0()[cellID], 2.0);
     const auto centre = this->mesh().C()[cellID];
 
     // Idea: if all vertices of a cell have a distance less than the signed distance
@@ -71,8 +72,8 @@ surfaceMeshCellApproximation::decomposeCell(const label cellID) const
     const auto& thisCell = mesh.cells()[cellID];
     const auto& cellVertexIDs = mesh.cellPoints()[cellID];
     const auto& vertices = mesh.points();
-    const auto& pointSignedDist = this->pointSignedDist();
-    const auto& cellSignedDist = this->cellSignedDist0();
+    const auto& pointSignedDist = sigDistCalcPtr_->pointSignedDist();
+    const auto& cellSignedDist = sigDistCalcPtr_->cellSignedDist0();
 
     std::vector<indexedTet> tets(nTets(cellID));
     // Using a barycentric decomposition, the number of unique points
@@ -101,7 +102,7 @@ surfaceMeshCellApproximation::decomposeCell(const label cellID) const
     for (const auto face_id : thisCell)
     {
         points[face_centre_id] = mesh.Cf()[face_id];
-        sd[face_centre_id] = this->signedDistCalc().signedDistance(mesh.Cf()[face_id]);
+        sd[face_centre_id] = sigDistCalcPtr_->signedDistance(mesh.Cf()[face_id]);
 
         for (const auto& anEdge : faces[face_id].edges())
         {
@@ -136,6 +137,7 @@ label surfaceMeshCellApproximation::nTets(const label cellID) const
     return nTet;
 }
 
+/*
 surfaceMeshCellApproximation::searchSphere
 surfaceMeshCellApproximation::cellInterfaceSearchSphere(const label cellID) const
 {
@@ -176,7 +178,9 @@ surfaceMeshCellApproximation::cellInterfaceSearchSphere(const label cellID) cons
 
     return searchSphere{centre, radiusSquared};
 }
+*/
 
+/*
 // TODO (TT): if this works as intended, restructure!
 triSurface surfaceMeshCellApproximation::surfaceSubset
 (
@@ -211,17 +215,18 @@ triSurface surfaceMeshCellApproximation::surfaceSubset
 
     return subset;
 }
+*/
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 surfaceMeshCellApproximation::surfaceMeshCellApproximation
 (
     const dictionary& configDict,
-    const fvMesh& mesh,
-    const triSurface& surface
+    const fvMesh& mesh
 )
 :
-    volumeFractionCalculator{configDict, mesh, surface},
+    volumeFractionCalculator{configDict, mesh},
+    sigDistCalcPtr_{signedDistanceCalculator::New(configDict.subDict("distCalc"), mesh)},
     interfaceCellIDs_{},
     maxAllowedRefinementLevel_{configDict.get<label>("refinementLevel")}
     {}
@@ -229,7 +234,6 @@ surfaceMeshCellApproximation::surfaceMeshCellApproximation
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 {
-    this->calcSignedDist();
     this->bulkVolumeFraction(alpha);
     findIntersectedCells();
 
@@ -240,17 +244,18 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
     const auto& V = this->mesh().V();
     label max_refine = 0;
 
-    vectorField surfaceVertexNormals{};
+    //vectorField surfaceVertexNormals{};
     // TODO (TT): OpenMP disbaled for now. Loop does not execute correct with
     // more than two threads. See issue on GitLab.
     //#pragma omp parallel for reduction(max:max_refine)
     for (const auto cellID : interfaceCellIDs_)
     {
-        auto subsetSurface = surfaceSubset(surfaceVertexNormals, cellID);
+        //auto subsetSurface = surfaceSubset(surfaceVertexNormals, cellID);
         //triSurfaceSearch subsetSearch{subsetSurface};
         //scalar s = 2.0*Foam::sqrt(this->searchDistCalc().cellSqrSearchDist()[cellID]);
         //triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
-        signedDistanceCalculator subsetCalc{subsetSurface, surfaceVertexNormals};
+        //triSurfaceDistCalc subsetCalc{subsetSurface, surfaceVertexNormals};
+        //tmp<signedDistanceCalculator> sigDistCalcPtr{new signedDistanceCalculator{subsetSurface, surfaceVertexNormals}};
         
         // TODO (TT): Add referenceLength member function to signedDistanceCalculator class
         // and use this with global surface instead of subset surface + triSurfaceAdapter.
@@ -262,7 +267,8 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 
         adaptiveTetCellRefinement<signedDistanceCalculator,boundingBallCriterion> refiner
         {
-            subsetCalc,
+            //subsetCalc,
+            this->sigDistCalc(),
             points,
             signed_dist,
             tets,
@@ -289,11 +295,11 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 
 void surfaceMeshCellApproximation::findIntersectedCells()
 {
-    const auto& cellNearestTriangle = this->cellNearestTriangle();
+    const auto& cellClosestPoint = sigDistCalcPtr_->cellClosestPoint();
 
-    forAll(cellNearestTriangle, cellI)
+    forAll(cellClosestPoint, cellI)
     {
-        if (cellNearestTriangle[cellI].hit() && intersectionPossible(cellI))
+        if (cellClosestPoint[cellI].hit() && intersectionPossible(cellI))
         {
             interfaceCellIDs_.push_back(cellI);
         }
@@ -302,10 +308,10 @@ void surfaceMeshCellApproximation::findIntersectedCells()
 
 void surfaceMeshCellApproximation::writeFields() const
 {
-    this->volumeFractionCalculator::writeFields();
+    sigDistCalcPtr_->writeFields();
 
     // Write identified interface cells as field
-    volScalarField interfaceCells{"interfaceCells", this->cellSignedDist()};
+    volScalarField interfaceCells{"interfaceCells", sigDistCalcPtr_->cellSignedDist()};
     interfaceCells = dimensionedScalar{"interfaceCells", dimLength, 0};
 
     for(const auto idx : interfaceCellIDs_)

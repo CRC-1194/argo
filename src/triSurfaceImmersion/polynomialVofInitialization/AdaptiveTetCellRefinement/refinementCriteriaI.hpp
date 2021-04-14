@@ -1,5 +1,5 @@
-template<class Surface>
-bool Foam::TriSurfaceImmersion::boundingBallCriterion<Surface>::needsRefinement
+template<class LevelSet>
+bool Foam::TriSurfaceImmersion::boundingBallCriterion<LevelSet>::needsRefinement
 (
     const indexedTet& tet,
     const std::vector<point>& points,
@@ -21,14 +21,14 @@ bool Foam::TriSurfaceImmersion::boundingBallCriterion<Surface>::needsRefinement
 }
 
 
-template<class Surface>
-scalar Foam::TriSurfaceImmersion::boundingBallCriterion<Surface>::levelSetValue(const Surface& surface, const point& x)
+template<class LevelSet>
+scalar Foam::TriSurfaceImmersion::boundingBallCriterion<LevelSet>::levelSetValue(const LevelSet& ls, const point& p)
 {
-    return surface.signedDistance(x);
+    return ls.signedDistance(p);
 }
 
-template<class Surface>
-std::tuple<scalar, label> Foam::TriSurfaceImmersion::boundingBallCriterion<Surface>::maxDistSqrAndPointID
+template<class LevelSet>
+std::tuple<scalar, label> Foam::TriSurfaceImmersion::boundingBallCriterion<LevelSet>::maxDistSqrAndPointID
 (
     const indexedTet& tet,
     const std::vector<scalar>& signedDistances
@@ -50,8 +50,8 @@ std::tuple<scalar, label> Foam::TriSurfaceImmersion::boundingBallCriterion<Surfa
 }
 
 
-template<class Surface>
-bool Foam::TriSurfaceImmersion::signCriterion<Surface>::needsRefinemeent
+template<class LevelSet>
+bool Foam::TriSurfaceImmersion::signCriterion<LevelSet>::needsRefinemeent
 (
     const indexedTet &tet,
     const std::vector<point>& points,
@@ -72,8 +72,8 @@ bool Foam::TriSurfaceImmersion::signCriterion<Surface>::needsRefinemeent
 }
 
 
-template<class Surface>
-scalar Foam::TriSurfaceImmersion::signCriterion<Surface>::levelSetValue(const Surface& surface, const point& x)
+template<class LevelSet>
+scalar Foam::TriSurfaceImmersion::signCriterion<LevelSet>::levelSetValue(const LevelSet& ls, const point& p)
 {
-    return surface.value(x);
+    return ls.value(p);
 }

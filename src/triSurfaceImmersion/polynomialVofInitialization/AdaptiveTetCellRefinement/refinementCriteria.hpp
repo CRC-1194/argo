@@ -7,7 +7,7 @@
 
 namespace Foam::TriSurfaceImmersion {
 
-template<class Surface>
+template<class LevelSet>
 class boundingBallCriterion
 {
 public:
@@ -22,7 +22,7 @@ public:
     // The criterion determines whether an arbitrary level set field or
     // a signed distance field is required. Thus, the corresponding function
     // is called through the criterion class
-    static scalar levelSetValue(const Surface&, const point&);
+    static scalar levelSetValue(const LevelSet& ls, const point& p);
     
     // Criterion specific functions
     static std::tuple<scalar, label> maxDistSqrAndPointID
@@ -32,7 +32,7 @@ public:
     );
 };
 
-template<class Surface>
+template<class LevelSet>
 class signCriterion
 {
 public:
@@ -42,7 +42,7 @@ public:
         const std::vector<point>& points,
         const std::vector<scalar>& levelSetValues
     );
-    static scalar levelSetValue(const Surface&, const point&);
+    static scalar levelSetValue(const LevelSet& ls, const point& p);
 };
 
 } // End namespace Foam::TriSurfaceImmersion

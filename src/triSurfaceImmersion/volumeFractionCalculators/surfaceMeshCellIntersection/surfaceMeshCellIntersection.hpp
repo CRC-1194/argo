@@ -40,6 +40,7 @@ SourceFiles
 #ifndef surfaceMeshCellIntersection_H
 #define surfaceMeshCellIntersection_H
 
+#include "triSurfaceDistCalc.hpp"
 #include "volFieldsFwd.H"
 #include "volumeFractionCalculator.hpp"
 
@@ -59,6 +60,8 @@ class surfaceMeshCellIntersection
 private:
 
     // Private Data
+    triSurfaceDistCalc sigDistCalc_;
+
     using dynamicLabelList = DynamicList<label>; 
     dynamicLabelList intersectedCellLabels_;
 
@@ -77,8 +80,7 @@ public:
     surfaceMeshCellIntersection
     (
         const dictionary& configDict,
-        const fvMesh& mesh,
-        const triSurface& surface
+        const fvMesh& mesh
     );
 
 
@@ -91,6 +93,8 @@ public:
     inline const label nIntersectedCells() const override;
 
     inline const label maxRefinementLevel() const override;
+
+    const signedDistanceCalculator& sigDistCalc() const override;
 
     //- Computation
 

@@ -25,16 +25,23 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "signedDistanceCalculator.hpp"
+#include "triSurfaceDistCalc.hpp"
 
+#include "addToRunTimeSelectionTable.H"
 #include "triSurface.H"
 #include "triSurfaceSearch.H"
 #include "triSurfaceTools.H"
 
+#include "insideOutsidePropagation.hpp"
+
 namespace Foam::TriSurfaceImmersion {
 
+    defineTypeNameAndDebug(triSurfaceDistCalc, 0);
+    addToRunTimeSelectionTable(signedDistanceCalculator, triSurfaceDistCalc, Dictionary);
+
+
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-void signedDistanceCalculator::computeVertexNormals()
+void triSurfaceDistCalc::computeVertexNormals()
 {
     /* The vertex normals are computed as a weighted sum of normals 
      * of the adjacent triangles. The weights are the triangle angles at the
@@ -70,9 +77,34 @@ void signedDistanceCalculator::computeVertexNormals()
     }
 }
 
+void triSurfaceDistCalc::computeSignedDistances()
+{
+    cellSignedDist0_.primitiveFieldRef() =
+        signedDistance
+        (
+            cellNearestTriangle_,
+            this->mesh().C(),
+            searchDistCalc_.cellSqrSearchDist(),
+            this->outOfNarrowBandValue()
+        );
+    
+    cellSignedDist_ = 
+        insideOutsidePropagation::propagateInsideOutside(cellSignedDist0_);
+
+    pointSignedDist_.primitiveFieldRef() =
+        signedDistance
+        (
+            pointNearestTriangle_,
+            this->mesh().points(),
+            searchDistCalc_.pointSqrSearchDist(),
+            this->narrowBandWidth()
+        );
+}
+
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-signedDistanceCalculator::signedDistanceCalculator(const triSurface& surface)
+/*
+triSurfaceDistCalc::triSurfaceDistCalc(const triSurface& surface)
 :
     surface_{surface},
     surfaceSearch_{surface},
@@ -82,7 +114,7 @@ signedDistanceCalculator::signedDistanceCalculator(const triSurface& surface)
 }
 
 
-signedDistanceCalculator::signedDistanceCalculator
+triSurfaceDistCalc::triSurfaceDistCalc
 (
     const triSurface& surface,
     const vectorField& vertexNormals
@@ -95,17 +127,30 @@ signedDistanceCalculator::signedDistanceCalculator
     if (surface_.nPoints() != vertexNormals.size())
     {
         FatalErrorIn (
-            "signedDistanceCalculator::signedDistanceCalculator"
+            "triSurfaceDistCalc::triSurfaceDistCalc"
         )   << "Size of vertex normal field does not match number of points:" 
             << nl << "Points: " << surface_.nPoints()
             << nl << "Normals: " << vertexNormals_.size()
             << exit(FatalError);
     }
 }
+*/
+triSurfaceDistCalc::triSurfaceDistCalc(const dictionary& configDict, const fvMesh& mesh)
+:
+    signedDistanceCalculator{configDict, mesh},
+    searchDistCalc_{mesh, this->narrowBandWidth()},
+    surface_{configDict.get<fileName>("fileName")},
+    surfaceSearch_{surface_},
+    vertexNormals_{surface_.nPoints(), vector{0,0,0}}
+{
+    computeVertexNormals();
+    computeSignedDistances();
+}
+
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 scalarField 
-signedDistanceCalculator::signedDistance
+triSurfaceDistCalc::signedDistance
 (
     DynamicList<pointIndexHit>& pointToNearestTriangle,
     const pointField& pf,
@@ -140,7 +185,7 @@ signedDistanceCalculator::signedDistance
 }
 
 scalarField
-signedDistanceCalculator::signedDistance
+triSurfaceDistCalc::signedDistance
 (
     const pointField& pf,
     const scalarField& searchDistSqr,
@@ -154,7 +199,7 @@ signedDistanceCalculator::signedDistance
 }
 
 std::tuple<pointIndexHit, scalar>
-signedDistanceCalculator::signedDistance
+triSurfaceDistCalc::signedDistance
 (
     const point& p,
     const scalar searchDistSqr
@@ -174,13 +219,13 @@ signedDistanceCalculator::signedDistance
     return std::make_tuple(hitInfo, distance);
 }
 
-scalar signedDistanceCalculator::signedDistance(const point& p) const
+scalar triSurfaceDistCalc::signedDistance(const point& p) const
 {
     return std::get<1>(signedDistance(p, 1e15));
 }
 
 vector
-signedDistanceCalculator::normalAtSurface(const pointIndexHit& hitInfo) const
+triSurfaceDistCalc::normalAtSurface(const pointIndexHit& hitInfo) const
 {
     vector normal{0,0,0};
 
@@ -212,7 +257,7 @@ signedDistanceCalculator::normalAtSurface(const pointIndexHit& hitInfo) const
     return normal;
 }
 
-scalar signedDistanceCalculator::referenceLength() const
+scalar triSurfaceDistCalc::referenceLength() const
 {
     // Use minimum edge length as reference length
     const auto& edges = surface_.edges();
@@ -228,14 +273,52 @@ scalar signedDistanceCalculator::referenceLength() const
     return min_length;
 }
 
-const vectorField& signedDistanceCalculator::vertexNormals() const
+const vectorField& triSurfaceDistCalc::vertexNormals() const
 {
     return vertexNormals_;
 }
 
-const triSurfaceSearch& signedDistanceCalculator::surfaceSearch() const
+const triSurfaceSearch& triSurfaceDistCalc::surfaceSearch() const
 {
     return surfaceSearch_;
+}
+
+const triSurface& triSurfaceDistCalc::surface() const
+{
+    return surface_;
+}
+
+label triSurfaceDistCalc::nSurfaceElements() const
+{
+    return surface_.size();
+}
+
+scalar triSurfaceDistCalc::surfaceEnclosedVolume() const
+{
+    scalar Vsurf = 0; 
+
+    const auto& surfacePoints = surface_.points(); 
+    forAll(surface_, triangleI) 
+    {
+        const auto& Sf = surface_.Sf()[triangleI]; 
+        const auto& triangle = surface_[triangleI]; 
+        Vsurf += dot(
+            -Sf,  // Surface normals are oriented into the phase. 
+            (surfacePoints[triangle[0]] + 
+            surfacePoints[triangle[1]] + 
+            surfacePoints[triangle[2]])
+        );
+    }
+
+    Vsurf = 1./9.*mag(Vsurf); 
+
+    return Vsurf;
+}
+
+void triSurfaceDistCalc::writeFields() const
+{
+    this->signedDistanceCalculator::writeFields();
+    searchDistCalc_.writeFields();
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
