@@ -102,7 +102,7 @@ autoPtr<signedDistanceCalculator> signedDistanceCalculator::New
     const fvMesh& mesh
 )
 {
-    const word name = configDict.get<word>("type");
+    const word name = configDict.get<word>("surfaceType");
 
     DictionaryConstructorTable::iterator cstrIter =
         DictionaryConstructorTablePtr_->find(name);

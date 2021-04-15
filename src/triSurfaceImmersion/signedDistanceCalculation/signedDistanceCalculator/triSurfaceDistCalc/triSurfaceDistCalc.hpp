@@ -85,7 +85,7 @@ class triSurfaceDistCalc
 
 public:
 
-    TypeName("triSurfaceDist");
+    TypeName("triSurface");
 
     // Constructors
     /*

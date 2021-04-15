@@ -66,6 +66,29 @@ Description
 
 using namespace Foam::TriSurfaceImmersion;
 
+template<class T>
+T setOptionByPrecedence(dictionary& dict, const argList& args, const word keyword, T def)
+{
+    def = dict.getOrDefault<T>(keyword, def);
+    args.readIfPresent<T>(keyword, def);
+    dict.add(keyword, def, true);
+
+    return def;
+}
+
+template<>
+Switch setOptionByPrecedence(dictionary& dict, const argList& args, const word keyword, Switch def)
+{
+    def = dict.getOrDefault<Switch>(keyword, def);
+    if (args.found(keyword))
+    {
+        def = true;
+    }
+    dict.add(keyword, def, true);
+
+    return def;
+}
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -75,13 +98,6 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
-    // * * * * Configuration * * * *
-    // Precedence: commandline option > dictionary value > default
-
-    // rmlater
-    // Idea: read dictionary, add default values for parameters which have not been set
-    //      and overwrite parameterswhich are set via command line arguments
-    
     // Read from dictionary if present
     IOdictionary initDict
                  {
@@ -94,30 +110,32 @@ int main(int argc, char *argv[])
                     }
                  };
 
-    // Common options
-    auto fieldName = initDict.getOrDefault<word>("fieldName", "alpha.water");
-    auto refinementLevel = initDict.getOrDefault<label>("refinementLevel", -1);
-    auto narrowBandWidth = initDict.getOrDefault<scalar>("narrowBandWidth", 4.0);
-    auto surfaceFile = initDict.getOrDefault<fileName>("surfaceFile", args.path() + "/surface.stl");
-    auto invertVolumeFraction = initDict.getOrDefault<Switch>("invert", false);
-    auto vofCalcType = initDict.getOrDefault<word>("type", "SMCI");
-    // Testing / debugging related options
-    auto writeAllFields = initDict.getOrDefault<Switch>("writeAllFields", false);
-    auto writeGeometry = initDict.getOrDefault<Switch>("writeGeometry", false);
-    auto checkVolume = initDict.getOrDefault<Switch>("checkVolume", false);
+    // * * * * Configuration * * * *
+    // Precedence: commandline option > dictionary value > default
 
-    // Comand line args
-    args.readIfPresent<word>("fieldName", fieldName);
-    args.readIfPresent<label>("refinementLevel", refinementLevel);
-    args.readIfPresent<scalar>("narrowBandWidth", narrowBandWidth);
-    args.readIfPresent<fileName>("surfaceFile", surfaceFile);
-    args.readIfPresent<word>("type", vofCalcType);
-    invertVolumeFraction = args.found("invert");
-    writeAllFields = args.found("writeAllFields");
-    writeGeometry = args.found("writeGeometry");
-    checkVolume = args.found("checkVolume");
+    // Configure signed distance calculator
+    auto& distDict = initDict.subDictOrAdd("distCalc");
+    setOptionByPrecedence<word>(distDict, args, "surfaceType", "triSurface");
+    setOptionByPrecedence<scalar>(distDict, args, "narrowBandWidth", 4.0);
+    setOptionByPrecedence<fileName>(distDict, args, "surfaceFile", args.path() + "/surface.stl");
+    
+    // Configure volume fraction calculator
+    auto fieldName = 
+        setOptionByPrecedence<word>(initDict, args, "fieldName", "alpha.water");
+    setOptionByPrecedence<word>(initDict, args, "algorithm", "SMCI");
+    setOptionByPrecedence<label>(initDict, args, "refinementLevel", -1);
+    setOptionByPrecedence<Switch>(initDict, args, "writeGeometry", false);
+    // TODO (TT): move invert option to signed distance calculator. This 
+    // automatically causes an inversion of volume fractions.
+    auto invertVolumeFraction = 
+        setOptionByPrecedence<Switch>(initDict, args, "invert", false);
+    auto writeAllFields = 
+        setOptionByPrecedence<Switch>(initDict, args, "writeAllFields", false);
+    auto checkVolume =
+        setOptionByPrecedence<Switch>(initDict, args, "checkVolume", false);
 
     // Print configuration
+    /*
     Info << "Configuration:"
          << "\n\tfieldName: " << fieldName
          << "\n\tsurfaceFile: " << surfaceFile
@@ -129,18 +147,12 @@ int main(int argc, char *argv[])
          << "\n\twriteGeometry: " << writeGeometry
          << "\n\tcheckVolume: " << checkVolume
          << endl;
+         */
+    Info<< "<------------------------------------------>"
+        << "\nConfiguration:" << initDict
+        << "<------------------------------------------>"
+        << endl;
     
-    // Write config to dictionary passed to RTS selection
-    initDict.add("fieldName", fieldName);
-    initDict.add("refinementLevel", refinementLevel);
-    initDict.add("narrowBandWidth", narrowBandWidth);
-    initDict.add("surfaceFile", surfaceFile);
-    initDict.add("invert", invertVolumeFraction);
-    initDict.add("type", vofCalcType);
-    initDict.add("writeAllFields", writeAllFields);
-    initDict.add("writeGeometry", writeGeometry);
-    initDict.add("checkVolume", checkVolume);
-
     // Initialization
     #include "createFields.hpp"
 
@@ -177,7 +189,7 @@ int main(int argc, char *argv[])
             std::cout << std::setprecision(20) 
                 << "Volume by volume fraction = " << Valpha << nl
                 << "Volume of the surface mesh by divergence theorem (only closed surfaces!) = " << Vsurf << nl 
-                << "Volume error from surface interval = " << Evsurf << nl;
+                << "Volume error from surface integral = " << Evsurf << nl;
 
             std::ofstream errorFile; 
             errorFile.open("smcaVofInit.csv"); 

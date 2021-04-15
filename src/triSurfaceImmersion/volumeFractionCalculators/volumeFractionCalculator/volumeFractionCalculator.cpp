@@ -67,7 +67,7 @@ volumeFractionCalculator::New
     const fvMesh& mesh
 )
 {
-    const word name = configDict.get<word>("type");
+    const word name = configDict.get<word>("algorithm");
 
     DictionaryConstructorTable::iterator cstrIter =
         DictionaryConstructorTablePtr_->find(name);

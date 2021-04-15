@@ -5,24 +5,10 @@
 
     argList::addOption
     (
-        "fieldName", 
-        "alpha.water",
-        "Name of the volume fraction field." 
-    ); 
-
-    argList::addOption
-    (
-        "type", 
-        "SMCI/SMCA",
-        "Name of the volume fraction calculator. Default: SMCI." 
-    ); 
-
-    argList::addOption
-    (
-        "refinementLevel", 
-        "label",
-        "Maximum refinement level to be used (SMCA only). Default: auto mode."
-    ); 
+        "surfaceType",
+        "triSurface / levelSet"
+        "Surface type, meaning either a triSurface, e.g. from an STL, or a level set."
+    );
 
     argList::addOption
     (
@@ -38,6 +24,33 @@
         "File containing the interface description. Requires a consistent, inward normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose. Default: surface.stl"
     );
 
+    argList::addOption
+    (
+        "fieldName", 
+        "alpha.water",
+        "Name of the volume fraction field." 
+    ); 
+
+    argList::addOption
+    (
+        "algorithm", 
+        "SMCI/SMCA",
+        "Name of the volume fraction calculator. Default: SMCI." 
+    ); 
+
+    argList::addOption
+    (
+        "refinementLevel", 
+        "label",
+        "Maximum refinement level to be used (SMCA only). Default: auto mode."
+    ); 
+
+    argList::addBoolOption
+    (
+        "writeGeometry",
+        "Write the intersected geometry (SMCI) or the testrahedral decomposition (SMCA)used to compute the volume fractions"
+    );
+
     argList::addBoolOption
     (
         "invert",
@@ -48,12 +61,6 @@
     (
         "writeAllFields",
         "Write out all fields used by the initialization method."
-    );
-
-    argList::addBoolOption
-    (
-        "writeGeometry",
-        "Write the intersected geometry (SMCI) or the testrahedral decomposition (SMCA)used to compute the volume fractions"
     );
 
     argList::addBoolOption

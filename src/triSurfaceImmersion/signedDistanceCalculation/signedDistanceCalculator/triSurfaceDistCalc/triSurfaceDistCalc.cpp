@@ -139,7 +139,7 @@ triSurfaceDistCalc::triSurfaceDistCalc(const dictionary& configDict, const fvMes
 :
     signedDistanceCalculator{configDict, mesh},
     searchDistCalc_{mesh, this->narrowBandWidth()},
-    surface_{configDict.get<fileName>("fileName")},
+    surface_{configDict.get<fileName>("surfaceFile")},
     surfaceSearch_{surface_},
     vertexNormals_{surface_.nPoints(), vector{0,0,0}}
 {
