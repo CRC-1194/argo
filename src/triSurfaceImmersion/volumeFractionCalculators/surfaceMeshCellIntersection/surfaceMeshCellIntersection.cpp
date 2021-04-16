@@ -182,7 +182,7 @@ surfaceMeshCellIntersection::surfaceMeshCellIntersection
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellIntersection::calcVolumeFraction(volScalarField& alpha)
 {
-    this->bulkVolumeFraction(alpha);
+    bulkVolumeFraction(alpha, sigDistCalc_.cellSignedDist());
     findIntersectedCells();
     interfaceCellVolumeFraction(alpha);
 }

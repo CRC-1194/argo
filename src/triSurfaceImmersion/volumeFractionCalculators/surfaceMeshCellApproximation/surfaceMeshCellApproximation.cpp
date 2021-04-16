@@ -234,7 +234,7 @@ surfaceMeshCellApproximation::surfaceMeshCellApproximation
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 {
-    this->bulkVolumeFraction(alpha);
+    bulkVolumeFraction(alpha, sigDistCalcPtr_->cellSignedDist());
     findIntersectedCells();
 
     Info<< "Computing volume fraction for interface cells..." << endl;

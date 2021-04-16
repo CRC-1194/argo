@@ -88,9 +88,18 @@ volumeFractionCalculator::New
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void volumeFractionCalculator::bulkVolumeFraction(volScalarField& alpha) const
+
+// TODO (TT): in principle, the inside/outside field inOut can be accessed through
+// the signed distance Calculator. However, there happen strange things when accessing
+// it through "sigDistCalc()".
+// For now, this is a functioning workaroud.
+void volumeFractionCalculator::bulkVolumeFraction
+(
+    volScalarField& alpha,
+    const volScalarField& inOut
+)
 {
-    alpha = pos(this->sigDistCalc().cellSignedDist());
+    alpha = pos(inOut);
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

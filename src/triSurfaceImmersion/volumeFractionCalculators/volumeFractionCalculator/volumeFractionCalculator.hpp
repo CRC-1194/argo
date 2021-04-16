@@ -139,7 +139,7 @@ public:
 
     virtual void findIntersectedCells() = 0;
 
-    void bulkVolumeFraction(volScalarField& alpha) const;
+    static void bulkVolumeFraction(volScalarField& alpha, const volScalarField& inOut);
 
     virtual void calcVolumeFraction(volScalarField& alpha) = 0;
 
