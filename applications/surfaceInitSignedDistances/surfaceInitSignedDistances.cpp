@@ -49,9 +49,32 @@ Description
 #include "searchDistanceCalculator.hpp"
 #include "triSurfaceDistCalc.hpp"
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 using namespace Foam::TriSurfaceImmersion;
+
+template<class T>
+T setOptionByPrecedence(dictionary& dict, const argList& args, const word keyword, T def)
+{
+    def = dict.getOrDefault<T>(keyword, def);
+    args.readIfPresent<T>(keyword, def);
+    dict.add(keyword, def, true);
+
+    return def;
+}
+
+template<>
+Switch setOptionByPrecedence(dictionary& dict, const argList& args, const word keyword, Switch def)
+{
+    def = dict.getOrDefault<Switch>(keyword, def);
+    if (args.found(keyword))
+    {
+        def = true;
+    }
+    dict.add(keyword, def, true);
+
+    return def;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
@@ -61,6 +84,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
     // * * * * Configuration * * * *
     // Precedence: commandline option > dictionary value > default
     
@@ -77,36 +101,31 @@ int main(int argc, char *argv[])
                  );
 
     // Read options from dictionary
-    auto fieldName = initDict.getOrDefault<word>("fieldName", "signedDistance");
-    auto surfaceFile = initDict.getOrDefault<fileName>("surfaceFile", args.path() + "/surface.stl");
-    auto searchDistanceFactor = initDict.getOrDefault<scalar>("searchDistanceFactor", 4.0);
-    auto propagateInsideOutside = initDict.getOrDefault<Switch>("propagateInsideOutside", true);
-    auto invertInsideOutside = initDict.getOrDefault<Switch>("invert", false);
-
-    // Comand line args
-    args.readIfPresent<word>("fieldName", fieldName);
-    args.readIfPresent<fileName>("surfaceFile", surfaceFile);
-    args.readIfPresent<scalar>("searchDistanceFactor", searchDistanceFactor);
-    propagateInsideOutside = args.found("propagateInsideOutside");
-    invertInsideOutside = args.found("invert");
+    auto fieldName =
+        setOptionByPrecedence<word>(initDict, args, "fieldName", "signedDistance");
+    setOptionByPrecedence<word>(initDict, args, "surfaceType", "triSurface");
+    setOptionByPrecedence<fileName>(initDict, args, "surfaceFile", args.path() + "/surface.stl");
+    setOptionByPrecedence<scalar>(initDict, args, "narrowBandWidth", 4.0);
+    auto propagateInsideOutside = 
+        setOptionByPrecedence<Switch>(initDict, args, "propagateInsideOutside", true);
+    auto invertInsideOutside = 
+        setOptionByPrecedence<Switch>(initDict, args, "invert", false);
 
     // A negative search distance factor means to compute signed distances in the entire
     // domain (TT)
+    // TODO (TT): move this logic in the signed distance calculator class
+    /*
     if (searchDistanceFactor <= 0.0)
     {
         searchDistanceFactor = mesh.bounds().mag();
     }
+    */
 
     // Print configuration
-    Info << "Configuration:"
-         << "\n\tfieldName: " << fieldName
-         << "\n\tsurfaceFile: " << surfaceFile
-         << "\n\tsearchDistanceFactor: " << searchDistanceFactor
-         << "\n\tpropagateInsideOutside: " << propagateInsideOutside
-         << "\n\tinvert inside outside: " << invertInsideOutside
-         << endl;
-
-    // TODO: add comand line arguments to initDict as in VoF Init
+    Info<< "<------------------------------------------>"
+        << "\nConfiguration:" << initDict
+        << "<------------------------------------------>"
+        << endl;
 
     // Initialization
     #include "createFields.hpp"

@@ -119,7 +119,7 @@ def plot_cpu_times(data, pattern, alg_name, data_write_dir):
     fig_cpu.savefig(os.path.join(data_write_dir, "CPUtime-%s-%s.pdf" % (pattern,alg_name)),
                     bbox_inches='tight')
 
-def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", csv_file="smcaVofInit.csv"):
+def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", csv_file="vof-init-results-SMCA.csv"):
     data = read_data(pattern, csv_file)
     compute_dependent_data(data, exact_volume, pattern, "SMCA", data_write_dir)
     fig, axis = plt.subplots()
@@ -145,7 +145,7 @@ def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", c
     fig.savefig(os.path.join(data_write_dir, "convergence-%s-SCMA.pdf" % pattern),
                     bbox_inches='tight')
 
-def plot_smca_cad_refinement_convergence(pattern, data_write_dir="", csv_file="smcaVofInit.csv"):
+def plot_smca_cad_refinement_convergence(pattern, data_write_dir="", csv_file="vof-init-results-SMCA.csv"):
     data = read_data(pattern, csv_file)
     volume = data["VOLUME_FROM_SURFACE_INTEGRAL"][0]
     compute_dependent_data(data, volume, pattern, "SMCA", data_write_dir)
@@ -161,7 +161,7 @@ def plot_smca_cad_refinement_convergence(pattern, data_write_dir="", csv_file="s
     fig.savefig(os.path.join(data_write_dir, "cad-convergence-%s-SCMA.pdf" % pattern),
                     bbox_inches='tight')
 
-def plot_study(pattern, alg_name, exact_volume, data_write_dir="", csv_file="surfaceCellVofInit.csv"):
+def plot_study(pattern, alg_name, exact_volume, data_write_dir="", csv_file="vof-init-results-SMCI.csv"):
     data = read_data(pattern, csv_file)
     compute_dependent_data(data, exact_volume, pattern, alg_name, data_write_dir)
     plot_convergence(data, pattern, alg_name, data_write_dir)

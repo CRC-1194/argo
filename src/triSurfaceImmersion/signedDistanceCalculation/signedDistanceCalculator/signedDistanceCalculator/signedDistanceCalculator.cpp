@@ -128,6 +128,11 @@ void signedDistanceCalculator::outOfNarrowBandValue(const scalar value)
     outOfNarrowBandValue_ = value;
 }
 
+void signedDistanceCalculator::narrowBandWidth(const scalar width)
+{
+    narrowBandWidth_ = width;
+}
+
 void signedDistanceCalculator::writeFields() const
 {
     cellSignedDist0_.write();

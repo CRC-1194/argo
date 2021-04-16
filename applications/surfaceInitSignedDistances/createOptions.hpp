@@ -12,6 +12,13 @@
 
     argList::addOption
     (
+        "surfaceType",
+        "triSurface / levelSet"
+        "Surface type, meaning either a triSurface, e.g. from an STL, or a level set."
+    );
+
+    argList::addOption
+    (
         "surfaceFile",
         "Surface mesh file."
         "STL or VTK file containing the interface description. Requires a consistent normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose. Default: surface.stl."

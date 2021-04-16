@@ -122,7 +122,8 @@ int main(int argc, char *argv[])
     // Configure volume fraction calculator
     auto fieldName = 
         setOptionByPrecedence<word>(initDict, args, "fieldName", "alpha.water");
-    setOptionByPrecedence<word>(initDict, args, "algorithm", "SMCI");
+    auto algName = 
+        setOptionByPrecedence<word>(initDict, args, "algorithm", "SMCI");
     setOptionByPrecedence<label>(initDict, args, "refinementLevel", -1);
     setOptionByPrecedence<Switch>(initDict, args, "writeGeometry", false);
     // TODO (TT): move invert option to signed distance calculator. This 
@@ -134,20 +135,6 @@ int main(int argc, char *argv[])
     auto checkVolume =
         setOptionByPrecedence<Switch>(initDict, args, "checkVolume", false);
 
-    // Print configuration
-    /*
-    Info << "Configuration:"
-         << "\n\tfieldName: " << fieldName
-         << "\n\tsurfaceFile: " << surfaceFile
-         << "\n\tvof calculation: " << vofCalcType
-         << "\n\trefinementLevel: " << refinementLevel
-         << "\n\tnarrowbandWidth: " << narrowBandWidth
-         << "\n\tinvert volume fraction: " << invertVolumeFraction
-         << "\n\twriteAllFields: " << writeAllFields
-         << "\n\twriteGeometry: " << writeGeometry
-         << "\n\tcheckVolume: " << checkVolume
-         << endl;
-         */
     Info<< "<------------------------------------------>"
         << "\nConfiguration:" << initDict
         << "<------------------------------------------>"
@@ -192,7 +179,8 @@ int main(int argc, char *argv[])
                 << "Volume error from surface integral = " << Evsurf << nl;
 
             std::ofstream errorFile; 
-            errorFile.open("smcaVofInit.csv"); 
+            // TODO (TT): make file name algorithm dependent
+            errorFile.open("vof-init-results-" + algName + ".csv"); 
             errorFile << "N_CELLS,"
                 << "N_TRIANGLES,"
                 << "VOLUME_FROM_VOLUME_FRACTION,"

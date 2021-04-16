@@ -136,6 +136,7 @@ public:
 
     // Edit
     void outOfNarrowBandValue(scalar value);
+    void narrowBandWidth(scalar width);
 
     // Write
     virtual void writeFields() const;
