@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
     setOptionByPrecedence<word>(initDict, args, "surfaceType", "triSurface");
     setOptionByPrecedence<fileName>(initDict, args, "surfaceFile", args.path() + "/surface.stl");
     setOptionByPrecedence<scalar>(initDict, args, "narrowBandWidth", 4.0);
+    setOptionByPrecedence(initDict, args, "bulkValue", 0.0);
     auto propagateInsideOutside = 
         setOptionByPrecedence<Switch>(initDict, args, "propagateInsideOutside", true);
     auto invertInsideOutside = 

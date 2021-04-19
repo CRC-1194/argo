@@ -60,6 +60,7 @@ signedDistanceCalculator::signedDistanceCalculator(
     mesh_{mesh},
     pMesh_{mesh},
     narrowBandWidth_{configDict.get<scalar>("narrowBandWidth")},
+    outOfNarrowBandValue_{configDict.get<scalar>("bulkValue")},
     cellSignedDist_
     {
         IOobject
