@@ -67,6 +67,7 @@ private:
     //- Squared search distance field in cell centers. 
     volScalarField cellSqrSearchDist_;
 
+    //- Point mesh constituted by cell corner points
     pointMesh pMesh_;
 
     //- Inverse Distance Interpolation : cell centers to cell corners. 

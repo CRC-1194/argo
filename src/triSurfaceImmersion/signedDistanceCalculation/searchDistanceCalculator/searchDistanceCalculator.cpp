@@ -27,6 +27,7 @@ License
 
 #include "searchDistanceCalculator.hpp"
 
+#include "dimensionedScalarFwd.H"
 #include "fvc.H"
 
 namespace Foam::TriSurfaceImmersion {
@@ -65,7 +66,8 @@ searchDistanceCalculator::searchDistanceCalculator
             IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
-        fvc::average(pow(mesh.deltaCoeffs(), -2))*searchDistFactor_*searchDistFactor_
+        mesh,
+        dimensionedScalar{"defaultCellSearchDist", pow(dimLength, 2), mesh.bounds().mag()}
     },
     pMesh_{mesh},
     cellsToPointsInterp_{mesh},
@@ -85,7 +87,15 @@ searchDistanceCalculator::searchDistanceCalculator
         "zeroGradient"
     }
 {
-    // Cell corner search distance cannot be initialized above
+    // Narrow band around the interface based on search distances is only enabled for
+    // for positive search distance factors.
+    // Negative values enable signed distance calculation in the entrire domain. (TT
+    if (searchDistFactor_ > 0.0)
+    {
+        cellSqrSearchDist_ =
+            fvc::average(pow(mesh.deltaCoeffs(), -2))*searchDistFactor_*searchDistFactor_;
+    }
+
     cellsToPointsInterp_.interpolate(cellSqrSearchDist_, pointSqrSearchDist_);
 }
 

@@ -26,9 +26,16 @@
 
     argList::addOption
     (
-        "searchDistanceFactor",
+        "narrowBandWidth",
         "scalar",
-        "Factor for the search radius computation. Set to zero or negative to compute signed distance in the entire domain rather than in a narrowband. Default: 4.0."
+        "Enable narrow band around the interface and set its thickness in number of cells on each side. Set to zero or negative to compute signed distance in the entire domain rather than in a narrowband. Default: -1."
+    );
+
+    argList::addOption
+    (
+        "bulkValue",
+        "scalar",
+        "Set the distance of cells outside of the narrow band to this value. Default: 0.0."
     );
 
     argList::addBoolOption
@@ -41,4 +48,10 @@
     (
         "invert",
         "Invert inside / outside as given by the surface normals."
+    );
+
+    argList::addBoolOption
+    (
+        "writeAllFields",
+        "Write all fields used for signed distance calculation."
     );

@@ -42,12 +42,8 @@ Description
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "signedDistanceCalculator.hpp"
-#include "triSurface.H"
 
-#include "insideOutsidePropagation.hpp"
-#include "searchDistanceCalculator.hpp"
-#include "triSurfaceDistCalc.hpp"
+#include "signedDistanceCalculator.hpp"
 
 using namespace Foam::TriSurfaceImmersion;
 
@@ -105,22 +101,14 @@ int main(int argc, char *argv[])
         setOptionByPrecedence<word>(initDict, args, "fieldName", "signedDistance");
     setOptionByPrecedence<word>(initDict, args, "surfaceType", "triSurface");
     setOptionByPrecedence<fileName>(initDict, args, "surfaceFile", args.path() + "/surface.stl");
-    setOptionByPrecedence<scalar>(initDict, args, "narrowBandWidth", 4.0);
+    setOptionByPrecedence<scalar>(initDict, args, "narrowBandWidth", -1.0);
     setOptionByPrecedence(initDict, args, "bulkValue", 0.0);
     auto propagateInsideOutside = 
-        setOptionByPrecedence<Switch>(initDict, args, "propagateInsideOutside", true);
+        setOptionByPrecedence<Switch>(initDict, args, "propagateInsideOutside", false);
     auto invertInsideOutside = 
         setOptionByPrecedence<Switch>(initDict, args, "invert", false);
-
-    // A negative search distance factor means to compute signed distances in the entire
-    // domain (TT)
-    // TODO (TT): move this logic in the signed distance calculator class
-    /*
-    if (searchDistanceFactor <= 0.0)
-    {
-        searchDistanceFactor = mesh.bounds().mag();
-    }
-    */
+    auto writeAllFields =
+        setOptionByPrecedence<Switch>(initDict, args, "writeAllFields", false);
 
     // Print configuration
     Info<< "<------------------------------------------>"
@@ -130,9 +118,7 @@ int main(int argc, char *argv[])
 
     // Initialization
     #include "createFields.hpp"
-    //triSurface surface{surfaceFile};
-    //searchDistanceCalculator searchDistCalc{mesh, searchDistanceFactor};
-    //triSurfaceDistCalc sig_dist_calc{surface};
+
     autoPtr<signedDistanceCalculator> sigDistCalcPtr{signedDistanceCalculator::New(initDict, mesh)};
 
     if (propagateInsideOutside)
@@ -153,6 +139,10 @@ int main(int argc, char *argv[])
 
     // TT: TODO: include testing of inside/outside computation here, analogue to 
     // '-checkVolume' option of vof-init application
+    if (writeAllFields)
+    {
+        sigDistCalcPtr->writeFields();
+    }
 
     Info<< nl;
     runTime.printExecutionTime(Info);
