@@ -190,15 +190,22 @@ void surfaceMeshCellIntersection::calcVolumeFraction(volScalarField& alpha)
 void surfaceMeshCellIntersection::findIntersectedCells()
 {
     const auto& mesh = this->mesh();
-    const auto& cellSignedDist = sigDistCalc_.cellSignedDist();
-    const auto& pointSignedDist = sigDistCalc_.pointSignedDist();
     const auto& meshCellPoints = mesh.cellPoints();
     const auto& meshCellEdges = mesh.cellEdges();
+    const auto& cellClosestTriangle = sigDistCalc_.cellClosestPoint();
+    const auto& cellSignedDist = sigDistCalc_.cellSignedDist();
+    const auto& pointSignedDist = sigDistCalc_.pointSignedDist();
 
     intersectedCellLabels_.resize(0);
 
     forAll(cellSignedDist, cellI)
     {
+        // No hit-> cell not within narrow band
+        if (!cellClosestTriangle[cellI].hit())
+        {
+            continue;
+        }
+
         const auto& cellDist = cellSignedDist[cellI];  
         const auto& cellPoints = meshCellPoints[cellI]; 
 

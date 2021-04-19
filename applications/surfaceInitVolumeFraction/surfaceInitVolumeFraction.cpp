@@ -116,9 +116,11 @@ int main(int argc, char *argv[])
     // Configure signed distance calculator
     auto& distDict = initDict.subDictOrAdd("distCalc");
     setOptionByPrecedence<word>(distDict, args, "surfaceType", "triSurface");
+    setOptionByPrecedence<fileName>(distDict, args, "surfaceFile", args.path() + "/surface.stl");
+    // TODO (TT): the parameters below should be fixed in this application.
+    // Altering them may break volume fraction calculation.
     setOptionByPrecedence<scalar>(distDict, args, "narrowBandWidth", 4.0);
     setOptionByPrecedence<scalar>(distDict, args, "bulkValue", 0.0);
-    setOptionByPrecedence<fileName>(distDict, args, "surfaceFile", args.path() + "/surface.stl");
     
     // Configure volume fraction calculator
     auto fieldName = 

@@ -97,7 +97,7 @@ void triSurfaceDistCalc::computeSignedDistances()
             pointNearestTriangle_,
             this->mesh().points(),
             searchDistCalc_.pointSqrSearchDist(),
-            this->narrowBandWidth()
+            this->outOfNarrowBandValue()
         );
 }
 
