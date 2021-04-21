@@ -74,7 +74,7 @@ autoPtr<implicitSurface> implicitSurface::New
     const dictionary& configDict
 )
 {
-    const auto name = configDict.get<word>("type");
+    const auto name = configDict.get<word>("surface");
     // Find the constructor pointer for the model in the constructor table.
     DictionaryConstructorTable::iterator cstrIter =
         DictionaryConstructorTablePtr_->find(name);

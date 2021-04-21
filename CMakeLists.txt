@@ -119,6 +119,7 @@ add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator/searchDistanceCalculator.cpp
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/levelSetDistCalc/levelSetDistCalc.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator/signedDistanceCalculator.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc/triSurfaceDistCalc.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
@@ -139,6 +140,7 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator
+    src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/levelSetDistCalc
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator

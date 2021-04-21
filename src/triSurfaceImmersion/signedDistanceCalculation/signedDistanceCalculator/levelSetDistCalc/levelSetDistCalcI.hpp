@@ -36,55 +36,34 @@ License
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-const dictionary& signedDistanceCalculator::configDict() const
+const implicitSurface& levelSetDistCalc::surface() const
 {
-    return dict_;
+    return *surfacePtr_;
 }
 
-const fvMesh& signedDistanceCalculator::mesh() const
+
+label levelSetDistCalc::maxIter() const
 {
-    return mesh_;
+    return maxIt_;
 }
 
-const pointMesh& signedDistanceCalculator::pMesh() const
+scalar levelSetDistCalc::epsilon() const
 {
-    return pMesh_;
+    return epsilon_;
 }
 
-scalar signedDistanceCalculator::narrowBandWidth() const
+
+const volScalarField& levelSetDistCalc::cellLevelSetValues() const
 {
-    return narrowBandWidth_;
+    return cellLevelSetValues_;
 }
 
-const DynamicList<pointIndexHit>& signedDistanceCalculator::cellClosestPoint() const
+
+const pointScalarField& levelSetDistCalc::pointLevelSetValues() const
 {
-    return cellNearestTriangle_;
+    return pointLevelSetValues_;
 }
 
-const DynamicList<pointIndexHit>& signedDistanceCalculator::pointClosestPoint() const
-{
-    return pointNearestTriangle_;
-}
-
-const volScalarField& signedDistanceCalculator::cellSignedDist() const
-{
-    return cellSignedDist_;
-}
-
-const volScalarField& signedDistanceCalculator::cellSignedDist0() const
-{
-    return cellSignedDist0_;
-}
-
-const pointScalarField& signedDistanceCalculator::pointSignedDist() const
-{
-    return pointSignedDist_;
-}
-
-scalar signedDistanceCalculator::outOfNarrowBandValue() const
-{
-    return outOfNarrowBandValue_;
-}
 
 // * * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * //
 

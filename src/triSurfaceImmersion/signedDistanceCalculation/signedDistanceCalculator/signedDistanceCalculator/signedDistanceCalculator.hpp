@@ -43,6 +43,7 @@ SourceFiles
 #include "DynamicList.H"
 #include "pointFields.H"
 #include "pointIndexHit.H"
+#include "pointMesh.H"
 #include "runTimeSelectionTables.H"
 #include "typeInfo.H"
 #include "volFields.H"
@@ -120,6 +121,7 @@ public:
     // Access
     inline const dictionary& configDict() const;
     inline const fvMesh& mesh() const;
+    inline const pointMesh& pMesh() const;
     inline scalar narrowBandWidth() const;
     inline scalar outOfNarrowBandValue() const;
     inline const DynamicList<pointIndexHit>& cellClosestPoint() const;
