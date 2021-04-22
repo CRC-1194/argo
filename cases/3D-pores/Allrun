@@ -8,7 +8,7 @@ runApplication cartesianMesh
 runApplication checkMesh
 
 # Initialization
-runApplication smcaVofInit -checkVolume -writeFields -invert -surfaceFile CAB_XD_95VC-clean.stl
+runApplication surfaceInitVolumeFraction
 
 # Postprocessing
 runApplication foamToVTK

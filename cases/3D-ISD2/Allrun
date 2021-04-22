@@ -17,7 +17,7 @@ runApplication cartesianMesh
 runApplication checkMesh
 
 # Initialization
-runApplication smcaVofInit -checkVolume -writeFields -surfaceFile ISD2.stl
+runApplication surfaceInitVolumeFraction
 
 # Postprocessing
 runApplication foamToVTK

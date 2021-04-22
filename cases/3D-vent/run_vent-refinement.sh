@@ -23,7 +23,7 @@ do
     cp ../3D-vent/box.fms .
     cp ../3D-vent/inside_vent.stl .
     cartesianMesh
-    surfaceInitVolumeFraction -algorithm SMCA -checkVolume -surfaceFile inside_vent.stl
+    surfaceInitVolumeFraction -algorithm SMCA
     cd ..
     mv $STUDYDIR 3Dinit
 done

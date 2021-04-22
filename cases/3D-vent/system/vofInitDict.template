@@ -24,6 +24,7 @@ refinementLevel @!MAX_REFINEMENT_LEVEL!@;
 distCalc
 {
     surfaceType triSurface;
+    surfaceFile inside_vent.stl;
     narrowBandWidth 4.0;
 }
 
