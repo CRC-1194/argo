@@ -29,7 +29,9 @@ Description
 \*---------------------------------------------------------------------------*/
 
 #include "implicitSurfaces.hpp"
+
 #include "addToRunTimeSelectionTable.H"
+#include "mathematicalConstants.H"
 
 namespace Foam::TriSurfaceImmersion {
 
@@ -96,11 +98,13 @@ autoPtr<implicitSurface> implicitSurface::New
         (cstrIter()(configDict));
 }
 
-
-scalar implicitSurface::signedDistance(const vector& x) const
+// Only makes sense for closed surfaces, but needs to be supported by the
+// interface class (TT)
+scalar implicitSurface::volume() const
 {
-    return sign(this->value(x))*mag(x - this->closestPoint(x));
+    return -SMALL;
 }
+
 
 // * * * * * * * * * * * * Class plane  * * * * * * * * * * * //
 
@@ -146,12 +150,7 @@ scalar plane::operator()(const vector& x) const
     return value(x); 
 }
 
-vector plane::closestPoint(const vector& x) const
-{
-    return x - value(x)*normal_;
-}
-
- vector plane::grad(const vector& x) const
+vector plane::grad(const vector& x) const
 {
     return normal_; 
 }
@@ -206,23 +205,6 @@ scalar sphere::operator()(const vector& x) const
     return value(x); 
 }
 
-vector sphere::closestPoint(const vector& x) const
-{
-    auto delta = x - center_;
-    auto dist = mag(delta);
-
-    if (dist > SMALL)
-    {
-        return center_ + radius_*delta/mag(delta);
-    }
-    else
-    {
-        // x coincides with centre: every point on the sphere can be 
-        // considered closest point
-        return center_ + radius_*vector{1,0,0};
-    }
-}
-
 vector sphere::grad(const vector& x) const
 {
     scalar x0c0 = x[0] - center_[0];
@@ -231,6 +213,11 @@ vector sphere::grad(const vector& x) const
 
     return vector(x0c0, x1c1, x2c2) / 
         sqrt(x0c0*x0c0 + x1c1*x1c1 + x2c2*x2c2);
+}
+
+scalar sphere::volume() const
+{
+    return 4.0/3.0*Foam::constant::mathematical::pi*pow(radius_, 3.0);
 }
 
 vector sphere::center() const
@@ -297,11 +284,6 @@ scalar ellipsoid::operator()(const vector& x) const
     return value(x); 
 }
 
-vector ellipsoid::closestPoint(const vector& x) const
-{
-    return vector{1,0,0};
-}
-
 vector ellipsoid::grad(const vector& x) const
 {
     return 2*vector
@@ -310,6 +292,11 @@ vector ellipsoid::grad(const vector& x) const
         (x[1] - center_[1])/axesSqr_[1], 
         (x[2] - center_[2])/axesSqr_[2]
     );
+}
+
+scalar ellipsoid::volume() const
+{
+    return 4.0/3.0*Foam::constant::mathematical::pi*axes_[0]*axes_[1]*axes_[2];
 }
 
 vector ellipsoid::center() const
@@ -374,11 +361,6 @@ scalar sinc::value(const vector& x) const
 scalar sinc::operator()(const vector& x) const
 {
     return value(x); 
-}
-
-vector sinc::closestPoint(const vector& x) const
-{
-    return vector{1,0,0};
 }
 
 vector sinc::grad(const vector& x) const
@@ -476,11 +458,6 @@ scalar sincScaled::value(const vector& x) const // TODO scale the amplitude
 scalar sincScaled::operator()(const vector& x) const
 {
     return value(x); 
-}
-
-vector sincScaled::closestPoint(const vector& x) const
-{
-    return vector{1,0,0};
 }
 
 vector sincScaled::grad(const vector& x) const

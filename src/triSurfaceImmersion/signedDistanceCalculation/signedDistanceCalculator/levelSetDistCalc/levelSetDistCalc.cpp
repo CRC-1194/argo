@@ -330,8 +330,7 @@ label levelSetDistCalc::nSurfaceElements() const
 
 scalar levelSetDistCalc::surfaceEnclosedVolume() const
 {
-    //return surfacePtr_->volume();
-    return 1.0;
+    return surfacePtr_->volume();
 }
 
 

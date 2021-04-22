@@ -86,9 +86,8 @@ namespace Foam::TriSurfaceImmersion {
 
             virtual scalar value(const vector&) const = 0;
             virtual scalar operator()(const vector&) const = 0;
-            virtual vector closestPoint(const vector&) const = 0;
-            virtual scalar signedDistance(const vector&) const;
             virtual vector grad(const vector&) const = 0;
+            virtual scalar volume() const = 0;
     };
 
     class plane : public implicitSurface
@@ -114,8 +113,6 @@ namespace Foam::TriSurfaceImmersion {
 
             virtual scalar operator()(const vector& x) const;
             
-            virtual vector closestPoint(const vector& x) const;
-
             virtual vector grad(const vector& x) const;
 
             vector position() const;
@@ -146,9 +143,9 @@ namespace Foam::TriSurfaceImmersion {
 
             virtual scalar operator()(const vector& x) const;
 
-            virtual vector closestPoint(const vector& x) const;
-            
             virtual vector grad(const vector& x) const;
+
+            scalar volume() const override;
 
             vector center() const;
 
@@ -179,9 +176,9 @@ namespace Foam::TriSurfaceImmersion {
 
             virtual scalar operator()(const vector& x) const;
             
-            virtual vector closestPoint(const vector& x) const;
-            
             virtual vector grad(const vector& x) const;
+
+            scalar volume() const override;
 
             vector center() const;
 
@@ -209,8 +206,6 @@ namespace Foam::TriSurfaceImmersion {
             virtual scalar value(const vector& x) const;
 
             virtual scalar operator()(const vector& x) const;
-            
-            virtual vector closestPoint(const vector& x) const;
             
             virtual vector grad(const vector& x) const;
 
@@ -242,8 +237,6 @@ namespace Foam::TriSurfaceImmersion {
             virtual scalar value(const vector& x) const;
 
             virtual scalar operator()(const vector& x) const;
-            
-            virtual vector closestPoint(const vector& x) const;
             
             virtual vector grad(const vector& x) const;
 
