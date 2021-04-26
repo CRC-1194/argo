@@ -87,7 +87,7 @@ namespace Foam::TriSurfaceImmersion {
             virtual scalar value(const vector&) const = 0;
             virtual scalar operator()(const vector&) const = 0;
             virtual vector grad(const vector&) const = 0;
-            virtual scalar volume() const = 0;
+            virtual scalar volume() const;
     };
 
     class plane : public implicitSurface
