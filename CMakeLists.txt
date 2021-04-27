@@ -109,11 +109,8 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 #       Check which type is required / reasonable for this project (TT)
 add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
-    #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection/geomSurfaceCellMeshIntersection.cpp
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
-    #src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization/polynomialVofInitialization.cpp
     src/triSurfaceImmersion/implicitSurfaces/implicitSurfaces.cpp
-    #src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement/refinementCriteria.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
@@ -130,11 +127,9 @@ add_library("triSurfaceImmersion" SHARED
 target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection
     src/triSurfaceImmersion/geomMeshIntersection/geomReconstructError
-    #src/triSurfaceImmersion/geomMeshIntersection/geomSurfaceCellMeshIntersection
     src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools
     src/triSurfaceImmersion/implicitSurfaces
     src/triSurfaceImmersion/include
-    #src/triSurfaceImmersion/polynomialVofInitialization/polynomialVofInitialization
     src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement
     src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator
     src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
@@ -190,52 +185,7 @@ target_link_libraries("geophaseUnitTest"
 add_test(NAME unitTests COMMAND geophaseUnitTest)
 set_tests_properties(unitTests PROPERTIES LABELS "UNIT")
 
-#add_executable("polynomialVofTest${PROJECT_BUILD_TYPE}"
-#               applications/polynomialVofTest/polynomialVofTest.cpp)
-#target_link_libraries("polynomialVofTest${PROJECT_BUILD_TYPE}"
-#    "triSurfaceImmersion${PROJECT_BUILD_TYPE}"
-#    ${OF_FINITEVOLUME}
-#    ${OF_MESHTOOLS}
-#    ${OF_OPENFOAM}
-#    dl
-#    m
-#)
-
 # Preprocessing
-#add_executable("cellCellVofInit"
-#               applications/cellCellVofInit/cellCellVofInit.cpp)
-#target_link_libraries("cellCellVofInit"
-#    "triSurfaceImmersion"
-#    ${OF_FINITEVOLUME}
-#    ${OF_MESHTOOLS}
-#    ${OF_OPENFOAM}
-#    dl
-#    m
-#)
-
-#add_executable("smciVofInit"
-#               applications/smciVofInit/smciVofInit.cpp)
-#target_link_libraries("smciVofInit"
-#    "triSurfaceImmersion"
-#    ${OF_FINITEVOLUME}
-#    ${OF_MESHTOOLS}
-#    ${OF_OPENFOAM}
-#    dl
-#    m
-#)
-
-#add_executable("smcaVofInit"
-#               applications/smcaVofInit/smcaVofInit.cpp)
-#target_link_libraries("smcaVofInit"
-#    "triSurfaceImmersion"
-#    ${OF_FINITEVOLUME}
-#    ${OF_MESHTOOLS}
-#    ${OF_OPENFOAM}
-#    dl
-#    m
-#)
-
-# 
 add_executable("surfaceInitVolumeFraction"
                applications/surfaceInitVolumeFraction/surfaceInitVolumeFraction.cpp)
 target_link_libraries("surfaceInitVolumeFraction"
@@ -246,27 +196,6 @@ target_link_libraries("surfaceInitVolumeFraction"
     dl
     m
 )
-
-
-#add_executable("signedDistanceTestCalc"
-#               applications/signedDistanceTestCalc/signedDistanceTestCalc.cpp)
-#target_include_directories("signedDistanceTestCalc" PRIVATE
-#    applications/signedDistanceTestCalc
-#    ${of_src_path}/finiteVolume/lnInclude
-#    ${of_src_path}/surfMesh/lnInclude
-#    ${of_src_path}/meshTools/lnInclude
-#    ${of_src_path}/fileFormats/lnInclude
-#    ${of_src_path}/OSspecific/POSIX/lnInclude
-#    ${of_src_path}/OpenFOAM/lnInclude
-#)
-#target_link_libraries("signedDistanceTestCalc"
-#    "triSurfaceImmersion"
-#    ${OF_FINITEVOLUME}
-#    ${OF_MESHTOOLS}
-#    ${OF_OPENFOAM}
-#    dl
-#    m
-#)
 
 add_executable("surfaceInitSignedDistances"
                applications/surfaceInitSignedDistances/surfaceInitSignedDistances.cpp)
@@ -319,14 +248,9 @@ target_link_libraries("computeLiquidVolume"
 install(TARGETS 
         # Refactored
         "surfaceInitVolumeFraction"
-        # Pre-refactor
-        #"smciVofInit"  
-        #"cellCellVofInit"
-        "geophaseUnitTest"
-        #"smcaVofInit"
         "surfaceInitSignedDistances"
-        #"signedDistanceTestCalc"
-        #"polynomialVofTest"
+        # Pre-refactor
+        "geophaseUnitTest"
         "foamPerturbMesh"
         "computeLiquidVolume"
         RUNTIME)
