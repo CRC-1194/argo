@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import sys
@@ -19,6 +19,7 @@ parser.add_argument('--template_case', dest="template_case", type=str,
                     help='OpenFOAM template case. Default: templateCase', default="templateCase")
 
 parser.add_argument('--surface', dest="surface", type=str, required=True,
+                    choices=['ellipsoid', 'sphere'],
                     help='Name of the surface used for initialization: available surfaces see are .geo files in the templateCase directory.')
 
 parser.add_argument('--mesh_generator', dest="mesh_generator", type=str, default="", required=True,
@@ -31,6 +32,9 @@ parser.add_argument('--perturb_mesh', dest="alpha_perturb", type=float, default=
 parser.add_argument('--slurm', dest="slurm_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')
 
+parser.add_argument('--levelset', dest="levelset", action='store_true',
+                    help='Use analytic level set (implicit) surface description instead of triangulated surface.')
+
 parser.set_defaults(serial_run=True)
 
 args = parser.parse_args()
@@ -40,6 +44,11 @@ if __name__ == '__main__':
     args = parser.parse_args(sys.argv[1:])
 
     prefix = args.study_name + "_" + args.surface + "_" + args.parameter_file
+
+    if (args.levelset):
+        call(["cp", "templateCase/system/vofInitDict-" + args.surface + ".template", "templateCase/system/vofInitDict.template"])
+    else:
+        call(["cp", "templateCase/system/vofInitDict-trisurface.template", "templateCase/system/vofInitDict.template"])
 
     call_args = ["pyFoamRunParameterVariation.py", 
                  "--every-variant-one-case-execution", 
@@ -88,8 +97,9 @@ if __name__ == '__main__':
             print(base_command + variable_command)
 
             # Submit surface mesh generation to the SLURM workload manager.
-            variable_command=" --job-name %s -o %s.log gmsh -2 %s.geo -o %s.vtk >/dev/null 2>&1 &" % (args.surface, args.surface, args.surface, args.surface)
-            call(base_command + variable_command, shell=True)
+            if not args.levelset:
+                variable_command=" --job-name %s -o %s.log gmsh -2 %s.geo -o %s.vtk >/dev/null 2>&1 &" % (args.surface, args.surface, args.surface, args.surface)
+                call(base_command + variable_command, shell=True)
 
             if args.alpha_perturb > 0.0:
                 print("Sorry: mesh perturbation not implemented yet for SLURM.")
@@ -99,8 +109,8 @@ if __name__ == '__main__':
             print("Serial mesh generation...")
 
             call([args.mesh_generator])
-            print("Using GMSH file %s for surface generation." % geo_file)
-            if (os.path.exists(geo_file) and os.path.isfile(geo_file)):
+            if ((not args.levelset) and os.path.exists(geo_file) and os.path.isfile(geo_file)):
+                print("Using GMSH file %s for surface generation." % geo_file)
                 call(["gmsh", "-2", geo_file, "-o", "%s.vtk" % args.surface])
             if args.alpha_perturb > 0.0:
                 print("Perturbing mesh with foamPerturbMesh using alpha = %f" % args.alpha_perturb)

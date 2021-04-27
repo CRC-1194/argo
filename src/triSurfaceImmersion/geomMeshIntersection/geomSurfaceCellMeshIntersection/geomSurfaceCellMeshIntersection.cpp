@@ -37,7 +37,7 @@ License
 #include <cmath>
 
 // geophase 
-#include "Geophase.hpp"
+//#include "Geophase.hpp"
 
 // Testing
 #include <cassert>

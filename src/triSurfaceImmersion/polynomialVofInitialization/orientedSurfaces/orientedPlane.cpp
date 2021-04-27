@@ -28,8 +28,7 @@ License
 
 #include "orientedPlane.hpp"
 
-namespace Foam {
-namespace PolynomialVof {
+namespace Foam::TriSurfaceImmersion {
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 void orientedPlane::updateDistanceToOrigin()
@@ -43,7 +42,8 @@ orientedPlane::orientedPlane(const point& refPoint, const vector& normal, scalar
 :
     ref_point_{refPoint},
     unit_normal_{normal},
-    ref_length_{refLength}
+    ref_length_{refLength},
+    distance_origin_{0.0}
 {
     updateDistanceToOrigin();
 }
@@ -63,11 +63,7 @@ scalar orientedPlane::referenceLength() const
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace PolynomialVof
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // ************************************************************************* //

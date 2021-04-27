@@ -11,4 +11,9 @@ values
     (
         0.05 0.01 0.0025 
     );
+
+    MAX_REFINEMENT_LEVEL
+    (
+        -1 // Automatic refinement mode for SMCA algorithm
+    );
 }

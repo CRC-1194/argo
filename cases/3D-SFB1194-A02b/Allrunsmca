@@ -1,4 +1,4 @@
 #!/bin/sh
 
-rm -rf 0 && cp -r 0.org 0 && blockMesh && smcaVofInit -checkVolume -surfaceFile wPhil0.5_alpha1_90_25.stl -writeFields -invert -refinementLevel 4
+rm -rf 0 && cp -r 0.org 0 && blockMesh && surfaceInitVolumeFraction -algorithm SMCA
 

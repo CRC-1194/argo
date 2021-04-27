@@ -27,8 +27,7 @@ License
 
 #include "triSurfaceAdapter.hpp"
 
-namespace Foam {
-namespace PolynomialVof {
+namespace Foam::TriSurfaceImmersion {
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 scalar triSurfaceAdapter::compute_ref_length()
@@ -92,11 +91,7 @@ scalar triSurfaceAdapter::referenceLength() const
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace PolynomialVof
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // ************************************************************************* //

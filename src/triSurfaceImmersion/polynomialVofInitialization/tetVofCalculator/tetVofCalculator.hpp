@@ -24,14 +24,21 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::tetVofCalculator
+    Foam::TriSurfaceImmersion::tetVofCalculator
 
 Description
+    Compute volume fractions and absolute volumes of tetrahedra intersected
+    by an interface based on the signed distance of its vertices.
+    This class implements the model from
+
+    \verbatim
+        Detrixhe, M., & Aslam, T. D. (2016).
+        From level set to volume of fluid and back again at second‐order accuracy.
+        International Journal for Numerical Methods in Fluids, 80(4), 231-255.
+    \endverbatim
 
 SourceFiles
-    tetVofCalculatorI.H
-    tetVofCalculator.C
-    tetVofCalculatorIO.C
+    tetVofCalculator.cpp
 
 \*---------------------------------------------------------------------------*/
 
@@ -40,12 +47,12 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "AdaptiveTetCellRefinement.hpp"
-
 #include <array>
 
-namespace Foam {
-namespace PolynomialVof {
+#include "AdaptiveTetCellRefinement.hpp"
+
+
+namespace Foam::TriSurfaceImmersion {
 
 
 /*---------------------------------------------------------------------------*\
@@ -55,57 +62,67 @@ namespace PolynomialVof {
 class tetVofCalculator
 {
     // Private data
-    mutable std::array<scalar, 4> signed_distance_buffer_;
+
+    //- Temporary storage of vertex signed distances for a tetrahedron
+    mutable std::array<scalar, 4> signedDistanceBuffer_;
 
     // Private Member Functions
-    label count_negative_entries() const;
+
+    //- Count the number of vertices of a tetrahedron which have negative distances
+    label countNegativeDistances() const;
 
 
 public:
 
-    // Constructors
-    
     // Member Functions
-    scalar volume(const indexedTet& t, const std::vector<point>& p) const;
 
+    //- Compute the tetrahedron's volume
+    static scalar volume(const indexedTet& t, const std::vector<point>& p);
+
+    //- Volume fraction of the tetrahedron from signed distances at vertices
     scalar vof
-           (
-                const indexedTet& tet,
-                const std::vector<scalar>& signed_distance
-           ) const;
-    scalar omega_plus_volume
-           (
-                const indexedTet& tet,
-                const std::vector<scalar>& signed_distance,
-                const std::vector<point>& points
-           ) const;
+    (
+        const indexedTet& tet,
+        const std::vector<scalar>& signedDistance
+    ) const;
+
+    //- Volume of the tetrahedron located on the positive side of the interface
+    scalar omegaPlusVolume
+    (
+        const indexedTet& tet,
+        const std::vector<scalar>& signedDistance,
+        const std::vector<point>& points
+    ) const;
+
+    //- Compute volume fractions for given tetrahedra
     std::vector<scalar> vof
-                        (
-                            const std::vector<indexedTet>& tets,
-                            const std::vector<scalar>& signed_distance
-                        ) const;
-    std::vector<scalar> omega_plus_volume
-                        (
-                            const std::vector<indexedTet>& tets,
-                            const std::vector<scalar>& signed_distance,
-                            const std::vector<point>& points
-                        ) const;
-    scalar accumulated_omega_plus_volume
-           (
-                const std::vector<indexedTet>& tets,
-                const std::vector<scalar>& signed_distance,
-                const std::vector<point>& points
-           ) const;
+    (
+        const std::vector<indexedTet>& tets,
+        const std::vector<scalar>& signedDistance
+    ) const;
+    
+    //- Compute volume on positive side of interface for given tetrahedra
+    std::vector<scalar> omegaPlusVolumes
+    (
+        const std::vector<indexedTet>& tets,
+        const std::vector<scalar>& signedDistance,
+        const std::vector<point>& points
+    ) const;
+
+    //- Accumulated volume of given tetrahedra which is located on the positive
+    //  side of the interface
+    scalar accumulatedOmegaPlusVolume
+    (
+        const std::vector<indexedTet>& tets,
+        const std::vector<scalar>& signedDistance,
+        const std::vector<point>& points
+    ) const;
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-} // End namespace PolynomialVof
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
+} // End namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

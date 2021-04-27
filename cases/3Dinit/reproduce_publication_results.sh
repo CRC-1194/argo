@@ -17,8 +17,8 @@ PERTURBATION=0.25
 wait
 
 # Run studies for sphere and ellipsoid
-./run_smci_smca_verification_study.sh smciVofInit "$PERTURBATION"
-./run_smci_smca_verification_study.sh smcaVofInit "$PERTURBATION"
+./run_smci_smca_verification_study.sh SMCI "$PERTURBATION"
+./run_smci_smca_verification_study.sh SMCA "$PERTURBATION"
 ./run_refinement_study_smca.sh "$PERTURBATION"
 
 wait

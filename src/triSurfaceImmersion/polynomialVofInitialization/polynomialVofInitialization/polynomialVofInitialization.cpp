@@ -13,8 +13,7 @@
 #include <map>
 #include <omp.h>
 
-namespace Foam {
-namespace PolynomialVof {
+namespace Foam::TriSurfaceImmersion {
 
 // Private member functions
 void polynomialVofInitialization::setBulkFractions(volScalarField& alpha) const
@@ -93,7 +92,7 @@ void polynomialVofInitialization::calcVertexSignedDistance()
             {
                 // Vertices are guaranteed to be close to the interface.
                 // So the search distance can be large (TT)
-                auto [hit_info, distance] = sig_dist_calc_.signed_distance(points[v_id], 1e15);
+                auto [hit_info, distance] = sig_dist_calc_.signedDistance(points[v_id], 1e15);
                 vertexNearestTriangle_[v_id] = hit_info;
                 vertexSignedDistance_[v_id] = distance;
             }
@@ -114,7 +113,7 @@ void polynomialVofInitialization::calcFaceSignedDistance()
         {
             if (faceSignedDistance_[face_id] == 1.0e15)
             {
-                faceSignedDistance_[face_id] = sig_dist_calc_.signed_distance(points[face_id]);
+                faceSignedDistance_[face_id] = sig_dist_calc_.signedDistance(points[face_id]);
             }
         }
     }
@@ -342,9 +341,9 @@ void polynomialVofInitialization::calcSqrSearchDist()
 
 void polynomialVofInitialization::calcSignedDist()
 {
-    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signed_distance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_, 0.0);
+    signedDistance0_.primitiveFieldRef() = sig_dist_calc_.signedDistance(cellNearestTriangle_, mesh_.C(), sqrSearchDist_*sqrDistFactor_*sqrDistFactor_, 0.0);
 
-    signedDistance_ = SigDistCalc::insideOutsidePropagation{}.propagate_inside_outside(signedDistance0_);
+    signedDistance_ = insideOutsidePropagation::propagateInsideOutside(signedDistance0_);
 }
 
 void polynomialVofInitialization::initializeDistances()
@@ -396,17 +395,20 @@ void polynomialVofInitialization::calcVolFraction(volScalarField& alpha, const b
                                                          points,
                                                          signed_dist,
                                                          tets,
-                                                         max_refinement_level_,
-                                                         writeTets,
-                                                         cell_id
+                                                         max_refinement_level_
                                                      };
         tetVofCalculator vofCalc{};
-        alpha[cell_id] = vofCalc.accumulated_omega_plus_volume(refiner.resulting_tets(), refiner.signed_distance(), refiner.points()) / V[cell_id]; 
+        alpha[cell_id] = vofCalc.accumulated_omega_plus_volume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cell_id]; 
 
         // Limit volume fraction field
         alpha[cell_id] = max(min(alpha[cell_id], 1.0), 0.0);
 
-        max_refine = std::max(refiner.refinement_level(), max_refine);
+        max_refine = std::max(refiner.refinementLevel(), max_refine);
+
+        if (writeTets)
+        {
+            refiner.writeTets(cell_id);
+        }
     }
 
     max_used_refinement_level_ = max_refine;
@@ -421,8 +423,8 @@ void polynomialVofInitialization::writeFields() const
     signedDistance0_.write();
 
     // Write identified interface cells as field
-    volScalarField interfaceCells{"interface_cells", signedDistance_};
-    interfaceCells = dimensionedScalar{"interface_cells", dimLength, 0};
+    volScalarField interfaceCells{"interfaceCells", signedDistance_};
+    interfaceCells = dimensionedScalar{"interfaceCells", dimLength, 0};
 
     for(const auto idx : interfaceCells_)
     {
@@ -432,7 +434,4 @@ void polynomialVofInitialization::writeFields() const
     interfaceCells.write();
 }
 
-// End namespace PolynomialVof
-}
-// End namespace Foam
-}
+} // End namespace Foam::TriSurfaceImmersion

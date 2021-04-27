@@ -1,0 +1,31 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      vofInitDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+fieldName       alpha.water;
+writeGeometry   off;
+invert          on;
+writeAllFields  on;
+checkVolume     on;
+refinementLevel 4;
+
+distCalc
+{
+    surfaceType triSurface;
+    surfaceFile wPhil0.5_alpha1_90_25.stl;
+    narrowBandWidth 4.0;
+}
+
+// ************************************************************************* //

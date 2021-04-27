@@ -50,6 +50,8 @@ SourceFiles
 #include "volPointInterpolation.H"
 #include "DynamicList.H"
 
+#include "Geophase.hpp"
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

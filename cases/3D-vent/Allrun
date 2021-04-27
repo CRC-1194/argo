@@ -10,8 +10,12 @@ cd ${0%/*} || exit 1                        # Run from this directory
 # needs to be executed to obtain good features -> proper box edges
 # needs only to be executed once
 #surfaceFeatureEdges -angle 50 box.stl box.fms
+rm -rf 0 && cp -r 0.org 0
 
 runApplication cartesianMesh
 runApplication checkMesh
+
+# Change algorithm from SMCA to SMCI to use geometrical intersections
+runApplication surfaceInitVolumeFraction -algorithm SMCA
 
 #------------------------------------------------------------------------------

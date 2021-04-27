@@ -14,6 +14,18 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+fieldName       alpha.water;
+writeGeometry   off;
+invert          off;
+writeAllFields  on;
+checkVolume     on;
 refinementLevel @!MAX_REFINEMENT_LEVEL!@;
+
+distCalc
+{
+    surfaceType triSurface;
+    surfaceFile inside_vent.stl;
+    narrowBandWidth 4.0;
+}
 
 // ************************************************************************* //

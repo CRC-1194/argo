@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import argparse
 import sys
 import os
@@ -7,9 +7,9 @@ from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
 
 parser = argparse.ArgumentParser(description='Run an application in each case directory that fits the pattern.')
 
-parser.add_argument('application', type=str,
-                    choices=['smciVofInit', 'smcaVofInit'],
-                    help='Name of the application to be run, e.g. smciVofInit.')
+parser.add_argument('algorithm', type=str,
+                    choices=['SMCI', 'SMCA'],
+                    help='Choose the VoF calculation algorithm.')
 
 parser.add_argument('--dir_pattern', dest="dir_pattern", type=str, required=True,
                     help='Pattern contained in the name of each initialization directory.')
@@ -19,6 +19,9 @@ parser.add_argument('--surface_file', dest="surface_file", type=str, required=Tr
 
 parser.add_argument('--slurm', dest="slurm_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')
+
+parser.add_argument('--levelset', dest="levelset", action='store_true',
+                    help='Use analytic level set (implicit) surface description instead of triangulated surface.')
 
 parser.set_defaults(serial_run=True)
 
@@ -33,14 +36,15 @@ if __name__ == '__main__':
                       and args.dir_pattern in parameter_dir]
     parameter_dirs.sort()
 
-    vof_init_call = ["smciVofInit", 
+    vof_init_call = ["surfaceInitVolumeFraction",
+                     "-algorithm",
+                     args.algorithm,
                      "-checkVolume", 
                      "-surfaceFile", 
                      args.surface_file] 
-    smca_init_call = ["smcaVofInit",
-                       "-checkVolume",
-                       "-surfaceFile",
-                       args.surface_file]
+
+    if (args.levelset):
+        vof_init_call = ["surfaceInitVolumeFraction"]
 
     for parameter_dir in parameter_dirs: 
         pwd = os.getcwd()
@@ -66,9 +70,6 @@ if __name__ == '__main__':
             call(base_command + variable_command, shell=True)
 
         else: 
-            if args.application == "smcaVofInit":
-                call(smca_init_call)
-            elif args.application == "smciVofInit":
-                call(vof_init_call)
+            call(vof_init_call)
 
         os.chdir(pwd)
