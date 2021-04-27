@@ -67,9 +67,11 @@ endif()
 
 set(of_lib_path "${of_wm_project_dir}/platforms/${of_wm_options}/lib" CACHE PATH "Path to compiled OpenFOAM libraries.")
 set(of_src_path "${of_wm_project_dir}/src" CACHE PATH "Path to OpenFOAM/src folder")
+set(of_app_path "${of_wm_project_dir}/applications" CACHE PATH "Path to OpenFOAM/applications folder")
 
 message(STATUS "OpenFOAM lib path: ${of_lib_path}")
 message(STATUS "OpenFOAM src path: ${of_src_path}")
+message(STATUS "OpenFOAM applications path: ${of_app_path}")
 
 # TODO: Check that those variables are set. Optional: check for reasonable values (TT)
 
@@ -99,6 +101,18 @@ find_library(OF_FINITEVOLUME finiteVolume PATHS ${of_lib_path})
 find_library(OF_MESHTOOLS meshTools PATHS ${of_lib_path})
 find_library(OF_OPENFOAM OpenFOAM PATHS ${of_lib_path})
 find_library(OF_SURFMESH surfMesh PATHS ${of_lib_path})
+
+# Required OpenFOAM libraries for interIsoPandoraFoam
+find_library(OF_FVOPTIONS fvOptions PATHS ${of_lib_path})
+find_library(OF_SAMPLING sampling PATHS ${of_lib_path})
+find_library(OF_DYNAMICFVMESH dynamicFvMesh PATHS ${of_lib_path})
+find_library(OF_GEOMETRICVOF geometricVoF PATHS ${of_lib_path})
+find_library(OF_INCOMPRESSIBLETRANSPORTMODELS incompressibleTransportModels PATHS ${of_lib_path})
+find_library(OF_INTERFACEPROPERTIES interfaceProperties PATHS ${of_lib_path})
+find_library(OF_IMMISCIBLEINCOMPRESSIBLETWOPHASEMIXTURE immiscibleIncompressibleTwoPhaseMixture PATHS ${of_lib_path})
+find_library(OF_TURBULENCEMODELS turbulenceModels PATHS ${of_lib_path})
+find_library(OF_INCOMPRESSIBLETURBULENCEMODELS incompressibleTransportModels PATHS ${of_lib_path})
+find_library(OF_WAVEMODELS waveModels PATHS ${of_lib_path})
 
 # Use lib instead of lib64 for libraries.
 set(CMAKE_INSTALL_LIBDIR "$ENV{FOAM_USER_LIBBIN}")
@@ -156,11 +170,58 @@ target_link_libraries("triSurfaceImmersion"
     ${OpenMP_CXX_LIBRARIES}
 )
 
+
+add_library("pandora" SHARED
+    src/pandora/curvatureFunctionObject/curvatureFunctionObject.cpp
+    src/pandora/pandora/pandora.cpp
+    src/pandora/pandoraCurvature/pandoraCurvature/pandoraCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraDivGradCurvature/pandoraDivGradCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraDivNormalCurvature/pandoraDivNormalCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraSmoothedMarkerCurvature/pandoraSmoothedMarkerCurvature.cpp
+    src/pandora/pandoraCurvatureExtension/pandoraCurvatureAverageExtension/pandoraCurvatureAverageExtension.cpp
+    src/pandora/pandoraCurvatureExtension/pandoraCurvatureExtension/pandoraCurvatureExtension.cpp
+    src/pandora/pandoraCurvatureExtension/pandoraCurvatureNoExtension/pandoraCurvatureNoExtension.cpp
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureLaplaceRegularisation/pandoraCurvatureLaplaceRegularisation.cpp
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureNoRegularisation/pandoraCurvatureNoRegularisation.cpp
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureNormalRegularisation/pandoraCurvatureNormalRegularisation.cpp
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureRegularisation/pandoraCurvatureRegularisation.cpp
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureTangentialAverageRegularisation/pandoraCurvatureTangentialAverageRegularisation.cpp
+)
+
+target_include_directories("pandora" PUBLIC
+    src/pandora/curvatureFunctionObject
+    src/pandora/pandora
+    src/pandora/pandoraCurvature/pandoraCurvature
+    src/pandora/pandoraCurvature/pandoraDivGradCurvature
+    src/pandora/pandoraCurvature/pandoraDivNormalCurvature
+    src/pandora/pandoraCurvature/pandoraSmoothedMarkerCurvature
+    src/pandora/pandoraCurvatureExtension/pandoraCurvatureAverageExtension
+    src/pandora/pandoraCurvatureExtension/pandoraCurvatureExtension
+    src/pandora/pandoraCurvatureExtension/pandoraCurvatureNoExtension
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureLaplaceRegularisation
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureNoRegularisation
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureNormalRegularisation
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureRegularisation
+    src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureTangentialAverageRegularisation
+)
+
+target_include_directories("pandora" PUBLIC SYSTEM
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+
+
 # TODO: enable if OPenMP is re-enabled (TT)
 #target_compile_options("triSurfaceImmersion" PRIVATE "-fopenmp")
 
 # Install the libraries 
-install(TARGETS "triSurfaceImmersion" LIBRARY)
+install(TARGETS
+    "pandora"
+    "triSurfaceImmersion"
+    LIBRARY
+)
 
 
 # Build executables
@@ -244,8 +305,71 @@ target_link_libraries("computeLiquidVolume"
     m
 )
 
+# Pandora executables
+add_executable("interIsoPandoraFoam"
+    applications/interIsoPandoraFoam/interIsoPandoraFoam.cpp)
+target_include_directories("interIsoPandoraFoam" PRIVATE
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/sampling/lnInclude
+    ${of_src_path}/dynamicFvMesh/lnInclude
+    ${of_src_path}/dynamicMesh/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+    ${of_src_path}/transportModels
+    ${of_src_path}/transportModels/geometricVoF/lnInclude
+    ${of_src_path}/transportModels/twoPhaseMixture/lnInclude
+    ${of_src_path}/transportModels/incompressible/lnInclude
+    ${of_src_path}/transportModels/interfaceProperties/lnInclude
+    ${of_src_path}/TurbulenceModels/turbulenceModels/lnInclude
+    ${of_src_path}/TurbulenceModels/incompressible/lnInclude
+    ${of_src_path}/transportModels/immiscibleIncompressibleTwoPhaseMixture/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/transportModels/geometricVoF/lnInclude
+    ${of_app_path}/solvers/multiphase/VoF
+    ${of_app_path}/solvers/multiphase/interFoam
+)
+target_link_libraries("interIsoPandoraFoam"
+    "pandora"
+    ${OF_FINITEVOLUME}
+    ${OF_FVOPTIONS}
+    ${OF_MESHTOOLS}
+    ${OF_SAMPLING}
+    ${OF_DYNAMICFVMESH}
+    ${OF_GEOMETRICVOF}
+    ${OF_INCOMPRESSIBLETRANSPORTMODELS}
+    ${OF_INTERFACEPROPERTIES}
+    ${OF_IMMISCIBLEINCOMPRESSIBLETWOPHASEMIXTURE}
+    ${OF_TURBULENCEMODELS}
+    ${OF_INCOMPRESSIBLETURBULENCEMODELS}
+    ${OF_WAVEMODELS}
+    ${OF_SURFMESH}
+    dl
+    m
+)
+
+add_executable("pandoraTestCurvature"
+    applications/pandoraTestCurvature/pandoraTestCurvature.cpp
+)
+target_include_directories("pandoraTestCurvature" PRIVATE
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/transportModels/geometricVoF/lnInclude
+)
+target_link_libraries("pandoraTestCurvature"
+    "pandora"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_SURFMESH}
+    ${OF_GEOMETRICVOF}
+)
+
 # Install executables
-install(TARGETS 
+install(TARGETS
+        # Pandora
+        "interIsoPandoraFoam"
+        "pandoraTestCurvature"
+        # TriSurfaceImmersion
         # Refactored
         "surfaceInitVolumeFraction"
         "surfaceInitSignedDistances"
