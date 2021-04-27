@@ -20,6 +20,9 @@ parser.add_argument('--surface_file', dest="surface_file", type=str, required=Tr
 parser.add_argument('--slurm', dest="slurm_run", action='store_true',
                     help='Use SLURM workload manager to submit mesh generation jobs.')
 
+parser.add_argument('--levelset', dest="levelset", action='store_true',
+                    help='Use analytic level set (implicit) surface description instead of triangulated surface.')
+
 parser.set_defaults(serial_run=True)
 
 args = parser.parse_args()
@@ -39,6 +42,9 @@ if __name__ == '__main__':
                      "-checkVolume", 
                      "-surfaceFile", 
                      args.surface_file] 
+
+    if (args.levelset):
+        vof_init_call = ["surfaceInitVolumeFraction"]
 
     for parameter_dir in parameter_dirs: 
         pwd = os.getcwd()

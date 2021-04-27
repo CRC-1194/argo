@@ -1,4 +1,5 @@
 import os
+import warnings
 import pandas as pd
 from math import pi
 import matplotlib.pyplot as plt
@@ -23,7 +24,10 @@ def read_data(pattern, csv_file):
                  if os.path.exists(os.path.join(param_dir,csv_file))]
 
     if (len(csv_files) == 0):
-        raise ValueError("No CSV files found, did the parameter variation run?")
+        warnings.warn("No CSV files found, did the parameter variation run?\n" +
+                      "Skipping plots for pattern %s." % pattern)
+        df = pd.DataFrame()
+        return df
 
     data = pd.concat((pd.read_csv(csv_file) for csv_file in csv_files))
 
@@ -121,6 +125,10 @@ def plot_cpu_times(data, pattern, alg_name, data_write_dir):
 
 def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", csv_file="vof-init-results-SMCA.csv"):
     data = read_data(pattern, csv_file)
+
+    if data.empty:
+        return
+
     compute_dependent_data(data, exact_volume, pattern, "SMCA", data_write_dir)
     fig, axis = plt.subplots()
     fig.set_size_inches(4,3)
@@ -147,6 +155,10 @@ def plot_smca_refinement_convergence(pattern, exact_volume, data_write_dir="", c
 
 def plot_smca_cad_refinement_convergence(pattern, data_write_dir="", csv_file="vof-init-results-SMCA.csv"):
     data = read_data(pattern, csv_file)
+
+    if data.empty:
+        return
+
     volume = data["VOLUME_FROM_SURFACE_INTEGRAL"][0]
     compute_dependent_data(data, volume, pattern, "SMCA", data_write_dir)
     fig, axis = plt.subplots()
@@ -161,8 +173,41 @@ def plot_smca_cad_refinement_convergence(pattern, data_write_dir="", csv_file="v
     fig.savefig(os.path.join(data_write_dir, "cad-convergence-%s-SCMA.pdf" % pattern),
                     bbox_inches='tight')
 
+def plot_smca_levelset_convergence(pattern, exact_volume, data_write_dir="", csv_file="vof-init-results-SMCA.csv"):
+    data = read_data(pattern, csv_file)
+
+    if data.empty:
+        return
+
+    compute_dependent_data(data, exact_volume, pattern, "SMCA", data_write_dir)
+
+    n_cells = n_cells_sorted(data)
+    fig_conv, ax_conv = plt.subplots()
+    for i,n_cell in enumerate(n_cells):
+        n_c = ceil(n_cell**(1./3.))
+        n_cell_data = data[data["N_CELLS"] == n_cell] 
+        ax_conv.semilogy(n_cell_data["MAX_REFINEMENT_LEVEL"],
+                         n_cell_data["VOLUME_ERROR_FROM_EXACT_VOLUME"],
+                         label = r"$N_c = %d$" % n_c, 
+                         marker=global_markers[i % len(n_cells)],
+                         linewidth=0)
+
+    add_convergence_order(ax_conv, 2.0, xaxis='linear', xrelmin=0.22)
+
+    ax_conv.set_xlabel(r"$l$")
+    ax_conv.set_ylabel(r"$E_v$")
+    ax_conv.legend(bbox_to_anchor=(1.0, 1.), fancybox=False, frameon=False, framealpha=0)
+
+    fig_conv.savefig(os.path.join(data_write_dir, "levelset-convergence-%s-SCMA.pdf" % pattern),
+                    bbox_inches='tight')
+
+
 def plot_study(pattern, alg_name, exact_volume, data_write_dir="", csv_file="vof-init-results-SMCI.csv"):
     data = read_data(pattern, csv_file)
+
+    if data.empty:
+        return
+
     compute_dependent_data(data, exact_volume, pattern, alg_name, data_write_dir)
     plot_convergence(data, pattern, alg_name, data_write_dir)
     plot_cpu_times(data, pattern, alg_name, data_write_dir)
