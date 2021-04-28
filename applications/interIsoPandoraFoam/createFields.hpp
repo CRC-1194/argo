@@ -126,20 +126,3 @@ mesh.setFluxRequired(alpha1.name());
 #include "createFvOptions.H"
 
 isoAdvection advector(alpha1, phi, U);
-
-// FIXME: Make this an attribute of the curvature model.  
-volScalarField kappa
-(
-    IOobject
-    (
-        "kappa", 
-        runTime.timeName(), 
-        mesh, 
-        IOobject::NO_READ, 
-        IOobject::AUTO_WRITE
-    ),
-    mesh,
-    dimensionedScalar("kappa", pow(dimLength,-1), 0)
-);
-
-
