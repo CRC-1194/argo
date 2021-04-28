@@ -1,0 +1,29 @@
+values
+{
+    solver (interIsoFoam);
+    
+    REC_SCHEME 
+    (
+        plicRDF 
+    );
+
+    N_CELLS
+    (
+        32 64 128 
+    );
+
+    N_CURVATURE_AVERAGES
+    (
+       5 10 20
+    );
+
+    N_CURVATURE_EXTENSIONS
+    (
+        3 4 5 
+    );
+
+    N_CURVATURE_REGULARISATIONS
+    (
+        0 2 4 
+    ); 
+}
