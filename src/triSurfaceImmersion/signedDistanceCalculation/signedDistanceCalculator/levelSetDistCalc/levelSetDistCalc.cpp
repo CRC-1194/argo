@@ -68,6 +68,14 @@ point levelSetDistCalc::surfacePoint(const point& p) const
         val_j = surfacePtr_->value(x_j);
         grad_j = surfacePtr_->grad(x_j);
 
+        // TODO (TT): divide by zero stablization. 
+        // This is required as coincidence of point p with the centre
+        // cannot be ruled out.
+        if (mag(grad_j) < SMALL)
+        {
+            grad_j = vector{SMALL, SMALL, SMALL};
+        }
+
         x_j = x_j - val_j * grad_j / (grad_j & grad_j);
 
         // Uncomment for debugging info 
@@ -102,7 +110,18 @@ point levelSetDistCalc::closestPoint(const point& p) const
     for (std::size_t i = 0; i < MAX_I; ++i)
     {
         vector n_i = surfacePtr_->grad(p_i); 
-        n_i /= Foam::mag(n_i); 
+        // TODO (TT): divide by zero stablization using SMALL. 
+        // This is required as coincidence of point p with the centre
+        // cannot be ruled out.
+        if (mag(n_i) < SMALL)
+        {
+            n_i = vector{SMALL, SMALL, SMALL};
+        }
+        else
+        {
+            n_i /= Foam::mag(n_i); 
+        }
+
         vector q_i = p - ((p - p_i) & n_i) * n_i; 
         
         // First-order tangential projection.

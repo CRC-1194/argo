@@ -59,11 +59,11 @@ volScalarField& pandoraDivGradCurvature::cellCurvature()
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (meshDb.found(fieldName_))
     {
-        const volScalarField& vf = 
+        const auto& vf = 
             mesh().lookupObject<volScalarField>(fieldName_);
 
-        volVectorField vfGrad = fvc::grad(vf); 
-        volScalarField vfMagGrad = mag(vfGrad); 
+        volVectorField vfGrad{fvc::grad(vf)}; 
+        volScalarField vfMagGrad{mag(vfGrad)}; 
         vfMagGrad += dimensionedScalar(
             "vfMagGrad", 
             vfMagGrad.dimensions(),

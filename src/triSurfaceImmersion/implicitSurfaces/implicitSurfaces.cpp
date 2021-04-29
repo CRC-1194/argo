@@ -197,7 +197,7 @@ sphere::sphere(const dictionary& configDict)
 
 scalar sphere::value(const vector& x) const
 {
-    return Foam::mag(x - center_) - radius_; 
+    return magSqr(x - center_) - radius_*radius_;
 }
 
 scalar sphere::operator()(const vector& x) const
@@ -207,12 +207,7 @@ scalar sphere::operator()(const vector& x) const
 
 vector sphere::grad(const vector& x) const
 {
-    scalar x0c0 = x[0] - center_[0];
-    scalar x1c1 = x[1] - center_[1];
-    scalar x2c2 = x[2] - center_[2];
-
-    return vector(x0c0, x1c1, x2c2) / 
-        sqrt(x0c0*x0c0 + x1c1*x1c1 + x2c2*x2c2);
+    return 2.0*(x - center_);
 }
 
 scalar sphere::volume() const
