@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Description
-    Perturbe every point in a hex-cell mesh. 
+    Perturb every point in a hex-cell mesh. 
 
     1. For each mesh point that is not part of a patch, compute the distance
     to the nearest neighbour vertex. A "neighbour vertex" is another vertex in
@@ -76,7 +76,7 @@ autoPtr<pointField> randomUnitVec(label size)
 
 autoPtr<scalarField> pointBoundingBallRadius(const fvMesh& mesh)
 {
-    auto& meshPoints(mesh.points());
+    const auto& meshPoints(mesh.points());
     //bbRadius short for boundingBoxRadius
     autoPtr<scalarField> bbRadiusPtr(new scalarField(meshPoints.size(), GREAT));
     auto& bbRadius = bbRadiusPtr.ref(); 
@@ -90,7 +90,9 @@ autoPtr<scalarField> pointBoundingBallRadius(const fvMesh& mesh)
             const auto ngbPoint( meshPoints[pointPoints[ppointI]]);
             const auto edgeLength(mag( curPoint - ngbPoint ));
             if (edgeLength < mag(bbRadius[pointI]))
+            {
                 bbRadius[pointI] = edgeLength;
+            }
         }
     }
     return bbRadiusPtr;
@@ -100,8 +102,8 @@ void resetBoundaryPertubations(const fvMesh& mesh, vectorField& pertubations)
 {
     forAll(mesh.boundaryMesh(), boundaryI)
     {
-        auto& patch(mesh.boundaryMesh()[boundaryI]); // is a polyPatch
-        auto& patchPointLabels(patch.meshPoints());
+        const auto& patch(mesh.boundaryMesh()[boundaryI]); // is a polyPatch
+        const auto& patchPointLabels(patch.meshPoints());
         forAll(patchPointLabels, pointI)
         {
             label labelI(patchPointLabels[pointI]);
@@ -126,9 +128,6 @@ int main(int argc, char *argv[])
 
     fvMesh mesh
     (
-        //regionName,
-        //runTime.timeName(),
-        //runTime,
         IOobject
         (
             "region0",
@@ -139,7 +138,7 @@ int main(int argc, char *argv[])
         )
     );
 
-    const scalar alpha = args.getOrDefault<scalar>("alpha", 0.1); 
+    const auto alpha = args.getOrDefault<scalar>("alpha", 0.1); 
     
     auto pertubationVecPtr = randomUnitVec(mesh.points().size());
     auto maxDistancePtr = pointBoundingBallRadius(mesh);

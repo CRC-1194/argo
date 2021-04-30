@@ -49,8 +49,10 @@ scalar xyPrism(const pointField& tri)
 {
     pointField opts = tri;
 
-    for(auto it=opts.begin(); it!=opts.end(); ++it)
-        (*it).z() = 0;
+    for (auto& p : opts)
+    {
+        p.z() = 0;
+    }
 
     Foam::triFace face(0,1,2); 
     return face.sweptVol(opts, tri);
@@ -73,9 +75,13 @@ int main(int argc, char *argv[])
     // file name of stl is input of the utility
     word fileName("");
     if (args.found("stl"))
+    {
         fileName = args.get<word>("stl");
+    }
     else
+    {
         FatalError << "No stl-file provided.";
+    }
 
     std::cout << "Reading: " << fileName << std::endl;
     triSurface surfaceMesh(fileName);

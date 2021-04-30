@@ -72,11 +72,6 @@ Description
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-bool isKappaAlpha(const scalar alpha, const scalar alphaKappa)
-{
-    return (alpha < alphaKappa) || (alpha > (1 - alphaKappa));
-}
-
 int main(int argc, char *argv[])
 {
     argList::addNote
@@ -109,27 +104,6 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     Info<< "\nStarting time loop\n" << endl;
-
-    //volScalarField nSummands
-    //(
-        //IOobject
-        //(
-            //"nSummands",
-            //runTime.timeName(), 
-            //mesh, 
-            //IOobject::NO_READ, 
-            //IOobject::AUTO_WRITE
-        //), 
-        //mesh, 
-        //dimensionedScalar("nSummands", dimless, 0)
-    //);
-
-    //const double kappaAlpha = 0.1;
-
-    //autoPtr<curvatureModel> kappaModel = 
-        //curvatureModel::New(mesh);
-
-    //surfTensionForceModel surfaceTensionForce(mesh, mesh.solutionDict());
 
     while (runTime.run())
     {
