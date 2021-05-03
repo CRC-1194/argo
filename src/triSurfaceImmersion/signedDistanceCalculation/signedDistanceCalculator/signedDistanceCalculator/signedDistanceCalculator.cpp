@@ -34,21 +34,6 @@ namespace Foam::TriSurfaceImmersion {
     defineTypeNameAndDebug(signedDistanceCalculator, 0);
     defineRunTimeSelectionTable(signedDistanceCalculator, Dictionary)
 
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 signedDistanceCalculator::signedDistanceCalculator(
@@ -124,6 +109,7 @@ autoPtr<signedDistanceCalculator> signedDistanceCalculator::New
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+
 void signedDistanceCalculator::outOfNarrowBandValue(const scalar value)
 {
     outOfNarrowBandValue_ = value;

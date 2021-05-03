@@ -25,7 +25,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "tetVofCalculator.hpp"
+#include "tetVolumeFractionCalculator.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -34,7 +34,7 @@ License
 namespace Foam::TriSurfaceImmersion {
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-label tetVofCalculator::countNegativeDistances() const
+label tetVolumeFractionCalculator::countNegativeDistances() const
 {
     return std::count_if
             (
@@ -46,7 +46,7 @@ label tetVofCalculator::countNegativeDistances() const
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-scalar tetVofCalculator::volume
+scalar tetVolumeFractionCalculator::volume
 (
     const indexedTet& t,
     const std::vector<point>& p
@@ -56,7 +56,7 @@ scalar tetVofCalculator::volume
 }
 
 
-scalar tetVofCalculator::vof
+scalar tetVolumeFractionCalculator::volumeFraction
 (
     const indexedTet& tet,
     const std::vector<scalar>& signedDistance
@@ -104,18 +104,18 @@ scalar tetVofCalculator::vof
     return volFraction;
 }
 
-scalar tetVofCalculator::omegaPlusVolume
+scalar tetVolumeFractionCalculator::omegaPlusVolume
 (
     const indexedTet& tet,
     const std::vector<scalar>& signedDistance,
     const std::vector<point>& points
 ) const
 {
-    return vof(tet, signedDistance)*volume(tet, points);
+    return volumeFraction(tet, signedDistance)*volume(tet, points);
 }
 
 
-std::vector<scalar> tetVofCalculator::vof
+std::vector<scalar> tetVolumeFractionCalculator::volumeFractions
 (
     const std::vector<indexedTet>& tets,
     const std::vector<scalar>& signedDistance
@@ -125,14 +125,14 @@ std::vector<scalar> tetVofCalculator::vof
 
     forAll(tets, tetI)
     {
-        volumeFractions[tetI] = vof(tets[tetI], signedDistance);
+        volumeFractions[tetI] = volumeFraction(tets[tetI], signedDistance);
     }
 
     return volumeFractions;
 }
 
 
-std::vector<scalar> tetVofCalculator::omegaPlusVolumes
+std::vector<scalar> tetVolumeFractionCalculator::omegaPlusVolumes
 (
     const std::vector<indexedTet>& tets,
     const std::vector<scalar>& signedDistance,
@@ -150,7 +150,7 @@ std::vector<scalar> tetVofCalculator::omegaPlusVolumes
 }
 
 
-scalar tetVofCalculator::accumulatedOmegaPlusVolume
+scalar tetVolumeFractionCalculator::accumulatedOmegaPlusVolume
 (
     const std::vector<indexedTet>& tets,
     const std::vector<scalar>& signedDistance,

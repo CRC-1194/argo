@@ -84,7 +84,6 @@ public:
 
 
     // Constructors
-
     levelSetDistCalc(const dictionary& configDict, const fvMesh& mesh);
 
 
@@ -103,11 +102,6 @@ public:
 
     // Write
     void writeFields() const override;
-
-
-    // Member Operators
-
-
 };
 
 

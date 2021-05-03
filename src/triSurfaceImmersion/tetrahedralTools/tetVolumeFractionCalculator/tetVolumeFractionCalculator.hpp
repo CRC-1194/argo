@@ -24,11 +24,15 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::TriSurfaceImmersion::tetVofCalculator
+    Foam::TriSurfaceImmersion::tetVolumeFractionCalculator
 
 Description
     Compute volume fractions and absolute volumes of tetrahedra intersected
-    by an interface based on the signed distance of its vertices.
+    by an interface based on the signed distances of its vertices. The part
+    of a tetrahedron that is located on the positive side of the interface
+    (defined by the interface normal orientation) contributes. This means
+    a tetrahedron with negative sidnged distances at all its vertices has a
+    volume fraction of 0.
     This class implements the model from
 
     \verbatim
@@ -38,12 +42,12 @@ Description
     \endverbatim
 
 SourceFiles
-    tetVofCalculator.cpp
+    tetVolumeFractionCalculator.cpp
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef tetVofCalculator_H
-#define tetVofCalculator_H
+#ifndef tetVolumeFractionCalculator_H
+#define tetVolumeFractionCalculator_H
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -56,10 +60,10 @@ namespace Foam::TriSurfaceImmersion {
 
 
 /*---------------------------------------------------------------------------*\
-                         Class tetVofCalculator Declaration
+                   Class tetVolumeFractionCalculator Declaration
 \*---------------------------------------------------------------------------*/
 
-class tetVofCalculator
+class tetVolumeFractionCalculator
 {
     // Private data
 
@@ -80,7 +84,7 @@ public:
     static scalar volume(const indexedTet& t, const std::vector<point>& p);
 
     //- Volume fraction of the tetrahedron from signed distances at vertices
-    scalar vof
+    scalar volumeFraction
     (
         const indexedTet& tet,
         const std::vector<scalar>& signedDistance
@@ -95,7 +99,7 @@ public:
     ) const;
 
     //- Compute volume fractions for given tetrahedra
-    std::vector<scalar> vof
+    std::vector<scalar> volumeFractions
     (
         const std::vector<indexedTet>& tets,
         const std::vector<scalar>& signedDistance

@@ -40,13 +40,13 @@ namespace Foam::TriSurfaceImmersion {
 // * * * * * * * * * * * * * * Static Members * * * * * * * * * * * * * //
 
 defineTypeNameAndDebug(implicitSurface, false);
-defineRunTimeSelectionTable(implicitSurface, ITstream);
-defineRunTimeSelectionTable(implicitSurface, Dictionary);
+defineRunTimeSelectionTable(implicitSurface, ITstream)
+defineRunTimeSelectionTable(implicitSurface, Dictionary)
 
 autoPtr<implicitSurface> implicitSurface::New 
 (
     const word& name, 
-    ITstream is
+    ITstream& is
 )
 {
     // Find the constructor pointer for the model in the constructor table.
@@ -118,13 +118,13 @@ addToRunTimeSelectionTable(implicitSurface, plane, Dictionary);
 
 plane::plane(vector position, vector normal)
 : 
-    position_(position), 
-    normal_(normal)
+    position_{position}, 
+    normal_{normal}
 {
     normal_ /= Foam::mag(normal_);
 }
 
-plane::plane(ITstream is)
+plane::plane(ITstream& is)
 {
     is >> position_; 
     is >> normal_; 
@@ -150,7 +150,7 @@ scalar plane::operator()(const vector& x) const
     return value(x); 
 }
 
-vector plane::grad(const vector& x) const
+vector plane::grad(const vector&) const
 {
     return normal_; 
 }
@@ -177,11 +177,11 @@ addToRunTimeSelectionTable(implicitSurface, sphere, Dictionary);
 
 sphere::sphere(vector center, scalar radius)
     : 
-        center_(center), 
-        radius_(radius)
+        center_{center}, 
+        radius_{radius}
 {}
 
-sphere::sphere(ITstream is)
+sphere::sphere(ITstream& is)
 {
     is >> center_; 
     is >> radius_; 
@@ -237,13 +237,13 @@ addToRunTimeSelectionTable(implicitSurface, ellipsoid, Dictionary);
 
 ellipsoid::ellipsoid(vector center, vector axes)
     : 
-        center_(center), 
-        axes_(axes)
+        center_{center}, 
+        axes_{axes}
 {
     setAxesSqr(axes);
 }
 
-ellipsoid::ellipsoid(ITstream is)
+ellipsoid::ellipsoid(ITstream& is)
 {
     is >> center_; 
     is >> axes_; 
@@ -316,12 +316,12 @@ addToRunTimeSelectionTable(implicitSurface, sinc, Dictionary);
 
 sinc::sinc(vector origin, scalar amplitude, scalar omega)
     : 
-        origin_(origin), 
-        amplitude_(amplitude), 
-        omega_(omega)
+        origin_{origin}, 
+        amplitude_{amplitude}, 
+        omega_{omega}
 {}
 
-sinc::sinc(ITstream is)
+sinc::sinc(ITstream& is)
 {
     is >> origin_; 
     is >> amplitude_; 
@@ -346,11 +346,11 @@ scalar sinc::value(const vector& x) const
     );
 
     if (r < std::numeric_limits<double>::min())
-        return amplitude_; 
-    else 
     {
-        return x[2] - origin_[2] - amplitude_ * sin(omega_ * r) / (omega_ * r);
+        return amplitude_;
     }
+     
+    return x[2] - origin_[2] - amplitude_ * sin(omega_ * r) / (omega_ * r);
 }
 
 scalar sinc::operator()(const vector& x) const
@@ -372,7 +372,7 @@ vector sinc::grad(const vector& x) const
         A*(O0 - x0)*(omega_*pow(pow(O0 - x0, 2) + pow(O1 - x1, 2), 3.0/2.0)*cos(omega_*sqrt(pow(O0 - x0, 2) + pow(O1 - x1, 2))) - (pow(O0 - x0, 2) + pow(O1 - x1, 2))*sin(omega_*sqrt(pow(O0 - x0, 2) + pow(O1 - x1, 2))))/(omega_*pow(pow(O0 - x0, 2) + pow(O1 - x1, 2), 5.0/2.0)),
             A*(O1 - x1)*(omega_*pow(pow(O0 - x0, 2) + pow(O1 - x1, 2), 3.0/2.0)*cos(omega_*sqrt(pow(O0 - x0, 2) + pow(O1 - x1, 2))) - (pow(O0 - x0, 2) + pow(O1 - x1, 2))*sin(omega_*sqrt(pow(O0 - x0, 2) + pow(O1 - x1, 2))))/(omega_*pow(pow(O0 - x0, 2) + pow(O1 - x1, 2), 5.0/2.0)),
             1
-        );
+    );
 }
 
 vector sinc::origin() const
@@ -401,12 +401,12 @@ addToRunTimeSelectionTable(implicitSurface, sincScaled, ITstream);
 
 sincScaled::sincScaled(vector origin, scalar amplitude, scalar omega)
     : 
-        origin_(origin), 
-        amplitude_(amplitude), 
-        omega_(omega)
+        origin_{origin}, 
+        amplitude_{amplitude}, 
+        omega_{omega}
 {}
 
-sincScaled::sincScaled(ITstream is)
+sincScaled::sincScaled(ITstream& is)
 {
     is >> origin_; 
     is >> amplitude_; 
@@ -424,7 +424,7 @@ sincScaled::sincScaled(const dictionary& configDict)
 // * * * * * * * * * * * * * Member Functions * * * * * * * * * * * * * //
 
 
-scalar sincScaled::value(const vector& x) const // TODO scale the amplitude
+scalar sincScaled::value(const vector& x) const // TODO (TM) scale the amplitude
 {
     double r = Foam::sqrt
     (
@@ -433,21 +433,11 @@ scalar sincScaled::value(const vector& x) const // TODO scale the amplitude
     );
 
     if (r < std::numeric_limits<double>::min())
-        return amplitude_; 
-    else 
     {
-        //decltype(auto) factor = [](double A, double z)
-        //{
-            //if ((z < -A) || (z > A))
-                //return 0.; 
-            //else
-                //return A - 2*pow(z,2)/A + pow(z,4)/pow(A,3);
-        //};
-
-        //scalar z = x[2] - origin_[2];
-        //return z - amplitude_ * factor(amplitude_,z)*sin(omega_ * r) / (omega_ * r);
-        return x[2] - origin_[2] - amplitude_ * sin(omega_ * r) / (omega_ * r);
+        return amplitude_;
     }
+     
+    return x[2] - origin_[2] - amplitude_ * sin(omega_ * r) / (omega_ * r);
 }
 
 scalar sincScaled::operator()(const vector& x) const
@@ -488,4 +478,3 @@ scalar sincScaled::omega() const
 }
 
 } // End namespace Foam::TriSurfaceImmersion
-

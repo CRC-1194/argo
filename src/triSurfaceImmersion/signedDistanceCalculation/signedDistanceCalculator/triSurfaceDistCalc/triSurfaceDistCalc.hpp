@@ -24,7 +24,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::signedDistanceCalculator
+    Foam::TriSurfaceImmersion::triSurfaceDistCalc
 
 Author
     Tobias Tolle
@@ -43,7 +43,7 @@ Description
     interpolated from the triangle vertices by a linear shape function.
 
 SourceFiles
-    signedDistanceCalculator.cpp
+    triSurfaceDistCalc.cpp
 
 \*---------------------------------------------------------------------------*/
 
@@ -124,12 +124,13 @@ public:
         const point& p,
         scalar searchDistSqr
     ) const;
+
     vector normalAtSurface(const pointIndexHit& hitInfo) const;
 
     //- Access
-    const vectorField& vertexNormals() const;
-    const triSurfaceSearch& surfaceSearch() const;
-    const triSurface& surface() const;
+    inline const vectorField& vertexNormals() const;
+    inline const triSurfaceSearch& surfaceSearch() const;
+    inline const triSurface& surface() const;
 
     // Inherited interface functions
     scalar signedDistance(const point& p) const override;
@@ -138,6 +139,10 @@ public:
     scalar surfaceEnclosedVolume() const override;
     void writeFields() const override;
 };
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "triSurfaceDistCalcI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

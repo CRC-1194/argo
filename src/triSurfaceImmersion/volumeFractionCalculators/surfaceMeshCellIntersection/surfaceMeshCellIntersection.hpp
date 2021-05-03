@@ -87,11 +87,11 @@ public:
 
     //- Access
 
-    inline const double nTrianglesPerCell() const override;
+    inline double nTrianglesPerCell() const override;
 
-    inline const label nIntersectedCells() const override;
+    inline label nIntersectedCells() const override;
 
-    inline const label maxRefinementLevel() const override;
+    inline label maxRefinementLevel() const override;
 
     const signedDistanceCalculator& sigDistCalc() const override;
 

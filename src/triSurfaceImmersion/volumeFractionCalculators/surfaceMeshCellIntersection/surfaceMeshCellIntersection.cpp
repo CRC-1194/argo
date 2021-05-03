@@ -190,7 +190,6 @@ void surfaceMeshCellIntersection::findIntersectedCells()
 {
     const auto& mesh = this->mesh();
     const auto& meshCellPoints = mesh.cellPoints();
-    const auto& meshCellEdges = mesh.cellEdges();
     const auto& cellClosestTriangle = sigDistCalc_.cellClosestPoint();
     const auto& cellSignedDist = sigDistCalc_.cellSignedDist();
     const auto& pointSignedDist = sigDistCalc_.pointSignedDist();
@@ -205,6 +204,8 @@ void surfaceMeshCellIntersection::findIntersectedCells()
             continue;
         }
 
+        // Todo (TT): this is essentially the sign refinement criterion.
+        // Reuse it here.
         const auto& cellDist = cellSignedDist[cellI];  
         const auto& cellPoints = meshCellPoints[cellI]; 
 

@@ -97,7 +97,7 @@ using geophase::signed_distance;
 using geophase::intersect_tolerance;
 using geophase::foamPolyhedronIntersection;
 
-namespace Foam { namespace GeometricalTransport { 
+namespace Foam::GeometricalTransport { 
 
     template <typename Polygon> 
     geophase::base_tag_t<Polygon, geophase::sequence_polygon_tag>
@@ -274,7 +274,7 @@ namespace Foam { namespace GeometricalTransport {
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-}} // End namespace Foam::GeometricalTransport
+} // End namespace Foam::GeometricalTransport
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

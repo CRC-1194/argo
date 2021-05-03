@@ -38,18 +38,6 @@ namespace Foam::TriSurfaceImmersion {
     defineTypeNameAndDebug(levelSetDistCalc, 0);
     addToRunTimeSelectionTable(signedDistanceCalculator, levelSetDistCalc, Dictionary);
 
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-
-
-// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
 // Implementation of 'surfacePoint' and 'closestPoint' taken from
 // T. Maric's OpenFOAM machine learning project:
 // https://gitlab.com/tmaric/openfoam-ml
@@ -60,7 +48,7 @@ point levelSetDistCalc::surfacePoint(const point& p) const
     vector grad_j{0, 0, 0}; 
 
     // Descend onto the surface with gradient descent.
-    for (std::size_t j = 0; j < maxIt_; ++j)
+    for (label j = 0; j < maxIt_; ++j)
     {
         // Uncomment for debugging info. 
         //Info << "K ITERATION                          : " << j << endl;
@@ -178,7 +166,6 @@ void levelSetDistCalc::identifyNarrowBandCells()
         // Step 1: tag all cells intersected by the surface
         const auto& mesh = this->mesh();
         const auto& meshCellPoints = mesh.cellPoints();
-        const auto& meshCellEdges = mesh.cellEdges();
 
         forAll(cellLevelSetValues_, cellI)
         {
@@ -337,6 +324,8 @@ scalar levelSetDistCalc::signedDistance(const point& x) const
 
 scalar levelSetDistCalc::referenceLength() const
 {
+    // TODO (TT): implement a surface dependent reference length,
+    // e.g. based on maximum curvature
     return 1.0;
 }
 
@@ -369,9 +358,6 @@ void levelSetDistCalc::writeFields() const
 
     narrowBand.write();
 }
-
-// * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //
-
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

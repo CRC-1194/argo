@@ -35,7 +35,7 @@ namespace Foam {
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 defineTypeNameAndDebug(pandoraCurvatureExtension, false);
-defineRunTimeSelectionTable(pandoraCurvatureExtension, Dictionary);
+defineRunTimeSelectionTable(pandoraCurvatureExtension, Dictionary)
 
 // * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
 

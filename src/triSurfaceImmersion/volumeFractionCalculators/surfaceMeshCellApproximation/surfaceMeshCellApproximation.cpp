@@ -27,6 +27,7 @@ License
 
 #include "surfaceMeshCellApproximation.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 #include "addToRunTimeSelectionTable.H"
@@ -34,7 +35,7 @@ License
 #include "signedDistanceCalculator.hpp"
 #include "triSurfaceDistCalc.hpp"
 #include "refinementCriteria.hpp"
-#include "tetVofCalculator.hpp"
+#include "tetVolumeFractionCalculator.hpp"
 
 namespace Foam::TriSurfaceImmersion {
 
@@ -43,6 +44,7 @@ namespace Foam::TriSurfaceImmersion {
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+// TODO (TT): this is essentially the bounding ball criterion. It should be reused here.
 bool surfaceMeshCellApproximation::intersectionPossible(const label cellID) const
 {
     const auto& points = this->mesh().points();
@@ -52,16 +54,12 @@ bool surfaceMeshCellApproximation::intersectionPossible(const label cellID) cons
 
     // Idea: if all vertices of a cell have a distance less than the signed distance
     // of the centre to the interface, then there is no intersection possible (TT)
-    for(const auto pointI : cellPointIDs)
-    {
-        auto v = points[pointI] - centre;
-        if ((v & v) >= distSqr)
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::any_of
+           (
+                cellPointIDs.begin(),
+                cellPointIDs.end(),
+                [&](auto pI){auto v = points[pI] - centre; return (v & v) >= distSqr;}
+           );
 }
 
 surfaceMeshCellApproximation::cellDecompositionTuple 
@@ -273,7 +271,7 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
             tets,
             maxAllowedRefinementLevel_
         };
-        tetVofCalculator vofCalc{};
+        tetVolumeFractionCalculator vofCalc{};
         alpha[cellID] = vofCalc.accumulatedOmegaPlusVolume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cellID]; 
 
         // Limit volume fraction field

@@ -52,10 +52,10 @@ namespace Foam::TriSurfaceImmersion {
                 implicitSurface, 
                 ITstream, 
                 (
-                    ITstream is
+                    ITstream& is
                 ), 
                 (is)
-            );
+            )
 
             declareRunTimeSelectionTable
             (
@@ -66,11 +66,11 @@ namespace Foam::TriSurfaceImmersion {
                     const dictionary& configDict
                 ), 
                 (configDict)
-            );
+            )
 
             static autoPtr<implicitSurface> New(
                 const word& name, 
-                ITstream is
+                ITstream& is
             );
 
             static autoPtr<implicitSurface> New(
@@ -79,10 +79,8 @@ namespace Foam::TriSurfaceImmersion {
 
             implicitSurface() = default;
 
-            explicit implicitSurface(ITstream is) {};
-            explicit implicitSurface(const dictionary& configDict) {};
-
-            virtual ~implicitSurface() = default;
+            explicit implicitSurface(ITstream&) {};
+            explicit implicitSurface(const dictionary&) {};
 
             virtual scalar value(const vector&) const = 0;
             virtual scalar operator()(const vector&) const = 0;
@@ -99,21 +97,17 @@ namespace Foam::TriSurfaceImmersion {
 
             TypeName ("plane");
 
-            plane() = default;
-
             plane(vector position, vector normal);
 
-            explicit plane(ITstream is);
+            explicit plane(ITstream& is);
 
             explicit plane(const dictionary& configDict);
 
-            virtual ~plane() = default;
+            scalar value(const vector& x) const override;
 
-            virtual scalar value(const vector& x) const;
-
-            virtual scalar operator()(const vector& x) const;
+            scalar operator()(const vector& x) const override;
             
-            virtual vector grad(const vector& x) const;
+            vector grad(const vector& x) const override;
 
             vector position() const;
 
@@ -129,21 +123,17 @@ namespace Foam::TriSurfaceImmersion {
 
             TypeName ("sphere");
 
-            sphere() = default;
-
             sphere(vector center, scalar radius);
 
-            explicit sphere(ITstream is);
+            explicit sphere(ITstream& is);
 
             explicit sphere(const dictionary& configDict);
 
-            virtual ~sphere() = default;
+            scalar value(const vector& x) const override;
 
-            virtual scalar value(const vector& x) const;
+            scalar operator()(const vector& x) const override;
 
-            virtual scalar operator()(const vector& x) const;
-
-            virtual vector grad(const vector& x) const;
+            vector grad(const vector& x) const override;
 
             scalar volume() const override;
 
@@ -166,17 +156,15 @@ namespace Foam::TriSurfaceImmersion {
 
             ellipsoid(vector center, vector axes);
 
-            ellipsoid(ITstream is);
+            explicit ellipsoid(ITstream& is);
 
-            ellipsoid(const dictionary& configDict);
+            explicit ellipsoid(const dictionary& configDict);
 
-            virtual ~ellipsoid() = default;
+            scalar value(const vector& x) const override;
 
-            virtual scalar value(const vector& x) const;
-
-            virtual scalar operator()(const vector& x) const;
+            scalar operator()(const vector& x) const override;
             
-            virtual vector grad(const vector& x) const;
+            vector grad(const vector& x) const override;
 
             scalar volume() const override;
 
@@ -197,17 +185,15 @@ namespace Foam::TriSurfaceImmersion {
 
             sinc(vector origin, scalar amplitude, scalar omega);
 
-            sinc(ITstream is);
+            explicit sinc(ITstream& is);
 
-            sinc(const dictionary& configDict);
+            explicit sinc(const dictionary& configDict);
 
-            virtual ~sinc() = default;
+            scalar value(const vector& x) const override;
 
-            virtual scalar value(const vector& x) const;
-
-            virtual scalar operator()(const vector& x) const;
+            scalar operator()(const vector& x) const override;
             
-            virtual vector grad(const vector& x) const;
+            vector grad(const vector& x) const override;
 
             vector origin() const;
 
@@ -216,7 +202,7 @@ namespace Foam::TriSurfaceImmersion {
             scalar omega() const;
     };
 
-    class sincScaled : public implicitSurface // TODO: Scale the amplitude 
+    class sincScaled : public implicitSurface // TODO (TM): Scale the amplitude 
     {
         vector origin_; 
         scalar amplitude_; 
@@ -228,17 +214,15 @@ namespace Foam::TriSurfaceImmersion {
 
             sincScaled(vector origin, scalar amplitude, scalar omega);
 
-            sincScaled(ITstream is);
+            explicit sincScaled(ITstream& is);
 
-            sincScaled(const dictionary& configDict);
+            explicit sincScaled(const dictionary& configDict);
 
-            virtual ~sincScaled() = default;
+            scalar value(const vector& x) const override;
 
-            virtual scalar value(const vector& x) const;
-
-            virtual scalar operator()(const vector& x) const;
+            scalar operator()(const vector& x) const override;
             
-            virtual vector grad(const vector& x) const;
+            vector grad(const vector& x) const override;
 
             vector origin() const;
 
@@ -250,4 +234,3 @@ namespace Foam::TriSurfaceImmersion {
 } // End namespace Foam::TriSurfaceImmersion
 
 #endif
-

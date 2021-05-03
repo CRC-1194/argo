@@ -77,7 +77,7 @@ public:
             const dictionary& dict 
         ), 
         (mesh, dict)
-    );
+    )
 
     // Constructors
 

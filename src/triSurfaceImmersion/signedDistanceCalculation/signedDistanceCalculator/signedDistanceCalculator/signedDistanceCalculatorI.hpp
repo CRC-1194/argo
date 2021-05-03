@@ -26,15 +26,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 const dictionary& signedDistanceCalculator::configDict() const
 {
@@ -85,23 +76,5 @@ scalar signedDistanceCalculator::outOfNarrowBandValue() const
 {
     return outOfNarrowBandValue_;
 }
-
-// * * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Friend Functions  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Friend Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * IOstream Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Ostream Operator  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 
 // ************************************************************************* //

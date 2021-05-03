@@ -139,7 +139,7 @@ add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/levelSetDistCalc/levelSetDistCalc.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator/signedDistanceCalculator.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc/triSurfaceDistCalc.cpp
-    src/triSurfaceImmersion/tetrahedralTools/tetVofCalculator/tetVofCalculator.cpp
+    src/triSurfaceImmersion/tetrahedralTools/tetVolumeFractionCalculator/tetVolumeFractionCalculator.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation/surfaceMeshCellApproximation.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection/surfaceMeshCellIntersection.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
@@ -153,12 +153,12 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc
     src/triSurfaceImmersion/tetrahedralTools/AdaptiveTetCellRefinement
-    src/triSurfaceImmersion/tetrahedralTools/tetVofCalculator
+    src/triSurfaceImmersion/tetrahedralTools/tetVolumeFractionCalculator
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
 )
-target_include_directories("triSurfaceImmersion" PUBLIC SYSTEM
+target_include_directories("triSurfaceImmersion" SYSTEM PUBLIC 
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
@@ -205,7 +205,7 @@ target_include_directories("pandora" PUBLIC
     src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureRegularisation
     src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureTangentialAverageRegularisation
 )
-target_include_directories("pandora" PUBLIC SYSTEM
+target_include_directories("pandora" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
@@ -227,7 +227,7 @@ install(TARGETS
 # Testing only
 add_executable("geophaseUnitTest"
                 applications/test/geophaseUnitTest/geophaseUnitTest.cpp)
-target_include_directories("geophaseUnitTest" PRIVATE 
+            target_include_directories("geophaseUnitTest" SYSTEM PRIVATE 
     src/triSurfaceImmersion/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -249,7 +249,7 @@ set_tests_properties(unitTests PROPERTIES LABELS "UNIT")
 add_executable("pandoraTestCurvature"
     applications/test/pandoraTestCurvature/pandoraTestCurvature.cpp
 )
-target_include_directories("pandoraTestCurvature" PRIVATE
+target_include_directories("pandoraTestCurvature" SYSTEM PRIVATE 
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -289,7 +289,7 @@ target_link_libraries("surfaceInitSignedDistances"
 # Utilities: mesh manipulation
 add_executable("foamPerturbMesh"
                applications/utilities/mesh/manipulation/foamPerturbMesh/foamPerturbMesh.cpp)
-target_include_directories("foamPerturbMesh" PRIVATE 
+target_include_directories("foamPerturbMesh" SYSTEM PRIVATE 
     src/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -308,7 +308,7 @@ target_link_libraries("foamPerturbMesh"
 # Utilities: miscellaneous
 add_executable("computeLiquidVolume"
     applications/utilities/miscellaneous/computeLiquidVolume/computeLiquidVolume.cpp)
-target_include_directories("computeLiquidVolume" PRIVATE 
+target_include_directories("computeLiquidVolume" SYSTEM PRIVATE 
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
@@ -327,7 +327,7 @@ target_link_libraries("computeLiquidVolume"
 # Solvers
 add_executable("interIsoPandoraFoam"
     applications/solvers/interIsoPandoraFoam/interIsoPandoraFoam.cpp)
-target_include_directories("interIsoPandoraFoam" PRIVATE
+target_include_directories("interIsoPandoraFoam" SYSTEM PRIVATE 
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/sampling/lnInclude

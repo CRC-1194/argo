@@ -5,8 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2020 Tomislav Maric, Tobias Tolle, TU Darmstadt
-                       Anja Lippert, BOSCH CR 
+    Copyright (C) 2021 AUTHOR,AFFILIATION
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -26,46 +25,22 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "pandoraCurvatureNoExtension.hpp"
 
-#include "addToRunTimeSelectionTable.H"
-#include "dictionary.H"
-#include "fvc.H"
-
-namespace Foam {
-
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-defineTypeNameAndDebug(pandoraCurvatureNoExtension, false);
-addToRunTimeSelectionTable(pandoraCurvatureExtension, pandoraCurvatureNoExtension, Dictionary);
-
-
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-pandoraCurvatureNoExtension::pandoraCurvatureNoExtension()
-:
-    pandoraCurvatureExtension{dictionary{}}
-{}
-
-
-pandoraCurvatureNoExtension::pandoraCurvatureNoExtension(const dictionary& dict)
-:
-    pandoraCurvatureExtension{dict}
-{}
-
-
-// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void pandoraCurvatureNoExtension::extend(volScalarField&, const boolList&)
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+const vectorField& triSurfaceDistCalc::vertexNormals() const
 {
-    // Do nothing
+    return vertexNormals_;
+}
+
+const triSurfaceSearch& triSurfaceDistCalc::surfaceSearch() const
+{
+    return surfaceSearch_;
+}
+
+const triSurface& triSurfaceDistCalc::surface() const
+{
+    return surface_;
 }
 
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-} // End namespace Foam
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // ************************************************************************* //

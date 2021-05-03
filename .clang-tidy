@@ -1,5 +1,5 @@
 ---
-Checks:          'bugprone-*,clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,-cppcoreguidelines-avoid-magic-numbers,google-*,-google-runtime-references,hicpp-*,llvm-*,misc-*,modernize-*,-modernize-use-trailing-return-type,mpi-*,performance-*,readability-*,-readability-magic-numbers'
+Checks:          'bugprone-*,clang-diagnostic-*,clang-analyzer-*,cppcoreguidelines-*,-cppcoreguidelines-avoid-magic-numbers,google-*,-google-runtime-references,hicpp-*,llvm-*,misc-*,modernize-*,-modernize-use-trailing-return-type,-modernize-use-nodiscard,mpi-*,performance-*,readability-*,-readability-magic-numbers'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false

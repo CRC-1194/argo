@@ -32,21 +32,6 @@ License
 
 namespace Foam::TriSurfaceImmersion {
 
-// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Local Functions * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Static Member Functions * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 searchDistanceCalculator::searchDistanceCalculator
 (
@@ -81,7 +66,6 @@ searchDistanceCalculator::searchDistanceCalculator
             IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
-
         pMesh_,
         dimensionedScalar("pointSqrSearchDist", dimLength,0),
         "zeroGradient"
@@ -100,26 +84,12 @@ searchDistanceCalculator::searchDistanceCalculator
 }
 
 
-// * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void searchDistanceCalculator::writeFields() const
 {
     cellSqrSearchDist_.write();
     pointSqrSearchDist_.write();
 }
-
-
-// * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * Friend Functions  * * * * * * * * * * * * * * //
-
-// * * * * * * * * * * * * * * * Friend Operators  * * * * * * * * * * * * * //
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

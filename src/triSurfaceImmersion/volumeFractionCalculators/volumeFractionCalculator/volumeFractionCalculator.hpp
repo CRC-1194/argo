@@ -24,7 +24,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::volumeFractionCalculator
+    Foam::TriSurfaceImmersion::volumeFractionCalculator
 
 Description
     Interface class enabling runtime type selection for volume fraction
@@ -123,11 +123,11 @@ public:
 
     inline bool writeGeometry() const;
 
-    virtual const double nTrianglesPerCell() const = 0;
+    virtual double nTrianglesPerCell() const = 0;
 
-    virtual const label nIntersectedCells() const = 0;
+    virtual label nIntersectedCells() const = 0;
 
-    virtual const label maxRefinementLevel() const = 0;
+    virtual label maxRefinementLevel() const = 0;
 
     virtual const signedDistanceCalculator& sigDistCalc() const = 0;
 

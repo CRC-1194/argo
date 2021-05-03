@@ -54,12 +54,13 @@ namespace Foam::TriSurfaceImmersion {
 
 
 /*---------------------------------------------------------------------------*\
-                         Class signedDistanceCalculator Declaration
+                    Class signedDistanceCalculator Declaration
 \*---------------------------------------------------------------------------*/
 
 class signedDistanceCalculator
 {
 private:
+
     // Private Data
     const dictionary& dict_;
     const fvMesh& mesh_;
@@ -68,21 +69,21 @@ private:
     scalar outOfNarrowBandValue_;
 
 
-    // Private Member Functions
-
 protected:
 
-    // Create shared fields here?
     //- Signed distance at cell centers. 
-    volScalarField cellSignedDist_; 
+    volScalarField cellSignedDist_;
+
     //- Initial signed distance field given by the octree, used to correct the 
     //  signed distance propagated by the solution of the Laplace equation. 
-    volScalarField cellSignedDist0_;  
+    volScalarField cellSignedDist0_;
+
     //- Nearest surface triangle to a cell centre in the narrow band
     DynamicList<pointIndexHit> cellNearestTriangle_;
 
     //- Signed distance at cell corner points. 
     pointScalarField pointSignedDist_;
+
     //- Nearest surface triangle to a cell centre in the narrow band
     DynamicList<pointIndexHit> pointNearestTriangle_;
 
@@ -105,15 +106,11 @@ public:
 
 
     // Constructors
-
-        //- Construct from components
-        explicit signedDistanceCalculator(const dictionary& configDict, const fvMesh& mesh);
+    explicit signedDistanceCalculator(const dictionary& configDict, const fvMesh& mesh);
 
 
     // Selectors
-
-        //- Select default constructed
-        static autoPtr<signedDistanceCalculator> New(const dictionary& configDict, const fvMesh& mesh);
+    static autoPtr<signedDistanceCalculator> New(const dictionary& configDict, const fvMesh& mesh);
 
 
     // Member Functions
@@ -130,7 +127,7 @@ public:
     inline const volScalarField& cellSignedDist0() const;
     inline const pointScalarField& pointSignedDist() const;
 
-    // Check
+    // Computation
     virtual scalar signedDistance(const point& x) const = 0;
     virtual scalar referenceLength() const = 0;
     virtual label nSurfaceElements() const = 0;

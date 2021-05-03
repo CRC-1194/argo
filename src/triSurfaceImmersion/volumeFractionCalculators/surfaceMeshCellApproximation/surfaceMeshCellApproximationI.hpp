@@ -30,17 +30,17 @@ License
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-const double surfaceMeshCellApproximation::nTrianglesPerCell() const
+double surfaceMeshCellApproximation::nTrianglesPerCell() const
 {
     return sigDistCalcPtr_->nSurfaceElements()/interfaceCellIDs_.size();
 }
 
-const label surfaceMeshCellApproximation::nIntersectedCells() const
+label surfaceMeshCellApproximation::nIntersectedCells() const
 {
     return interfaceCellIDs_.size();
 }
 
-const label surfaceMeshCellApproximation::maxRefinementLevel() const
+label surfaceMeshCellApproximation::maxRefinementLevel() const
 {
     return maxUsedRefinementLevel_;
 }

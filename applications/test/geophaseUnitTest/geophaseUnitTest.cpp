@@ -51,7 +51,7 @@ using namespace Foam;
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 // Main program:
 
-int main(int argc, char *argv[])
+int main()
 {
     const double EPSILON = std::numeric_limits<double>::epsilon();
 

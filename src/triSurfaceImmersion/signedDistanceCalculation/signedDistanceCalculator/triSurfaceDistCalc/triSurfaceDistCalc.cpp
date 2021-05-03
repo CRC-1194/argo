@@ -273,21 +273,6 @@ scalar triSurfaceDistCalc::referenceLength() const
     return min_length;
 }
 
-const vectorField& triSurfaceDistCalc::vertexNormals() const
-{
-    return vertexNormals_;
-}
-
-const triSurfaceSearch& triSurfaceDistCalc::surfaceSearch() const
-{
-    return surfaceSearch_;
-}
-
-const triSurface& triSurfaceDistCalc::surface() const
-{
-    return surface_;
-}
-
 label triSurfaceDistCalc::nSurfaceElements() const
 {
     return surface_.size();
