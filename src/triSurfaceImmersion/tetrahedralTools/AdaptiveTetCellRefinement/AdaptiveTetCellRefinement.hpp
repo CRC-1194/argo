@@ -38,8 +38,6 @@ SourceFiles
 #ifndef adaptiveTetCellRefinement_H
 #define adaptiveTetCellRefinement_H
 
-#include "orientedPlane.hpp"
-
 #include "fvCFD.H"
 #include "tmp.H"
 

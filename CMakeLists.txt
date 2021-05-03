@@ -133,38 +133,30 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
 add_library("triSurfaceImmersion" SHARED
-    src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
-    src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
     src/triSurfaceImmersion/implicitSurfaces/implicitSurfaces.cpp
-    src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
-    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
-    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator/searchDistanceCalculator.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/levelSetDistCalc/levelSetDistCalc.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator/signedDistanceCalculator.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc/triSurfaceDistCalc.cpp
-    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
+    src/triSurfaceImmersion/tetrahedralTools/tetVofCalculator/tetVofCalculator.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation/surfaceMeshCellApproximation.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection/surfaceMeshCellIntersection.cpp
+    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
 )
 target_include_directories("triSurfaceImmersion" PUBLIC
-    src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection
-    src/triSurfaceImmersion/geomMeshIntersection/geomReconstructError
-    src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools
     src/triSurfaceImmersion/implicitSurfaces
     src/triSurfaceImmersion/include
-    src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement
-    src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator
-    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/levelSetDistCalc
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc
-    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
+    src/triSurfaceImmersion/tetrahedralTools/AdaptiveTetCellRefinement
+    src/triSurfaceImmersion/tetrahedralTools/tetVofCalculator
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection
+    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
 )
 target_include_directories("triSurfaceImmersion" PUBLIC SYSTEM
     ${of_src_path}/finiteVolume/lnInclude

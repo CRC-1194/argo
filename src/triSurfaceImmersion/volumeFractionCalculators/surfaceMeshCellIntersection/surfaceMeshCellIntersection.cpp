@@ -33,7 +33,6 @@ License
 #include <limits>
 
 #include "addToRunTimeSelectionTable.H"
-#include "volFieldsFwd.H"
 
 #include "Geophase.hpp"
 

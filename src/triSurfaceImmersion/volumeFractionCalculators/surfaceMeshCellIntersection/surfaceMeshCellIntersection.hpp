@@ -41,7 +41,6 @@ SourceFiles
 #define surfaceMeshCellIntersection_H
 
 #include "triSurfaceDistCalc.hpp"
-#include "volFieldsFwd.H"
 #include "volumeFractionCalculator.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -35,10 +35,6 @@ License
 #include "pointIndexHit.H"
 #include "pointMesh.H"
 
-#include "insideOutsidePropagation.hpp"
-#include "signedDistanceCalculator.hpp"
-#include "volFieldsFwd.H"
-
 namespace Foam::TriSurfaceImmersion {
 
     defineTypeNameAndDebug(volumeFractionCalculator, 0);

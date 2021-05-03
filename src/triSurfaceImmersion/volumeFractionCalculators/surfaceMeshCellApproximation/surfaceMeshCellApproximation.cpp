@@ -35,7 +35,6 @@ License
 #include "triSurfaceDistCalc.hpp"
 #include "refinementCriteria.hpp"
 #include "tetVofCalculator.hpp"
-#include "triSurfaceAdapter.hpp"
 
 namespace Foam::TriSurfaceImmersion {
 

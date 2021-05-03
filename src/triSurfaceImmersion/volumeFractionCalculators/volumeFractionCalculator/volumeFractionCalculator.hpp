@@ -45,16 +45,13 @@ SourceFiles
 #include "pointFields.H"
 #include "pointIndexHit.H"
 #include "runTimeSelectionTables.H"
-#include "signedDistanceCalculator.hpp"
 #include "surfaceFields.H"
 #include "Time.H"
 #include "triSurface.H"
 #include "typeInfo.H"
 #include "volFields.H"
 
-#include "searchDistanceCalculator.hpp"
-#include "triSurfaceDistCalc.hpp"
-#include "volFieldsFwd.H"
+#include "signedDistanceCalculator.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
