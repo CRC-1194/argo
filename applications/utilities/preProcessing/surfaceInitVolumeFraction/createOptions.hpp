@@ -1,21 +1,14 @@
     argList::addNote
     (
-        "Initialize a volume fraction field from a triangulated surface the SMCI/A algorithm"
+        "Initialize a volume fraction field from a triangulated surface or level set using the SMCI/A algorithm"
     );
 
     argList::addOption
     (
         "surfaceType",
         "triSurface / levelSet"
-        "Surface type, meaning either a triSurface, e.g. from an STL, or a level set."
+        "Surface type, meaning either a triSurface, e.g. from an STL, or a level set. Default: triSurface"
     );
-
-    argList::addOption
-    (
-        "narrowBandWidth", 
-        "scalar",
-        "Number of cells in interface normal direction constituting the narrow band. Default: 4.0."
-    ); 
 
     argList::addOption
     (
@@ -26,23 +19,30 @@
 
     argList::addOption
     (
+        "narrowBandWidth", 
+        "scalar",
+        "Number of cells in interface normal direction constituting the narrow band. Default: 4.0"
+    ); 
+
+    argList::addOption
+    (
         "fieldName", 
         "alpha.water",
-        "Name of the volume fraction field." 
+        "Name of the volume fraction field. Default: alpha.water" 
     ); 
 
     argList::addOption
     (
         "algorithm", 
         "SMCI/SMCA",
-        "Name of the volume fraction calculator. Default: SMCI." 
+        "Name of the volume fraction calculator. Default: SMCI" 
     ); 
 
     argList::addOption
     (
         "refinementLevel", 
         "label",
-        "Maximum refinement level to be used (SMCA only). Default: auto mode."
+        "Maximum refinement level to be used (SMCA only). Default: -1 (auto mode)"
     ); 
 
     argList::addBoolOption
@@ -54,7 +54,7 @@
     argList::addBoolOption
     (
         "invert",
-        "Invert the computed volume fraction field: cells outside of the surface are set to 1."
+        "Invert the computed volume fraction field with respect to the surface orientation."
     );
 
     argList::addBoolOption

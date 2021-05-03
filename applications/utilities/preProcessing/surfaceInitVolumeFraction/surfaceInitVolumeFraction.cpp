@@ -27,7 +27,8 @@ Application
     surfaceInitVolumeFraction
 
 Description
-    Initialize a volume fraction field from a triangulated surface.
+    Initialize a volume fraction field from a triangulated surface or a level
+    set given by an implicit function.
     
     Computation of volume fractions in interface cells is either performed by
     the SMCI or SMCA algorithm.
@@ -58,11 +59,6 @@ Description
 
 // Argo headers
 #include "volumeFractionCalculator.hpp"
-
-// Headers for prototype
-#include "AdaptiveTetCellRefinement.hpp"
-#include "implicitSurfaces.hpp"
-#include "refinementCriteria.hpp"
 
 using namespace Foam::TriSurfaceImmersion;
 
@@ -98,6 +94,9 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
+    // * * * * Configuration * * * *
+    // Precedence: commandline option > dictionary value > default
+
     // Read from dictionary if present
     IOdictionary initDict
                  {
@@ -109,9 +108,6 @@ int main(int argc, char *argv[])
                        IOobject::AUTO_WRITE
                     }
                  };
-
-    // * * * * Configuration * * * *
-    // Precedence: commandline option > dictionary value > default
 
     // Configure signed distance calculator
     auto& distDict = initDict.subDictOrAdd("distCalc");
@@ -129,8 +125,6 @@ int main(int argc, char *argv[])
         setOptionByPrecedence<word>(initDict, args, "algorithm", "SMCI");
     setOptionByPrecedence<label>(initDict, args, "refinementLevel", -1);
     setOptionByPrecedence<Switch>(initDict, args, "writeGeometry", false);
-    // TODO (TT): move invert option to signed distance calculator. This 
-    // automatically causes an inversion of volume fractions.
     auto invertVolumeFraction = 
         setOptionByPrecedence<Switch>(initDict, args, "invert", false);
     auto writeAllFields = 
@@ -209,7 +203,5 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-//} // End namespace Foam::TriSurfaceImmersion
 
 // ************************************************************************* //

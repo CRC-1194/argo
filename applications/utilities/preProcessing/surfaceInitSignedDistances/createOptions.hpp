@@ -1,27 +1,27 @@
     argList::addNote
     (
-        "Initialize a signed distance field from an oriented, triangulated surface."
+        "Initialize a signed distance field from an oriented, triangulated surface or a level set."
     );
 
     argList::addOption
     (
         "fieldName", 
         "signedDistance",
-        "Name of the signed distance field. Default: signedDistance." 
+        "Name of the signed distance field. Default: signedDistance" 
     ); 
 
     argList::addOption
     (
         "surfaceType",
         "triSurface / levelSet"
-        "Surface type, meaning either a triSurface, e.g. from an STL, or a level set."
+        "Surface type, meaning either a triSurface, e.g. from an STL, or a level set. Default: triSurface"
     );
 
     argList::addOption
     (
         "surfaceFile",
         "Surface mesh file."
-        "STL or VTK file containing the interface description. Requires a consistent normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose. Default: surface.stl."
+        "STL or VTK file containing the interface description. Requires a consistent normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose. Default: surface.stl"
     );
 
     argList::addOption

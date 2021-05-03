@@ -27,7 +27,8 @@ Application
     surfaceInitSignedDistances
 
 Description
-    Compute signed distances from an oriented triangulated surface.
+    Compute signed distances from an oriented triangulated surface or
+    a level set given by an implicit function.
 
     Relies on the implementation of the SMCI/A algorithm described in
 
