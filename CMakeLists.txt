@@ -16,7 +16,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # - Dependency: geophase
 FetchContent_Declare(geophase
-    GIT_REPOSITORY          git@git.rwth-aachen.de:leia/geophase.git
+    GIT_REPOSITORY          https://git.rwth-aachen.de/leia/geophase.git
     # TODO: Replace the branch with a new GIT_TAG for geophase as soon as everything runs.  
     #       geophase modifications are needed to make geometrical init work, so the geom-vof-init 
     #       branch is used. 
