@@ -87,12 +87,13 @@ param_study:
     - cd cases/initialization/3Dinit
     - ./create_and_run_levelset.sh
     - ./reproduce_publication_results.sh
-      #- cd cases/hex2D && ./studyRun 
 
   artifacts:
     paths:
         - cases/initialization/3Dinit/*.csv 
         - cases/initialization/3Dinit/*.pdf 
+        - cases/initialization/3Dinit/*.ipynb
+        - cases/initialization/3Dinit/results/*
 
 #convert_notebooks:
 #  stage: visualization 
