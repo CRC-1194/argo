@@ -14,13 +14,11 @@ build_debug:
     ## Configure the OpenFOAM environment
     ##
     - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
-    - pwd
-    - ls -l
 
     ##
     ## Build and install
     ##
-    - ./install Debug
+    - ./install.sh Debug
 
 build_release:
   stage: building
@@ -34,7 +32,7 @@ build_release:
     ##
     ## Build and install
     ##
-    - ./install
+    - ./install.sh
 
     ##
     ## OpenFOAM stores app and library binaries outside of project folder!
