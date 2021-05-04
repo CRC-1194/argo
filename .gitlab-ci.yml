@@ -63,7 +63,7 @@ build_release:
 param_study:
   stage: running
   dependencies:
-    - build
+    - build_release
   script: 
 
     ##
