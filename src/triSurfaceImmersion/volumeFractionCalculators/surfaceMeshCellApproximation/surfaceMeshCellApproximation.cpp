@@ -45,6 +45,7 @@ namespace Foam::TriSurfaceImmersion {
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 // TODO (TT): this is essentially the bounding ball criterion. It should be reused here.
+//            Then merge this function with `findIntersectedCells`.
 bool surfaceMeshCellApproximation::intersectionPossible(const label cellID) const
 {
     const auto& points = this->mesh().points();
@@ -73,6 +74,7 @@ surfaceMeshCellApproximation::decomposeCell(const label cellID) const
     const auto& cellSignedDist = sigDistCalcPtr_->cellSignedDist0();
 
     std::vector<indexedTet> tets(nTets(cellID));
+
     // Using a barycentric decomposition, the number of unique points
     // is the sum of n_cell_vertices + n_cell_faces + 1 (the cell centre) (TT).
     std::vector<point> points(cellVertexIDs.size() + thisCell.size() + 1);
@@ -134,86 +136,6 @@ label surfaceMeshCellApproximation::nTets(const label cellID) const
     return nTet;
 }
 
-/*
-surfaceMeshCellApproximation::searchSphere
-surfaceMeshCellApproximation::cellInterfaceSearchSphere(const label cellID) const
-{
-    const auto& cellToVertex = this->mesh().cellPoints()[cellID];
-    const auto& cellNearestTriangle = this->cellNearestTriangle();
-    const auto& pointNearestTriangle = this->pointNearestTriangle();
-
-    std::vector<vector> closestPoints(cellToVertex.size());
-
-    for (auto idx = 0; idx != cellToVertex.size(); ++idx)
-    {
-        closestPoints[idx] = pointNearestTriangle[cellToVertex[idx]].hitPoint();
-    }
-
-    point centre = std::accumulate(closestPoints.begin(), closestPoints.end(), vector{0,0,0})/closestPoints.size();
-
-    scalar radiusSquared = 0.0;
-
-    for (const auto& v : closestPoints)
-    {
-        radiusSquared = std::max(radiusSquared, (v - centre)&(v - centre)); 
-    }
-
-    // Special case: all cell vertices have the same closest point.
-    //      Thus, the bounding sphere of this point set has a radius of
-    //      zero. In this case, relate the search radius to the edge length
-    //      of the closest triangle. (TT)
-    if (radiusSquared < SMALL)
-    {
-        const auto& v = this->surface().points();
-        const auto& t = this->surface()[cellNearestTriangle[cellID].index()];
-        radiusSquared = ((v[t[0]] - centre)&(v[t[0]] - centre)) +
-                        ((v[t[1]] - centre)&(v[t[1]] - centre)) +
-                        ((v[t[2]] - centre)&(v[t[2]] - centre));
-    }
-
-    assert(radiusSquared > 1.0e-15 && "Radius of search square is zero.");
-
-    return searchSphere{centre, radiusSquared};
-}
-*/
-
-/*
-// TODO (TT): if this works as intended, restructure!
-triSurface surfaceMeshCellApproximation::surfaceSubset
-(
-    vectorField& vertexNormals,
-    const label cellID
-) const
-{
-    auto boundingSphere = cellInterfaceSearchSphere(cellID);
-    auto trisInSphere = this->signedDistCalc().surfaceSearch().tree().findSphere(boundingSphere.centre, boundingSphere.radiusSquared);
-    boolList includeTri(this->surface().size(), false);
-    labelList pointMap{};
-    labelList faceMap{};
-    for (const auto idx : trisInSphere)
-    {
-        includeTri[idx] = true;
-    }
-
-    assert(trisInSphere.size() > 0 && "Surface subset is empty set.");
-
-    // Return a signed distance calculator, reuse the computed normal field.
-    // Write surface subsets with normal field for inspection
-    //return this->surface().subsetMesh(includeTri, pointMap, faceMap);
-    auto subset = this->surface().subsetMesh(includeTri, pointMap, faceMap);
-
-    // Extract vertex normal field subset
-    vertexNormals.resize(pointMap.size());
-    const auto& globalVertexNormals = this->signedDistCalc().vertexNormals();
-    forAll(pointMap, I)
-    {
-        vertexNormals[I] = globalVertexNormals[pointMap[I]];
-    }
-
-    return subset;
-}
-*/
-
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 surfaceMeshCellApproximation::surfaceMeshCellApproximation
@@ -231,7 +153,7 @@ surfaceMeshCellApproximation::surfaceMeshCellApproximation
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 {
-    bulkVolumeFraction(alpha, sigDistCalcPtr_->cellSignedDist());
+    bulkVolumeFraction(alpha);
     findIntersectedCells();
 
     Info<< "Computing volume fraction for interface cells..." << endl;
@@ -241,25 +163,11 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
     const auto& V = this->mesh().V();
     label max_refine = 0;
 
-    //vectorField surfaceVertexNormals{};
     // TODO (TT): OpenMP disbaled for now. Loop does not execute correct with
     // more than two threads. See issue on GitLab.
     //#pragma omp parallel for reduction(max:max_refine)
     for (const auto cellID : interfaceCellIDs_)
     {
-        //auto subsetSurface = surfaceSubset(surfaceVertexNormals, cellID);
-        //triSurfaceSearch subsetSearch{subsetSurface};
-        //scalar s = 2.0*Foam::sqrt(this->searchDistCalc().cellSqrSearchDist()[cellID]);
-        //triSurfaceAdapter adapter{subsetSurface, subsetSearch, vector{s, s, s}};
-        //triSurfaceDistCalc subsetCalc{subsetSurface, surfaceVertexNormals};
-        //tmp<signedDistanceCalculator> sigDistCalcPtr{new signedDistanceCalculator{subsetSurface, surfaceVertexNormals}};
-        
-        // TODO (TT): Add referenceLength member function to signedDistanceCalculator class
-        // and use this with global surface instead of subset surface + triSurfaceAdapter.
-        // Then check performance difference and if it is worthwhile to implement
-        // the subset functionality.
-        // Alternatively: check if there is a way to tell the octree search where to start.
-        // If so, use the cellcentres closest point as start.
         auto [tets, points, signed_dist] = decomposeCell(cellID);
 
         adaptiveTetCellRefinement<signedDistanceCalculator,boundingBallCriterion> refiner
@@ -274,12 +182,12 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
         tetVolumeFractionCalculator vofCalc{};
         alpha[cellID] = vofCalc.accumulatedOmegaPlusVolume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cellID]; 
 
-        // Limit volume fraction field
+        // Bound volume fraction field
         alpha[cellID] = max(min(alpha[cellID], 1.0), 0.0);
 
         max_refine = std::max(refiner.refinementLevel(), max_refine);
 
-        if(this->writeGeometry())
+        if (this->writeGeometry())
         {
             refiner.writeTets(cellID);
         }

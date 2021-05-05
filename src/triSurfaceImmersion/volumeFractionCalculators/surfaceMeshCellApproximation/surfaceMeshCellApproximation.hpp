@@ -66,11 +66,6 @@ private:
     // Private types
     using cellDecompositionTuple =
         std::tuple<std::vector<indexedTet>, std::vector<point>, std::vector<scalar>>;
-    struct searchSphere
-    {
-        vector centre;
-        scalar radiusSquared;
-    };
 
     // Private data
     autoPtr<signedDistanceCalculator> sigDistCalcPtr_;
@@ -82,8 +77,6 @@ private:
     bool intersectionPossible(label cellID) const;
     cellDecompositionTuple decomposeCell(label cellID) const;
     label nTets(label cellID) const;
-    //searchSphere cellInterfaceSearchSphere(label cellID) const;
-    //triSurface surfaceSubset(vectorField& vertexNormals, label cellID) const;
 
 
 public:

@@ -89,13 +89,9 @@ volumeFractionCalculator::New
 // the signed distance Calculator. However, there happen strange things when accessing
 // it through "sigDistCalc()".
 // For now, this is a functioning workaroud.
-void volumeFractionCalculator::bulkVolumeFraction
-(
-    volScalarField& alpha,
-    const volScalarField& inOut
-)
+void volumeFractionCalculator::bulkVolumeFraction(volScalarField& alpha)
 {
-    alpha = pos(inOut);
+    alpha = pos(this->sigDistCalc().cellSignedDist());
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
