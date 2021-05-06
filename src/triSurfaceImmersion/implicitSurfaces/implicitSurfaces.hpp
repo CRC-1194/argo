@@ -23,214 +23,290 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::TriSurfaceImmersion::
+
 Description
-    Implicit surfaces used for NN input data generation.
+    Implicit surfaces described by a level set.
 
 \*---------------------------------------------------------------------------*/
 
 #ifndef implicitSurfaces_H
 #define implicitSurfaces_H
 
-#include "dictionary.H"
-#include "typeInfo.H"
-#include "autoPtr.H"
-#include "runTimeSelectionTables.H"
 #include "ITstream.H"
+#include "autoPtr.H"
+#include "dictionary.H"
+#include "runTimeSelectionTables.H"
+#include "typeInfo.H"
 #include "vector.H"
 
-namespace Foam::TriSurfaceImmersion {
+namespace Foam::TriSurfaceImmersion
+{
+/*---------------------------------------------------------------------------*\
+                    Class implicitSurface Declaration
+\*---------------------------------------------------------------------------*/
 
-    class implicitSurface
-    {
-        public: 
+class implicitSurface
+{
+public:
+    // Static Data Members
+    TypeName("implicitSurface");
 
-            TypeName("implicitSurface");
+    declareRunTimeSelectionTable(
+        autoPtr, implicitSurface, ITstream, (ITstream & is), (is));
 
-            declareRunTimeSelectionTable
-            (
-                autoPtr,
-                implicitSurface, 
-                ITstream, 
-                (
-                    ITstream& is
-                ), 
-                (is)
-            )
+    declareRunTimeSelectionTable(autoPtr,
+        implicitSurface,
+        Dictionary,
+        (const dictionary& configDict),
+        (configDict));
 
-            declareRunTimeSelectionTable
-            (
-                autoPtr,
-                implicitSurface, 
-                Dictionary, 
-                (
-                    const dictionary& configDict
-                ), 
-                (configDict)
-            )
 
-            static autoPtr<implicitSurface> New(
-                const word& name, 
-                ITstream& is
-            );
+    // Constructors
+    //- Default constructor
+    implicitSurface() = default;
 
-            static autoPtr<implicitSurface> New(
-                const dictionary& configDict
-            );
+    //- Construct from ITstream
+    explicit implicitSurface(ITstream&){};
 
-            implicitSurface() = default;
+    //- Construct from dictionary
+    explicit implicitSurface(const dictionary&){};
 
-            explicit implicitSurface(ITstream&) {};
-            explicit implicitSurface(const dictionary&) {};
 
-            virtual scalar value(const vector&) const = 0;
-            virtual scalar operator()(const vector&) const = 0;
-            virtual vector grad(const vector&) const = 0;
-            virtual scalar volume() const;
-    };
+    // Selectors
+    static autoPtr<implicitSurface> New(const word& name, ITstream& is);
+    static autoPtr<implicitSurface> New(const dictionary& configDict);
 
-    class plane : public implicitSurface
-    {
-        vector position_; 
-        vector normal_; 
 
-        public:
+    // Member functions
+    //- Returns scalar value at point x
+    virtual scalar value(const vector&) const = 0;
 
-            TypeName ("plane");
+    //- Returns scalar value at point x
+    virtual scalar operator()(const vector&) const = 0;
 
-            plane(vector position, vector normal);
+    //- Return gradient at point x
+    virtual vector grad(const vector&) const = 0;
 
-            explicit plane(ITstream& is);
+    //- Return the volume enclosed by the surface.
+    //  If the surface is not closed, a negative value is returned.
+    virtual scalar volume() const;
+};
 
-            explicit plane(const dictionary& configDict);
 
-            scalar value(const vector& x) const override;
+class plane : public implicitSurface
+{
+    //- Reference point determining the postion of the plane
+    vector position_;
 
-            scalar operator()(const vector& x) const override;
-            
-            vector grad(const vector& x) const override;
+    //- Normal orientation of the plane
+    vector normal_;
 
-            vector position() const;
+public:
 
-            vector normal() const;
-    };
+    // Static Data Members
+    TypeName("plane");
 
-    class sphere : public implicitSurface
-    {
-        vector center_; 
-        scalar radius_; 
 
-        public:
+    // Constructors
+    //- Construct from reference point and normal vector
+    plane(vector position, vector normal);
 
-            TypeName ("sphere");
+    //- Contruct from ITstream
+    explicit plane(ITstream& is);
 
-            sphere(vector center, scalar radius);
+    //- Construct from dictionary
+    explicit plane(const dictionary& configDict);
 
-            explicit sphere(ITstream& is);
+    
+    // Member functions
+    scalar value(const vector& x) const override;
 
-            explicit sphere(const dictionary& configDict);
+    scalar operator()(const vector& x) const override;
 
-            scalar value(const vector& x) const override;
+    vector grad(const vector& x) const override;
 
-            scalar operator()(const vector& x) const override;
+    //- Return plane's reference point
+    vector position() const;
 
-            vector grad(const vector& x) const override;
+    //- Return plane unit normal
+    vector normal() const;
+};
 
-            scalar volume() const override;
 
-            vector center() const;
+class sphere : public implicitSurface
+{
+    //- Sphere centre
+    vector center_;
 
-            scalar radius() const;
-    };
+    //- Sphere radius
+    scalar radius_;
 
-    class ellipsoid : public implicitSurface
-    {
-        vector center_; 
-        vector axes_; 
-        vector axesSqr_;
+public:
 
-        void setAxesSqr(const vector& axes);
+    // Static Data Members
+    TypeName("sphere");
 
-        public:
 
-            TypeName ("ellipsoid");
+    // Constructors
+    //- Construct from centre and radius
+    sphere(vector center, scalar radius);
 
-            ellipsoid(vector center, vector axes);
+    //- Construct from ITstream
+    explicit sphere(ITstream& is);
 
-            explicit ellipsoid(ITstream& is);
+    //- Construct from dictionary
+    explicit sphere(const dictionary& configDict);
 
-            explicit ellipsoid(const dictionary& configDict);
+    
+    // Member functions
+    scalar value(const vector& x) const override;
 
-            scalar value(const vector& x) const override;
+    scalar operator()(const vector& x) const override;
 
-            scalar operator()(const vector& x) const override;
-            
-            vector grad(const vector& x) const override;
+    vector grad(const vector& x) const override;
 
-            scalar volume() const override;
+    scalar volume() const override;
 
-            vector center() const;
+    //- Return sphere's centre
+    vector center() const;
 
-            vector axes() const;
-    };
+    //- Return sphere's radius
+    scalar radius() const;
+};
 
-    class sinc : public implicitSurface
-    {
-        vector origin_; 
-        scalar amplitude_; 
-        scalar omega_;
 
-        public:
+class ellipsoid : public implicitSurface
+{
+    //- Ellipsoid centre
+    vector center_;
 
-            TypeName ("sinc");
+    //- Ellipsoid semi axes in x, y and z direction
+    vector axes_;
 
-            sinc(vector origin, scalar amplitude, scalar omega);
+    //- Ellipsoid semi axes squared. Used for Computation.
+    vector axesSqr_;
 
-            explicit sinc(ITstream& is);
+    //- Compute the squared semi axes
+    void setAxesSqr(const vector& axes);
 
-            explicit sinc(const dictionary& configDict);
+public:
 
-            scalar value(const vector& x) const override;
+    // Static Data members
+    TypeName("ellipsoid");
 
-            scalar operator()(const vector& x) const override;
-            
-            vector grad(const vector& x) const override;
 
-            vector origin() const;
+    // Constructors
+    //- Construct from centre and vector of semi axes
+    ellipsoid(vector center, vector axes);
 
-            scalar amplitude() const;
+    //- Construct from ITstream
+    explicit ellipsoid(ITstream& is);
 
-            scalar omega() const;
-    };
+    //- Construct from dictionary
+    explicit ellipsoid(const dictionary& configDict);
 
-    class sincScaled : public implicitSurface // TODO (TM): Scale the amplitude 
-    {
-        vector origin_; 
-        scalar amplitude_; 
-        scalar omega_;
 
-        public:
+    // Member functions
+    scalar value(const vector& x) const override;
 
-            TypeName ("sincScaled");
+    scalar operator()(const vector& x) const override;
 
-            sincScaled(vector origin, scalar amplitude, scalar omega);
+    vector grad(const vector& x) const override;
 
-            explicit sincScaled(ITstream& is);
+    scalar volume() const override;
 
-            explicit sincScaled(const dictionary& configDict);
+    //- Return ellipsoid's centre
+    vector center() const;
 
-            scalar value(const vector& x) const override;
+    //- Return ellipsoid's semi axes
+    vector axes() const;
+};
 
-            scalar operator()(const vector& x) const override;
-            
-            vector grad(const vector& x) const override;
 
-            vector origin() const;
+class sinc : public implicitSurface
+{
+    //- Sinc function's origin
+    vector origin_;
 
-            scalar amplitude() const;
+    //- Amplitude
+    scalar amplitude_;
 
-            scalar omega() const;
-    };
+    //- Frequency
+    scalar omega_;
+
+public:
+
+    // Static Data members
+    TypeName("sinc");
+
+
+    // Constructors
+    //- Construct from orign, amplitude and frequency
+    sinc(vector origin, scalar amplitude, scalar omega);
+
+    //- Construct from ITstream
+    explicit sinc(ITstream& is);
+
+    //- Construct from dictionary
+    explicit sinc(const dictionary& configDict);
+
+
+    //Member functions
+    scalar value(const vector& x) const override;
+
+    scalar operator()(const vector& x) const override;
+
+    vector grad(const vector& x) const override;
+
+    //- Return function's origin
+    vector origin() const;
+
+    //- Return amplitude
+    scalar amplitude() const;
+
+    //- Return frequency
+    scalar omega() const;
+};
+
+
+/* Disbaled for now (TT)
+class sincScaled : public implicitSurface // TODO (TM): Scale the amplitude
+{
+    vector origin_;
+    scalar amplitude_;
+    scalar omega_;
+
+public:
+    TypeName("sincScaled");
+
+    sincScaled(vector origin, scalar amplitude, scalar omega);
+
+    explicit sincScaled(ITstream& is);
+
+    explicit sincScaled(const dictionary& configDict);
+
+    scalar value(const vector& x) const override;
+
+    scalar operator()(const vector& x) const override;
+
+    vector grad(const vector& x) const override;
+
+    vector origin() const;
+
+    scalar amplitude() const;
+
+    scalar omega() const;
+};
+*/
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam::TriSurfaceImmersion
 
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
 #endif
+
+// ************************************************************************* //
