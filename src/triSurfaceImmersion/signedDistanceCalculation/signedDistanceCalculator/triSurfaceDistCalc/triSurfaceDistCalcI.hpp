@@ -32,10 +32,12 @@ const vectorField& triSurfaceDistCalc::vertexNormals() const
     return vertexNormals_;
 }
 
+
 const triSurfaceSearch& triSurfaceDistCalc::surfaceSearch() const
 {
     return surfaceSearch_;
 }
+
 
 const triSurface& triSurfaceDistCalc::surface() const
 {

@@ -30,54 +30,39 @@ License
 #include "dimensionedScalarFwd.H"
 #include "fvc.H"
 
-namespace Foam::TriSurfaceImmersion {
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-searchDistanceCalculator::searchDistanceCalculator
-(
-    const fvMesh& mesh,
-    scalar searchDistFactor 
-)
-:
-    mesh_{mesh},
-    searchDistFactor_{searchDistFactor},
-    cellSqrSearchDist_
-    {
-        IOobject
-        (
-            "cellSqrSearchDist", 
-            mesh_.time().timeName(), 
-            mesh_, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh,
-        dimensionedScalar{"defaultCellSearchDist", pow(dimLength, 2), mesh.bounds().mag()}
-    },
-    pMesh_{mesh},
-    cellsToPointsInterp_{mesh},
-    pointSqrSearchDist_ 
-    {
-        IOobject
-        (
-            "pointSqrSearchDist", 
-            mesh_.time().timeName(), 
-            mesh_, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        pMesh_,
-        dimensionedScalar("pointSqrSearchDist", dimLength,0),
-        "zeroGradient"
-    }
+namespace Foam::TriSurfaceImmersion
 {
-    // Narrow band around the interface based on search distances is only enabled for
-    // for positive search distance factors.
-    // Negative values enable signed distance calculation in the entrire domain. (TT
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+searchDistanceCalculator::searchDistanceCalculator(
+    const fvMesh& mesh, scalar searchDistFactor)
+    : mesh_{mesh},
+      searchDistFactor_{searchDistFactor},
+      cellSqrSearchDist_{IOobject("cellSqrSearchDist",
+                             mesh_.time().timeName(),
+                             mesh_,
+                             IOobject::NO_READ,
+                             IOobject::NO_WRITE),
+          mesh,
+          dimensionedScalar{
+              "defaultCellSearchDist", pow(dimLength, 2), mesh.bounds().mag()}},
+      pMesh_{mesh},
+      cellsToPointsInterp_{mesh},
+      pointSqrSearchDist_{IOobject("pointSqrSearchDist",
+                              mesh_.time().timeName(),
+                              mesh_,
+                              IOobject::NO_READ,
+                              IOobject::NO_WRITE),
+          pMesh_,
+          dimensionedScalar("pointSqrSearchDist", dimLength, 0),
+          "zeroGradient"}
+{
+    // Narrow band around the interface based on search distances is only
+    // enabled for for positive search distance factors. Negative values enable
+    // signed distance calculation in the entrire domain. (TT
     if (searchDistFactor_ > 0.0)
     {
-        cellSqrSearchDist_ =
-            fvc::average(pow(mesh.deltaCoeffs(), -2))*searchDistFactor_*searchDistFactor_;
+        cellSqrSearchDist_ = fvc::average(pow(mesh.deltaCoeffs(), -2)) *
+            searchDistFactor_ * searchDistFactor_;
     }
 
     cellsToPointsInterp_.interpolate(cellSqrSearchDist_, pointSqrSearchDist_);

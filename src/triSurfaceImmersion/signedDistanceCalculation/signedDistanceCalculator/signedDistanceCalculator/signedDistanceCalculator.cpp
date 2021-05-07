@@ -29,64 +29,46 @@ License
 
 #include "dictionary.H"
 
-namespace Foam::TriSurfaceImmersion {
+namespace Foam::TriSurfaceImmersion
+{
 
-    defineTypeNameAndDebug(signedDistanceCalculator, 0);
-    defineRunTimeSelectionTable(signedDistanceCalculator, Dictionary)
+defineTypeNameAndDebug(signedDistanceCalculator, 0);
+defineRunTimeSelectionTable(signedDistanceCalculator, Dictionary);
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * *
 
 signedDistanceCalculator::signedDistanceCalculator(
-    const dictionary& configDict,
-    const fvMesh& mesh
-)
-:
-    dict_{configDict},
-    mesh_{mesh},
-    pMesh_{mesh},
-    narrowBandWidth_{configDict.get<scalar>("narrowBandWidth")},
-    outOfNarrowBandValue_{configDict.get<scalar>("bulkValue")},
-    cellSignedDist_
-    {
-        IOobject
-        (
-            "cellSignedDist", 
-            mesh.time().timeName(), 
-            mesh, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh,
-        dimensionedScalar("cellSignedDist", dimLength,0),
-        "zeroGradient"
-    },
-    cellSignedDist0_{"cellSignedDist0", cellSignedDist_}, 
-    cellNearestTriangle_{},
-    pointSignedDist_ 
-    {
-        IOobject
-        (
-            "pointSignedDist", 
-            mesh.time().timeName(), 
-            mesh_, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        pMesh_,
-        dimensionedScalar("pointSignedDist", dimLength,0),
-        "zeroGradient"
-    },
-    pointNearestTriangle_{}
-{}
+    const dictionary& configDict, const fvMesh& mesh)
+    : dict_{configDict}, mesh_{mesh}, pMesh_{mesh},
+      narrowBandWidth_{configDict.get<scalar>("narrowBandWidth")},
+      outOfNarrowBandValue_{configDict.get<scalar>("bulkValue")},
+      cellSignedDist_{IOobject("cellSignedDist",
+                          mesh.time().timeName(),
+                          mesh,
+                          IOobject::NO_READ,
+                          IOobject::NO_WRITE),
+          mesh,
+          dimensionedScalar("cellSignedDist", dimLength, 0),
+          "zeroGradient"},
+      cellSignedDist0_{"cellSignedDist0", cellSignedDist_},
+      cellNearestTriangle_{}, pointSignedDist_{IOobject("pointSignedDist",
+                                                   mesh.time().timeName(),
+                                                   mesh_,
+                                                   IOobject::NO_READ,
+                                                   IOobject::NO_WRITE),
+                                  pMesh_,
+                                  dimensionedScalar(
+                                      "pointSignedDist", dimLength, 0),
+                                  "zeroGradient"},
+      pointNearestTriangle_{}
+{
+}
 
 
 // * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
 
-autoPtr<signedDistanceCalculator> signedDistanceCalculator::New
-(
-    const dictionary& configDict,
-    const fvMesh& mesh
-)
+autoPtr<signedDistanceCalculator> signedDistanceCalculator::New(
+    const dictionary& configDict, const fvMesh& mesh)
 {
     const word name = configDict.get<word>("surfaceType");
 
@@ -95,13 +77,10 @@ autoPtr<signedDistanceCalculator> signedDistanceCalculator::New
 
     if (cstrIter == DictionaryConstructorTablePtr_->end())
     {
-        FatalErrorIn (
-            "signedDistanceCalculator::New(const word& name)"
-        )   << "Unknown signedDistanceCalculator type "
-            << name << nl << nl
+        FatalErrorIn("signedDistanceCalculator::New(const word& name)")
+            << "Unknown signedDistanceCalculator type " << name << nl << nl
             << "Valid signedDistanceCalculators are : " << endl
-            << DictionaryConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+            << DictionaryConstructorTablePtr_->sortedToc() << exit(FatalError);
     }
 
     return autoPtr<signedDistanceCalculator>(cstrIter()(configDict, mesh));
@@ -115,10 +94,12 @@ void signedDistanceCalculator::outOfNarrowBandValue(const scalar value)
     outOfNarrowBandValue_ = value;
 }
 
+
 void signedDistanceCalculator::narrowBandWidth(const scalar width)
 {
     narrowBandWidth_ = width;
 }
+
 
 void signedDistanceCalculator::writeFields() const
 {

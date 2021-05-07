@@ -31,42 +31,35 @@ License
 #include "linear.H"
 #include "skewCorrectedSnGrad.H"
 
-namespace Foam::TriSurfaceImmersion {
+namespace Foam::TriSurfaceImmersion
+{
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-tmp<volScalarField> insideOutsidePropagation::propagateInsideOutside(const volScalarField& signedDistance)
+tmp<volScalarField> insideOutsidePropagation::propagateInsideOutside(
+    const volScalarField& signedDistance)
 {
     // Hardcode Laplacian scheme and solver settings
     tmp<volScalarField> tmp_in_out_field{new volScalarField{signedDistance}};
     auto& in_out_field = tmp_in_out_field.ref();
     in_out_field.rename("inside_outside");
 
-    surfaceScalarField Gamma
-    (
-        IOobject
-        (
-            "Diffusion coefficient",
-            signedDistance.time().constant(),
-            signedDistance.mesh(),
-            IOobject::NO_READ
-        ),
+    surfaceScalarField Gamma(IOobject("Diffusion coefficient",
+                                 signedDistance.time().constant(),
+                                 signedDistance.mesh(),
+                                 IOobject::NO_READ),
         signedDistance.mesh(),
-        dimensionedScalar("1", dimless, 1.0)
-    );
+        dimensionedScalar("1", dimless, 1.0));
 
-    fvScalarMatrix propagationEqn
-    (
-        fv::gaussLaplacianScheme<scalar,scalar>
-        (
-            in_out_field.mesh(),
-            tmp<surfaceInterpolationScheme<scalar>>{new linear<scalar>{in_out_field.mesh()}}, 
-            tmp<fv::snGradScheme<scalar>>{new fv::skewCorrectedSnGrad<scalar>(in_out_field.mesh())}
-        ).fvmLaplacian(Gamma, in_out_field)
-    );
+    fvScalarMatrix propagationEqn(
+        fv::gaussLaplacianScheme<scalar, scalar>(in_out_field.mesh(),
+            tmp<surfaceInterpolationScheme<scalar>>{
+                new linear<scalar>{in_out_field.mesh()}},
+            tmp<fv::snGradScheme<scalar>>{
+                new fv::skewCorrectedSnGrad<scalar>(in_out_field.mesh())})
+            .fvmLaplacian(Gamma, in_out_field));
 
-    IStringStream solverInput{
-        "solver PCG; preconditioner DIC; tolerance 0.5; relTol 0; minIter 1; maxIter 1;"
-    };
+    IStringStream solverInput{"solver PCG; preconditioner DIC; tolerance 0.5; "
+                              "relTol 0; minIter 1; maxIter 1;"};
     dictionary solverControl{solverInput};
 
     for (auto iteration = 0; iteration != 3; ++iteration)

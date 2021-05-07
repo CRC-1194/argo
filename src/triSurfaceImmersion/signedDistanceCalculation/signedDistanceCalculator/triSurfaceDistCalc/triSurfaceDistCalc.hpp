@@ -29,7 +29,7 @@ Class
 Author
     Tobias Tolle
     tolle@mma.tu-darmstadt.de
-    Mathematical Modelling and Analysis Group 
+    Mathematical Modelling and Analysis Group
     Thermo-Fluids and Interfaces
     TU Darmstadt
     Germany
@@ -44,6 +44,7 @@ Description
 
 SourceFiles
     triSurfaceDistCalc.cpp
+    triSurfaceDistCalcI.hpp
 
 \*---------------------------------------------------------------------------*/
 
@@ -61,82 +62,96 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
-
+namespace Foam::TriSurfaceImmersion
+{
 
 /*---------------------------------------------------------------------------*\
                          Class signedDistanceCalculator Declaration
 \*---------------------------------------------------------------------------*/
 
-class triSurfaceDistCalc
-:
-    public signedDistanceCalculator
+class triSurfaceDistCalc : public signedDistanceCalculator
 {
     // Private Data
+    //- Calculator to compute the search radii used by the octree search
     searchDistanceCalculator searchDistCalc_;
+
+    //- Triangulated surface
     triSurface surface_;
+
+    //- Octree based search to find closest triangle to a point
     triSurfaceSearch surfaceSearch_;
+
+    //- Vertex normals computed as angle weighted average of adjacent triangles
     vectorField vertexNormals_;
 
 
     // Private Member Functions
+    //- Compute normals at vertices from triangle normals
     void computeVertexNormals();
+
+    //- Compute signed distances at cell centres and cell corners
     void computeSignedDistances();
 
 public:
 
+    // Static Data Members
     TypeName("triSurface");
 
+
     // Constructors
-    /*
-    explicit triSurfaceDistCalc(const triSurface& surface);
-    triSurfaceDistCalc
-    (
-        const triSurface& surface,
-        const vectorField& vertexNormals
-    );
-    */
     triSurfaceDistCalc(const dictionary& configDict, const fvMesh& mesh);
 
 
     // Member Functions
-
-    //- Computation
-    // Make point to nearest triangle information available to the caller of this
-    // member function
-    scalarField signedDistance
-    (
+    //- Compute signed distances for pf and closest point information
+    //  Compute signed distances for the points pf. For each point, the
+    //  closests point and triangle are also computed. Uses the squared
+    //  search distance radii searchDistSqr to determine the narrow band.
+    //  Points outisde the narrow band are set to outOfSearchDomain.
+    scalarField signedDistance(
         DynamicList<pointIndexHit>& pointToNearestTriangle,
         const pointField& pf,
         const scalarField& searchDistSqr,
-        scalar outOfSearchDomain=0.0
-    ) const;
+        scalar outOfSearchDomain = 0.0) const;
 
-    scalarField signedDistance
-    (
-        const pointField& pf,
+    //- Compute signed distances for points pf.
+    //  Compute signed distances to pf in a narrow band defined by the
+    //  squared search radii searchDistSqr.
+    scalarField signedDistance(const pointField& pf,
         const scalarField& searchDistSqr,
-        scalar outOfSearchDomain=0.0
-    ) const;
+        scalar outOfSearchDomain = 0.0) const;
 
-    std::tuple<pointIndexHit, scalar> signedDistance
-    (
-        const point& p,
-        scalar searchDistSqr
-    ) const;
+    //- Return signed distance to p and closest point information.
+    std::tuple<pointIndexHit, scalar> signedDistance(
+        const point& p, scalar searchDistSqr) const;
 
+    //- Return the normal vector interpolated to a surface point.
     vector normalAtSurface(const pointIndexHit& hitInfo) const;
 
-    //- Access
+    //- Reference to the vertex normal field.
     inline const vectorField& vertexNormals() const;
+
+    //- Refrence to the octree search.
     inline const triSurfaceSearch& surfaceSearch() const;
+
+    //- Refrence to the triangulated surface
     inline const triSurface& surface() const;
 
-    // Inherited interface functions
+    //- Return signed distance to p
     scalar signedDistance(const point& p) const override;
+
+    //- Return the minimum edge length of the surface
     scalar referenceLength() const override;
+
+    //- Return the number of surface triangles
     label nSurfaceElements() const override;
+
+    //- Return enclosed volume for *closed* surfaces.
+    //  Computes the enclosed volume using surface divergence. The result
+    //  only make sense if the surface is *closed*.
     scalar surfaceEnclosedVolume() const override;
+
+    //- Write signed distance and squared search radii fields
     void writeFields() const override;
 };
 

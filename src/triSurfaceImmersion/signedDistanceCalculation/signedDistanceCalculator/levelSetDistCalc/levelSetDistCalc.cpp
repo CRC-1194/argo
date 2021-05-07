@@ -33,30 +33,32 @@ License
 #include "surfaceInterpolate.H"
 #include "volFieldsFwd.H"
 
-namespace Foam::TriSurfaceImmersion {
+namespace Foam::TriSurfaceImmersion
+{
 
-    defineTypeNameAndDebug(levelSetDistCalc, 0);
-    addToRunTimeSelectionTable(signedDistanceCalculator, levelSetDistCalc, Dictionary);
+defineTypeNameAndDebug(levelSetDistCalc, 0);
+addToRunTimeSelectionTable(
+    signedDistanceCalculator, levelSetDistCalc, Dictionary);
 
 // Implementation of 'surfacePoint' and 'closestPoint' taken from
 // T. Maric's OpenFOAM machine learning project:
 // https://gitlab.com/tmaric/openfoam-ml
 point levelSetDistCalc::surfacePoint(const point& p) const
 {
-    vector x_j = p; 
-    scalar val_j{0.0}; 
-    vector grad_j{0, 0, 0}; 
+    vector x_j = p;
+    scalar val_j{0.0};
+    vector grad_j{0, 0, 0};
 
     // Descend onto the surface with gradient descent.
     for (label j = 0; j < maxIt_; ++j)
     {
-        // Uncomment for debugging info. 
-        //Info << "K ITERATION                          : " << j << endl;
+        // Uncomment for debugging info.
+        // Info << "K ITERATION                          : " << j << endl;
 
         val_j = surfacePtr_->value(x_j);
         grad_j = surfacePtr_->grad(x_j);
 
-        // TODO (TT): divide by zero stablization. 
+        // TODO (TT): divide by zero stablization.
         // This is required as coincidence of point p with the centre
         // cannot be ruled out.
         if (mag(grad_j) < SMALL)
@@ -66,11 +68,11 @@ point levelSetDistCalc::surfacePoint(const point& p) const
 
         x_j = x_j - val_j * grad_j / (grad_j & grad_j);
 
-        // Uncomment for debugging info 
-        //Info << "x_j = " << x_j << endl;
-        //Info << "val_j = " << surf.value(x_j) << endl;
-        
-        if (mag(val_j) < epsilon_) 
+        // Uncomment for debugging info
+        // Info << "x_j = " << x_j << endl;
+        // Info << "val_j = " << surf.value(x_j) << endl;
+
+        if (mag(val_j) < epsilon_)
         {
             break;
         }
@@ -84,21 +86,22 @@ point levelSetDistCalc::closestPoint(const point& p) const
 {
     vector p_i = surfacePoint(p);
 
-    // Modified closest-point algorithm from: 
+    // Modified closest-point algorithm from:
     //
-    //   Hartmann, Erich. "Geometry and algorithms for computer aided design." 
+    //   Hartmann, Erich. "Geometry and algorithms for computer aided design."
     //   Darmstadt University of Technology 95 (2003).
     //
-    // instead of linear tangential projection that fails with zero 
-    // gradients on some surfaces, a parabolic projection is always 
+    // instead of linear tangential projection that fails with zero
+    // gradients on some surfaces, a parabolic projection is always
     // used.
-    
-    // Move the initial surface point in the tangential direction with respect to x. 
+
+    // Move the initial surface point in the tangential direction with respect
+    // to x.
     const std::size_t MAX_I = 1;
     for (std::size_t i = 0; i < MAX_I; ++i)
     {
-        vector n_i = surfacePtr_->grad(p_i); 
-        // TODO (TT): divide by zero stablization using SMALL. 
+        vector n_i = surfacePtr_->grad(p_i);
+        // TODO (TT): divide by zero stablization using SMALL.
         // This is required as coincidence of point p with the centre
         // cannot be ruled out.
         if (mag(n_i) < SMALL)
@@ -107,21 +110,21 @@ point levelSetDistCalc::closestPoint(const point& p) const
         }
         else
         {
-            n_i /= Foam::mag(n_i); 
+            n_i /= Foam::mag(n_i);
         }
 
-        vector q_i = p - ((p - p_i) & n_i) * n_i; 
-        
-        // First-order tangential projection.
-        //vector p_i1 = surfacePoint(q_i, surf, maxIt, epsilon);
+        vector q_i = p - ((p - p_i) & n_i) * n_i;
 
-        // Second-order parabolic projection 
+        // First-order tangential projection.
+        // vector p_i1 = surfacePoint(q_i, surf, maxIt, epsilon);
+
+        // Second-order parabolic projection
         vector f_i = q_i - p_i;
-        vector x_i = p_i + f_i - (f_i & f_i)*n_i;
+        vector x_i = p_i + f_i - (f_i & f_i) * n_i;
         vector p_i1 = surfacePoint(x_i);
 
-        scalar error = mag(p_i - p_i1); 
-        p_i = p_i1; 
+        scalar error = mag(p_i - p_i1);
+        p_i = p_i1;
 
         if (error < epsilon_)
         {
@@ -129,9 +132,9 @@ point levelSetDistCalc::closestPoint(const point& p) const
         }
     }
 
-    // Uncomment for debugging 
-    //Info << "ps = " << p_i << endl;
-    //Info << "val_s = " << surf.value(p_i) << endl;
+    // Uncomment for debugging
+    // Info << "ps = " << p_i << endl;
+    // Info << "val_s = " << surf.value(p_i) << endl;
 
     return p_i;
 }
@@ -169,8 +172,8 @@ void levelSetDistCalc::identifyNarrowBandCells()
 
         forAll(cellLevelSetValues_, cellI)
         {
-            const auto& cellDist = cellLevelSetValues_[cellI];  
-            const auto& cellPoints = meshCellPoints[cellI]; 
+            const auto& cellDist = cellLevelSetValues_[cellI];
+            const auto& cellPoints = meshCellPoints[cellI];
 
             forAll(cellPoints, pointI)
             {
@@ -182,8 +185,8 @@ void levelSetDistCalc::identifyNarrowBandCells()
             }
         }
 
-        // Step 2: use explicit pseudo diffusion to tag cells adjacent to intersected
-        // cells as narrow band cells
+        // Step 2: use explicit pseudo diffusion to tag cells adjacent to
+        // intersected cells as narrow band cells
         auto nbWidth = int(std::ceil(this->narrowBandWidth()));
         for (int i = 0; i != nbWidth; ++i)
         {
@@ -210,12 +213,14 @@ void levelSetDistCalc::identifyNarrowBandCells()
     }
 }
 
+
 void levelSetDistCalc::computeSignedDistances()
 {
     const auto& cellCentres = this->mesh().C();
     const auto& cellCorners = this->mesh().points();
     const auto cellToPoint = this->mesh().cellPoints();
-    dimensionedScalar defaultValue{"default", dimLength, this->outOfNarrowBandValue()};
+    dimensionedScalar defaultValue{
+        "default", dimLength, this->outOfNarrowBandValue()};
     cellSignedDist0_ = defaultValue;
     pointSignedDist_ = defaultValue;
 
@@ -223,17 +228,18 @@ void levelSetDistCalc::computeSignedDistances()
     {
         auto nearestPoint = closestPoint(cellCentres[cellID]);
         cellNearestTriangle_[cellID] = pointIndexHit{true, nearestPoint, 1};
-        cellSignedDist0_[cellID] =
-            sign(cellLevelSetValues_[cellID])*mag(cellCentres[cellID] - nearestPoint);
+        cellSignedDist0_[cellID] = sign(cellLevelSetValues_[cellID]) *
+            mag(cellCentres[cellID] - nearestPoint);
 
         for (const auto pID : cellToPoint[cellID])
         {
             if (pointSignedDist_[pID] == this->outOfNarrowBandValue())
             {
                 nearestPoint = closestPoint(cellCorners[pID]);
-                pointNearestTriangle_[pID] = pointIndexHit{true, nearestPoint, 1};
-                pointSignedDist_[pID] =
-                    sign(pointLevelSetValues_[pID])*mag(cellCorners[pID] - nearestPoint);
+                pointNearestTriangle_[pID] =
+                    pointIndexHit{true, nearestPoint, 1};
+                pointSignedDist_[pID] = sign(pointLevelSetValues_[pID]) *
+                    mag(cellCorners[pID] - nearestPoint);
             }
         }
     }
@@ -249,7 +255,7 @@ void levelSetDistCalc::setInsideOutside()
         {
             cellSignedDist_[I] = cellSignedDist0_[I];
         }
-        else 
+        else
         {
             cellSignedDist_[I] = cellLevelSetValues_[I];
         }
@@ -265,45 +271,31 @@ void levelSetDistCalc::setInsideOutside()
     }
 }
 
-// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
-
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-levelSetDistCalc::levelSetDistCalc(const dictionary& configDict, const fvMesh& mesh)
-:
-    signedDistanceCalculator{configDict, mesh},
-    surfacePtr_{implicitSurface::New(configDict)},
-    maxIt_{configDict.getOrDefault<label>("maxIter", 100)},
-    epsilon_{configDict.getOrDefault<scalar>("epsilon", 1.e-15)},
-    cellLevelSetValues_ 
-    {
-        IOobject
-        (
-            "cellLevelSetValues", 
-            mesh.time().timeName(), 
-            mesh, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh,
-        dimensionedScalar("cellLevelSetValue", dimless,0),
-        "zeroGradient"
-    },
-    pointLevelSetValues_
-    {
-        IOobject
-        (
-            "pointLevelSetValues", 
-            mesh.time().timeName(), 
-            mesh, 
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        this->pMesh(),
-        dimensionedScalar("pointLevelSetValues", dimless, 0),
-        "zeroGradient"
-    },
-    narrowBandCells_{}
+levelSetDistCalc::levelSetDistCalc(
+    const dictionary& configDict, const fvMesh& mesh)
+    : signedDistanceCalculator{configDict, mesh},
+      surfacePtr_{implicitSurface::New(configDict)},
+      maxIt_{configDict.getOrDefault<label>("maxIter", 100)},
+      epsilon_{configDict.getOrDefault<scalar>("epsilon", 1.e-15)},
+      cellLevelSetValues_{IOobject("cellLevelSetValues",
+                              mesh.time().timeName(),
+                              mesh,
+                              IOobject::NO_READ,
+                              IOobject::NO_WRITE),
+          mesh,
+          dimensionedScalar("cellLevelSetValue", dimless, 0),
+          "zeroGradient"},
+      pointLevelSetValues_{IOobject("pointLevelSetValues",
+                               mesh.time().timeName(),
+                               mesh,
+                               IOobject::NO_READ,
+                               IOobject::NO_WRITE),
+          this->pMesh(),
+          dimensionedScalar("pointLevelSetValues", dimless, 0),
+          "zeroGradient"},
+      narrowBandCells_{}
 {
     cellNearestTriangle_.resize(mesh.nCells());
     pointNearestTriangle_.resize(mesh.nPoints());
@@ -312,13 +304,13 @@ levelSetDistCalc::levelSetDistCalc(const dictionary& configDict, const fvMesh& m
     identifyNarrowBandCells();
     computeSignedDistances();
     setInsideOutside();
-}    
+}
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 scalar levelSetDistCalc::signedDistance(const point& x) const
 {
-    return sign(surfacePtr_->value(x))*mag(x - closestPoint(x));
+    return sign(surfacePtr_->value(x)) * mag(x - closestPoint(x));
 }
 
 
