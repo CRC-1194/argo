@@ -34,7 +34,7 @@ License
 
 #include "signedDistanceCalculator.hpp"
 #include "triSurfaceDistCalc.hpp"
-#include "refinementCriteria.hpp"
+#include "RefinementCriteria.hpp"
 #include "tetVolumeFractionCalculator.hpp"
 
 namespace Foam::TriSurfaceImmersion {

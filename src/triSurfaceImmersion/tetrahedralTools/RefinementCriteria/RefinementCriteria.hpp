@@ -46,50 +46,54 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
+namespace Foam::TriSurfaceImmersion
+{
 
 template<class LevelSet>
 class boundingBallCriterion
 {
 public:
-    // The following member function defines the informal interface
-    // expected by the AdaptiveRefinement class
-    static bool needsRefinement
-    (
-        const indexedTet& tet,
+
+    // Generic interface member functions
+    //- Determine wheter the given tetrahedron needs refinement.
+    //  This function evaluates to true if the there is no bounding ball
+    //  centred around a tetrahedron vertex that is smaller than the ball
+    //  defined by the vertex and its signed distance as radius.
+    static bool needsRefinement(const indexedTet& tet,
         const std::vector<point>& points,
-        const std::vector<scalar>& signedDistances
-    );
-    // The criterion determines whether an arbitrary level set field or
-    // a signed distance field is required. Thus, the corresponding function
-    // is called through the criterion class
+        const std::vector<scalar>& signedDistances);
+
+    //- Return signed distance of p to the interface.
     static scalar levelSetValue(const LevelSet& ls, const point& p);
-    
-    // Criterion specific functions
-    static std::tuple<scalar, label> maxDistSqrAndPointID
-    (
-        const indexedTet& tet,
-        const std::vector<scalar>& signedDistances
-    );
+
+    // Criterion specific member functions
+    //- Return a tuple with the maximum distance squared and vertex label.
+    static std::tuple<scalar, label> maxDistSqrAndPointID(
+        const indexedTet& tet, const std::vector<scalar>& signedDistances);
 };
+
 
 template<class LevelSet>
 class signCriterion
 {
 public:
-    static bool needsRefinemeent
-    (
-        const indexedTet& tet,
+
+    // Generic interface member functions
+    //- Determine wheter the given tetrahedron needs refinement.
+    //  This function evaluates to true if the level set values do not have
+    //  all the same sign.
+    static bool needsRefinemeent(const indexedTet& tet,
         const std::vector<point>& points,
-        const std::vector<scalar>& levelSetValues
-    );
+        const std::vector<scalar>& levelSetValues);
+
+    //- Return level set value at point p. Not necessarily a signed distance.
     static scalar levelSetValue(const LevelSet& ls, const point& p);
 };
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "refinementCriteriaI.hpp"
+#include "RefinementCriteriaI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

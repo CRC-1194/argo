@@ -37,7 +37,8 @@ Description
 
     \verbatim
         Detrixhe, M., & Aslam, T. D. (2016).
-        From level set to volume of fluid and back again at second‐order accuracy.
+        From level set to volume of fluid and back again at second‐order
+        accuracy.
         International Journal for Numerical Methods in Fluids, 80(4), 231-255.
     \endverbatim
 
@@ -56,11 +57,11 @@ SourceFiles
 #include "AdaptiveTetCellRefinement.hpp"
 
 
-namespace Foam::TriSurfaceImmersion {
-
+namespace Foam::TriSurfaceImmersion
+{
 
 /*---------------------------------------------------------------------------*\
-                   Class tetVolumeFractionCalculator Declaration
+                Class tetVolumeFractionCalculator Declaration
 \*---------------------------------------------------------------------------*/
 
 class tetVolumeFractionCalculator
@@ -72,55 +73,41 @@ class tetVolumeFractionCalculator
 
     // Private Member Functions
 
-    //- Count the number of vertices of a tetrahedron which have negative distances
+    //- Count the number of vertices of a tetrahedron which have negative
+    //distances
     label countNegativeDistances() const;
 
 
 public:
-
+    
     // Member Functions
 
     //- Compute the tetrahedron's volume
     static scalar volume(const indexedTet& t, const std::vector<point>& p);
 
     //- Volume fraction of the tetrahedron from signed distances at vertices
-    scalar volumeFraction
-    (
-        const indexedTet& tet,
-        const std::vector<scalar>& signedDistance
-    ) const;
+    scalar volumeFraction(
+        const indexedTet& tet, const std::vector<scalar>& signedDistance) const;
 
     //- Volume of the tetrahedron located on the positive side of the interface
-    scalar omegaPlusVolume
-    (
-        const indexedTet& tet,
+    scalar omegaPlusVolume(const indexedTet& tet,
         const std::vector<scalar>& signedDistance,
-        const std::vector<point>& points
-    ) const;
+        const std::vector<point>& points) const;
 
     //- Compute volume fractions for given tetrahedra
-    std::vector<scalar> volumeFractions
-    (
-        const std::vector<indexedTet>& tets,
-        const std::vector<scalar>& signedDistance
-    ) const;
-    
+    std::vector<scalar> volumeFractions(const std::vector<indexedTet>& tets,
+        const std::vector<scalar>& signedDistance) const;
+
     //- Compute volume on positive side of interface for given tetrahedra
-    std::vector<scalar> omegaPlusVolumes
-    (
-        const std::vector<indexedTet>& tets,
+    std::vector<scalar> omegaPlusVolumes(const std::vector<indexedTet>& tets,
         const std::vector<scalar>& signedDistance,
-        const std::vector<point>& points
-    ) const;
+        const std::vector<point>& points) const;
 
     //- Accumulated volume of given tetrahedra which is located on the positive
     //  side of the interface
-    scalar accumulatedOmegaPlusVolume
-    (
-        const std::vector<indexedTet>& tets,
+    scalar accumulatedOmegaPlusVolume(const std::vector<indexedTet>& tets,
         const std::vector<scalar>& signedDistance,
-        const std::vector<point>& points
-    ) const;
+        const std::vector<point>& points) const;
 };
 
 

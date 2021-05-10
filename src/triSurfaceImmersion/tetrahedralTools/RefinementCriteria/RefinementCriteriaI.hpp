@@ -28,14 +28,13 @@ License
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 template<class LevelSet>
-bool Foam::TriSurfaceImmersion::boundingBallCriterion<LevelSet>::needsRefinement
-(
-    const indexedTet& tet,
+bool Foam::TriSurfaceImmersion::boundingBallCriterion<
+    LevelSet>::needsRefinement(const indexedTet& tet,
     const std::vector<point>& points,
-    const std::vector<scalar>& signedDistances
-)
+    const std::vector<scalar>& signedDistances)
 {
-    const auto [max_dist_sqr, max_p_id] = maxDistSqrAndPointID(tet, signedDistances);
+    const auto [max_dist_sqr, max_p_id] =
+        maxDistSqrAndPointID(tet, signedDistances);
 
     // Bounding ball criterion (TT)
     for (const auto p_id : tet)
@@ -45,32 +44,32 @@ bool Foam::TriSurfaceImmersion::boundingBallCriterion<LevelSet>::needsRefinement
             return true;
         }
     }
-    
+
     return false;
 }
 
 
 template<class LevelSet>
-scalar Foam::TriSurfaceImmersion::boundingBallCriterion<LevelSet>::levelSetValue(const LevelSet& ls, const point& p)
+scalar Foam::TriSurfaceImmersion::boundingBallCriterion<
+    LevelSet>::levelSetValue(const LevelSet& ls, const point& p)
 {
     return ls.signedDistance(p);
 }
 
+
 template<class LevelSet>
-std::tuple<scalar, label> Foam::TriSurfaceImmersion::boundingBallCriterion<LevelSet>::maxDistSqrAndPointID
-(
-    const indexedTet& tet,
-    const std::vector<scalar>& signedDistances
-)
+std::tuple<scalar, label> Foam::TriSurfaceImmersion::boundingBallCriterion<
+    LevelSet>::maxDistSqrAndPointID(const indexedTet& tet,
+    const std::vector<scalar>& signedDistances)
 {
     scalar max_dist_sqr{0.0};
     label max_p_id{tet[0]};
 
     for (const auto p_id : tet)
     {
-        if ((signedDistances[p_id]*signedDistances[p_id]) > max_dist_sqr)
+        if ((signedDistances[p_id] * signedDistances[p_id]) > max_dist_sqr)
         {
-            max_dist_sqr = signedDistances[p_id]*signedDistances[p_id];
+            max_dist_sqr = signedDistances[p_id] * signedDistances[p_id];
             max_p_id = p_id;
         }
     }
@@ -80,12 +79,10 @@ std::tuple<scalar, label> Foam::TriSurfaceImmersion::boundingBallCriterion<Level
 
 
 template<class LevelSet>
-bool Foam::TriSurfaceImmersion::signCriterion<LevelSet>::needsRefinemeent
-(
-    const indexedTet &tet,
+bool Foam::TriSurfaceImmersion::signCriterion<LevelSet>::needsRefinemeent(
+    const indexedTet& tet,
     const std::vector<point>& points,
-    const std::vector<scalar>& levelSetValues
-)
+    const std::vector<scalar>& levelSetValues)
 {
     scalar lsSign = sign(levelSetValues[tet[0]]);
 
@@ -102,7 +99,8 @@ bool Foam::TriSurfaceImmersion::signCriterion<LevelSet>::needsRefinemeent
 
 
 template<class LevelSet>
-scalar Foam::TriSurfaceImmersion::signCriterion<LevelSet>::levelSetValue(const LevelSet& ls, const point& p)
+scalar Foam::TriSurfaceImmersion::signCriterion<LevelSet>::levelSetValue(
+    const LevelSet& ls, const point& p)
 {
     return ls.value(p);
 }
