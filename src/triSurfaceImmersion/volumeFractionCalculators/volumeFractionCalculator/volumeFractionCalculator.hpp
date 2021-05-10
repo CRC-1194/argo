@@ -40,13 +40,13 @@ SourceFiles
 #ifndef volumeFractionCalculator_H
 #define volumeFractionCalculator_H
 
+#include "Time.H"
 #include "autoPtr.H"
 #include "fvMesh.H"
 #include "pointFields.H"
 #include "pointIndexHit.H"
 #include "runTimeSelectionTables.H"
 #include "surfaceFields.H"
-#include "Time.H"
 #include "triSurface.H"
 #include "typeInfo.H"
 #include "volFields.H"
@@ -55,8 +55,8 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
-
+namespace Foam::TriSurfaceImmersion
+{
 /*---------------------------------------------------------------------------*\
                  Class volumeFractionCalculator Declaration
 \*---------------------------------------------------------------------------*/
@@ -66,18 +66,19 @@ class volumeFractionCalculator
 private:
 
     // Private Data
-    //- A reference to the mesh.  
-    const fvMesh& mesh_; 
+    //- A reference to the mesh
+    const fvMesh& mesh_;
 
-    //- A reference to time.
-    const Time& runTime_;  
+    //- A reference to time
+    const Time& runTime_;
 
     //- Point mesh required to construct point fields
     pointMesh pMesh_;
 
-    //- Write additional geometric objects used in the computation of
-    //  volume fraction of interface cells
-    const bool writeGeometry_; 
+    //- Write additional geometric objects
+    //  Write additional geometric objects used during the computation of
+    //  volume fractions in interface cells.
+    const bool writeGeometry_;
 
 
 public:
@@ -85,64 +86,57 @@ public:
     // Static Data Members
     TypeName("volumeFractionCalculatorInterface");
 
-    declareRunTimeSelectionTable (
-        autoPtr,
+    declareRunTimeSelectionTable(autoPtr,
         volumeFractionCalculator,
         Dictionary,
-        (
-            const dictionary& configDict,
-            const fvMesh& mesh
-        ),
-        (configDict, mesh)
-    )
+        (const dictionary& configDict, const fvMesh& mesh),
+        (configDict, mesh));
 
 
     // Constructors
-    explicit volumeFractionCalculator
-    (
-        const dictionary& configDict,
-        const fvMesh& mesh
-    );
+    explicit volumeFractionCalculator(
+        const dictionary& configDict, const fvMesh& mesh);
 
 
     // Selectors
-    static autoPtr<volumeFractionCalculator>
-    New
-    (
-        const dictionary& configDict,
-        const fvMesh& mesh
-    );
+    static autoPtr<volumeFractionCalculator> New(
+        const dictionary& configDict, const fvMesh& mesh);
 
 
     // Member Functions
-    //- Access
-
+    //- Return reference to time.
     inline const Time& time() const;
 
+    //- Return reference to the underlying volume mesh.
     inline const fvMesh& mesh() const;
 
+    //- Return whether additional geometric objects are written.
     inline bool writeGeometry() const;
 
+    //- Return the average number of triangles per interface cell.
     virtual double nTrianglesPerCell() const = 0;
 
+    //- Return the number of intersected cells (interface cells).
     virtual label nIntersectedCells() const = 0;
 
+    //- Return the maximum refinement level used for tetrahedral refinement.
     virtual label maxRefinementLevel() const = 0;
 
+    //- Return reference to the signed distance calculator.
     virtual const signedDistanceCalculator& sigDistCalc() const = 0;
 
-
-    //- Computation
-
+    //- Identify cells intersected by the interface.
     virtual void findIntersectedCells() = 0;
 
+    //- Compute volume fractions according to signed distance at cell centre.
+    //  Sets volume fractions according to the sign of the signed distance
+    //  at cell centres for all cells including interface cells.
     void bulkVolumeFraction(volScalarField& alpha);
 
+    //- Compute the volume fraction field alpha.
     virtual void calcVolumeFraction(volScalarField& alpha) = 0;
 
-
-    //- Write 
-
+    //- Write out additional fields used by the volume fraction calculator.
     virtual void writeFields() const = 0;
 };
 

@@ -36,10 +36,12 @@ const Time& volumeFractionCalculator::time() const
     return runTime_;
 }
 
+
 const fvMesh& volumeFractionCalculator::mesh() const
 {
     return mesh_;
 }
+
 
 bool volumeFractionCalculator::writeGeometry() const
 {

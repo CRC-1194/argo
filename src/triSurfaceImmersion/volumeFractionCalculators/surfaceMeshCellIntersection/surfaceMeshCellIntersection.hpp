@@ -45,63 +45,65 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
-
-
+namespace Foam::TriSurfaceImmersion
+{
 /*---------------------------------------------------------------------------*\
                  Class surfaceMeshCellIntersection Declaration
 \*---------------------------------------------------------------------------*/
 
-class surfaceMeshCellIntersection
-:
-    public volumeFractionCalculator
+class surfaceMeshCellIntersection : public volumeFractionCalculator
 {
 private:
 
     // Private Data
+    //- Reference to triSurface signed distance calculator
     triSurfaceDistCalc sigDistCalc_;
 
-    using dynamicLabelList = DynamicList<label>; 
+    using dynamicLabelList = DynamicList<label>;
+    //- Stores IDs of all cells intersected by the interface
     dynamicLabelList intersectedCellLabels_;
 
+    //- Average number of triangles per interface cell
     label nTrianglesPerCell_;
 
     // Private Member Functions
+    //- Compute volume fractions for intersected cells
     void interfaceCellVolumeFraction(volScalarField& alpha);
 
 public:
 
     // Static Data Members
-    TypeName ("SMCI")
+    TypeName("SMCI");
 
 
     // Constructors
-    surfaceMeshCellIntersection
-    (
-        const dictionary& configDict,
-        const fvMesh& mesh
-    );
+    surfaceMeshCellIntersection(
+        const dictionary& configDict, const fvMesh& mesh);
 
 
     // Member Functions
+    //- Return average number of triangles per cell
+    inline scalar nTrianglesPerCell() const override;
 
-    //- Access
-
-    inline double nTrianglesPerCell() const override;
-
+    //- Return number of cells intersected by the interface
     inline label nIntersectedCells() const override;
 
+    //- Return the maximum refinement level used for tetrahedral refinement
+    //  Note: the SMCI algorithm does not use tetrahedral refinement yet.
     inline label maxRefinementLevel() const override;
 
+    //- Return reference to the signed distance calculator.
+    //  For the SMCI algorithm, this is guaranteed to be a
+    //  triSurface signed distance calculator.
     const signedDistanceCalculator& sigDistCalc() const override;
 
-    //- Computation
+    //- Compute the volume fraction field alpha
+    void calcVolumeFraction(volScalarField& alpha) override;
 
-    void calcVolumeFraction(volScalarField& alpha) override; 
-
+    //- Find all cells intersected by the interface
     void findIntersectedCells() override;
 
-    //- Write
+    //- Write additional fields used during the computation of volume fractions
     void writeFields() const override;
 };
 
@@ -112,7 +114,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-}  // namespace Foam::TriSurfaceImmersion
+} // namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

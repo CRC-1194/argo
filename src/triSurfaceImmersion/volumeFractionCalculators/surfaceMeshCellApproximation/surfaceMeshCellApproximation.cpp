@@ -32,38 +32,41 @@ License
 
 #include "addToRunTimeSelectionTable.H"
 
-#include "signedDistanceCalculator.hpp"
-#include "triSurfaceDistCalc.hpp"
 #include "RefinementCriteria.hpp"
+#include "signedDistanceCalculator.hpp"
 #include "tetVolumeFractionCalculator.hpp"
+#include "triSurfaceDistCalc.hpp"
 
-namespace Foam::TriSurfaceImmersion {
+namespace Foam::TriSurfaceImmersion
+{
 
-    defineTypeNameAndDebug(surfaceMeshCellApproximation, 0);
-    addToRunTimeSelectionTable(volumeFractionCalculator, surfaceMeshCellApproximation, Dictionary);
+defineTypeNameAndDebug(surfaceMeshCellApproximation, 0);
+addToRunTimeSelectionTable(
+    volumeFractionCalculator, surfaceMeshCellApproximation, Dictionary);
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-// TODO (TT): this is essentially the bounding ball criterion. It should be reused here.
-//            Then merge this function with `findIntersectedCells`.
-bool surfaceMeshCellApproximation::intersectionPossible(const label cellID) const
+// TODO (TT): this is essentially the bounding ball criterion. It should be
+// reused here. Then merge this function with `findIntersectedCells`.
+bool surfaceMeshCellApproximation::intersectionPossible(
+    const label cellID) const
 {
     const auto& points = this->mesh().points();
     const auto& cellPointIDs = this->mesh().cellPoints()[cellID];
     const auto distSqr = pow(sigDistCalcPtr_->cellSignedDist0()[cellID], 2.0);
     const auto centre = this->mesh().C()[cellID];
 
-    // Idea: if all vertices of a cell have a distance less than the signed distance
-    // of the centre to the interface, then there is no intersection possible (TT)
-    return std::any_of
-           (
-                cellPointIDs.begin(),
-                cellPointIDs.end(),
-                [&](auto pI){auto v = points[pI] - centre; return (v & v) >= distSqr;}
-           );
+    // Idea: if all vertices of a cell have a distance less than the signed
+    // distance of the centre to the interface, then there is no intersection
+    // possible (TT)
+    return std::any_of(cellPointIDs.begin(), cellPointIDs.end(), [&](auto pI) {
+        auto v = points[pI] - centre;
+        return (v & v) >= distSqr;
+    });
 }
 
-surfaceMeshCellApproximation::cellDecompositionTuple 
+
+surfaceMeshCellApproximation::cellDecompositionTuple
 surfaceMeshCellApproximation::decomposeCell(const label cellID) const
 {
     const auto& mesh = this->mesh();
@@ -80,7 +83,7 @@ surfaceMeshCellApproximation::decomposeCell(const label cellID) const
     std::vector<point> points(cellVertexIDs.size() + thisCell.size() + 1);
     std::vector<scalar> sd(points.size());
     std::map<label, label> globalToLocal{};
-    
+
     // Add vertices to points and their signed distance
     forAll(cellVertexIDs, I)
     {
@@ -101,12 +104,15 @@ surfaceMeshCellApproximation::decomposeCell(const label cellID) const
     for (const auto face_id : thisCell)
     {
         points[face_centre_id] = mesh.Cf()[face_id];
-        sd[face_centre_id] = sigDistCalcPtr_->signedDistance(mesh.Cf()[face_id]);
+        sd[face_centre_id] =
+            sigDistCalcPtr_->signedDistance(mesh.Cf()[face_id]);
 
         for (const auto& anEdge : faces[face_id].edges())
         {
-            tets[idx_tet] = indexedTet{centre_id, face_centre_id,
-                             globalToLocal[anEdge[0]], globalToLocal[anEdge[1]]};
+            tets[idx_tet] = indexedTet{centre_id,
+                face_centre_id,
+                globalToLocal[anEdge[0]],
+                globalToLocal[anEdge[1]]};
             ++idx_tet;
         }
         ++face_centre_id;
@@ -120,6 +126,7 @@ surfaceMeshCellApproximation::decomposeCell(const label cellID) const
 
     return std::make_tuple(tets, points, sd);
 }
+
 
 label surfaceMeshCellApproximation::nTets(const label cellID) const
 {
@@ -138,17 +145,16 @@ label surfaceMeshCellApproximation::nTets(const label cellID) const
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-surfaceMeshCellApproximation::surfaceMeshCellApproximation
-(
-    const dictionary& configDict,
-    const fvMesh& mesh
-)
-:
-    volumeFractionCalculator{configDict, mesh},
-    sigDistCalcPtr_{signedDistanceCalculator::New(configDict.subDict("distCalc"), mesh)},
-    interfaceCellIDs_{},
-    maxAllowedRefinementLevel_{configDict.get<label>("refinementLevel")}
-    {}
+surfaceMeshCellApproximation::surfaceMeshCellApproximation(
+    const dictionary& configDict, const fvMesh& mesh)
+    : volumeFractionCalculator{configDict, mesh},
+      sigDistCalcPtr_{
+          signedDistanceCalculator::New(configDict.subDict("distCalc"), mesh)},
+      interfaceCellIDs_{}, maxAllowedRefinementLevel_{
+                               configDict.get<label>("refinementLevel")}
+{
+}
+
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
@@ -156,31 +162,33 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
     bulkVolumeFraction(alpha);
     findIntersectedCells();
 
-    Info<< "Computing volume fraction for interface cells..." << endl;
-    Info<< "Number of cells flagged as interface cells: "
-        << interfaceCellIDs_.size() << endl;
+    Info << "Computing volume fraction for interface cells..." << endl;
+    Info << "Number of cells flagged as interface cells: "
+         << interfaceCellIDs_.size() << endl;
 
     const auto& V = this->mesh().V();
     label max_refine = 0;
 
-    // TODO (TT): OpenMP disbaled for now. Loop does not execute correct with
+    // TODO (TT): OpenMP disabled for now. Loop does not execute correct with
     // more than two threads. See issue on GitLab.
     //#pragma omp parallel for reduction(max:max_refine)
     for (const auto cellID : interfaceCellIDs_)
     {
         auto [tets, points, signed_dist] = decomposeCell(cellID);
 
-        adaptiveTetCellRefinement<signedDistanceCalculator,boundingBallCriterion> refiner
-        {
-            //subsetCalc,
-            this->sigDistCalc(),
-            points,
-            signed_dist,
-            tets,
-            maxAllowedRefinementLevel_
-        };
+        adaptiveTetCellRefinement<signedDistanceCalculator,
+            boundingBallCriterion>
+            refiner{this->sigDistCalc(),
+                points,
+                signed_dist,
+                tets,
+                maxAllowedRefinementLevel_};
         tetVolumeFractionCalculator vofCalc{};
-        alpha[cellID] = vofCalc.accumulatedOmegaPlusVolume(refiner.resultingTets(), refiner.signedDistance(), refiner.points()) / V[cellID]; 
+        alpha[cellID] =
+            vofCalc.accumulatedOmegaPlusVolume(refiner.resultingTets(),
+                refiner.signedDistance(),
+                refiner.points()) /
+            V[cellID];
 
         // Bound volume fraction field
         alpha[cellID] = max(min(alpha[cellID], 1.0), 0.0);
@@ -195,8 +203,9 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 
     maxUsedRefinementLevel_ = max_refine;
 
-    Info<< "Finished volume fraction calculation" << endl;
+    Info << "Finished volume fraction calculation" << endl;
 }
+
 
 void surfaceMeshCellApproximation::findIntersectedCells()
 {
@@ -211,15 +220,17 @@ void surfaceMeshCellApproximation::findIntersectedCells()
     }
 }
 
+
 void surfaceMeshCellApproximation::writeFields() const
 {
     sigDistCalcPtr_->writeFields();
 
     // Write identified interface cells as field
-    volScalarField interfaceCells{"interfaceCells", sigDistCalcPtr_->cellSignedDist()};
+    volScalarField interfaceCells{
+        "interfaceCells", sigDistCalcPtr_->cellSignedDist()};
     interfaceCells = dimensionedScalar{"interfaceCells", dimLength, 0};
 
-    for(const auto idx : interfaceCellIDs_)
+    for (const auto idx : interfaceCellIDs_)
     {
         interfaceCells[idx] = 1.0;
     }
@@ -229,6 +240,6 @@ void surfaceMeshCellApproximation::writeFields() const
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-}  // namespace Foam::TriSurfaceImmersion
+} // namespace Foam::TriSurfaceImmersion
 
 // ************************************************************************* //
