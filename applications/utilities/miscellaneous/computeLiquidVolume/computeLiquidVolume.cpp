@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) Tomislav Maric and TU Darmstadt 
+    \\  /    A nd           | Copyright (C) Tomislav Maric and TU Darmstadt
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -29,15 +29,15 @@ Description
 Author
     Dirk Gründing
     gruending@mma.tu-darmstadt.de
-    Mathematical Modeling and Analysis Group 
+    Mathematical Modeling and Analysis Group
     Center of Smart Interfaces
     TU Darmstadt
     Germany
 
 \*---------------------------------------------------------------------------*/
 
-#include "argList.H"
 #include "Time.H"
+#include "argList.H"
 #include "fvCFD.H"
 
 #include "triSurface.H"
@@ -54,23 +54,20 @@ scalar xyPrism(const pointField& tri)
         p.z() = 0;
     }
 
-    Foam::triFace face(0,1,2); 
+    Foam::triFace face(0, 1, 2);
     return face.sweptVol(opts, tri);
 }
 
 // Main program:
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    argList::addOption
-    (
-        "stl", 
+    argList::addOption("stl",
         "path/to/stl/file.stl"
-        "name of the stl file"
-    ); 
+        "name of the stl file");
 
     argList args(argc, argv);
 
-#   include "createTime.H"
+#include "createTime.H"
 
     // file name of stl is input of the utility
     word fileName("");
@@ -85,25 +82,25 @@ int main(int argc, char *argv[])
 
     std::cout << "Reading: " << fileName << std::endl;
     triSurface surfaceMesh(fileName);
-    //Info << surfaceMesh;
+    // Info << surfaceMesh;
     // Information on the triSurface cout format:
     // triSurface is first writing the points to cout and then a tuple for each
-    // triangle is the stl. the first entry of the tuple is a triple that 
+    // triangle is the stl. the first entry of the tuple is a triple that
     // contains the point ids of the triangle. The second entry is an integer
-    // that gives the region number of the triangle in the OpenFOAM 
+    // that gives the region number of the triangle in the OpenFOAM
     // PrimitivePatch as can be found in the labelledTri: "Triangle with
     // additional region number."
 
     scalar volume(0);
-    for(auto& triangle : surfaceMesh)
+    for (auto& triangle : surfaceMesh)
     {
         const pointField triPoints = triangle.points(surfaceMesh.points());
         volume += xyPrism(triPoints);
     }
-    std::cout << "Volume with respect to the x-y-plane: " 
-              << volume << std::endl;
-        
-    Info<< "\nEnd\n" << endl;
+    std::cout << "Volume with respect to the x-y-plane: " << volume
+              << std::endl;
+
+    Info << "\nEnd\n" << endl;
 
     return 0;
 }

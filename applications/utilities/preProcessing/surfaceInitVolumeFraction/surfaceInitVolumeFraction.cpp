@@ -29,7 +29,7 @@ Application
 Description
     Initialize a volume fraction field from a triangulated surface or a level
     set given by an implicit function.
-    
+
     Computation of volume fractions in interface cells is either performed by
     the SMCI or SMCA algorithm.
 
@@ -51,11 +51,6 @@ Description
 
 // OpenFOAM headers
 #include "fvCFD.H"
-#include "fvcAverage.H"
-#include "pointFieldsFwd.H"
-#include "pointMesh.H"
-#include "surfaceInterpolate.H"
-#include "triSurface.H"
 
 // Argo headers
 #include "volumeFractionCalculator.hpp"
@@ -63,7 +58,8 @@ Description
 using namespace Foam::TriSurfaceImmersion;
 
 template<class T>
-T setOptionByPrecedence(dictionary& dict, const argList& args, const word keyword, T def)
+T setOptionByPrecedence(
+    dictionary& dict, const argList& args, const word keyword, T def)
 {
     def = dict.getOrDefault<T>(keyword, def);
     args.readIfPresent<T>(keyword, def);
@@ -73,7 +69,8 @@ T setOptionByPrecedence(dictionary& dict, const argList& args, const word keywor
 }
 
 template<>
-Switch setOptionByPrecedence(dictionary& dict, const argList& args, const word keyword, Switch def)
+Switch setOptionByPrecedence(
+    dictionary& dict, const argList& args, const word keyword, Switch def)
 {
     def = dict.getOrDefault<Switch>(keyword, def);
     if (args.found(keyword))
@@ -87,7 +84,7 @@ Switch setOptionByPrecedence(dictionary& dict, const argList& args, const word k
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     #include "createOptions.hpp"
     #include "setRootCase.H"
@@ -98,45 +95,40 @@ int main(int argc, char *argv[])
     // Precedence: commandline option > dictionary value > default
 
     // Read from dictionary if present
-    IOdictionary initDict
-                 {
-                    IOobject{
-                       "vofInitDict",
-                       "system",
-                       mesh.time(),
-                       IOobject::READ_IF_PRESENT,
-                       IOobject::AUTO_WRITE
-                    }
-                 };
+    IOdictionary initDict{IOobject{"vofInitDict",
+        "system",
+        mesh.time(),
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE}};
 
     // Configure signed distance calculator
     auto& distDict = initDict.subDictOrAdd("distCalc");
     setOptionByPrecedence<word>(distDict, args, "surfaceType", "triSurface");
-    setOptionByPrecedence<fileName>(distDict, args, "surfaceFile", args.path() + "/surface.stl");
+    setOptionByPrecedence<fileName>(
+        distDict, args, "surfaceFile", args.path() + "/surface.stl");
     // TODO (TT): the parameters below should be fixed in this application.
     // Altering them may break volume fraction calculation.
     setOptionByPrecedence<scalar>(distDict, args, "narrowBandWidth", 4.0);
     setOptionByPrecedence<scalar>(distDict, args, "bulkValue", 0.0);
-    
+
     // Configure volume fraction calculator
-    auto fieldName = 
+    auto fieldName =
         setOptionByPrecedence<word>(initDict, args, "fieldName", "alpha.water");
-    auto algName = 
+    auto algName =
         setOptionByPrecedence<word>(initDict, args, "algorithm", "SMCI");
     setOptionByPrecedence<label>(initDict, args, "refinementLevel", -1);
     setOptionByPrecedence<Switch>(initDict, args, "writeGeometry", false);
-    auto invertVolumeFraction = 
+    auto invertVolumeFraction =
         setOptionByPrecedence<Switch>(initDict, args, "invert", false);
-    auto writeAllFields = 
+    auto writeAllFields =
         setOptionByPrecedence<Switch>(initDict, args, "writeAllFields", false);
     auto checkVolume =
         setOptionByPrecedence<Switch>(initDict, args, "checkVolume", false);
 
-    Info<< "<------------------------------------------>"
-        << "\nConfiguration:" << initDict
-        << "<------------------------------------------>"
-        << endl;
-    
+    Info << "<------------------------------------------>"
+         << "\nConfiguration:" << initDict
+         << "<------------------------------------------>" << endl;
+
     // Initialization
     #include "createFields.hpp"
 
@@ -145,15 +137,16 @@ int main(int argc, char *argv[])
     auto vofCalcPtr = volumeFractionCalculator::New(initDict, mesh);
     vofCalcPtr->calcVolumeFraction(alpha);
     auto ctime1 = std::chrono::steady_clock::now();
-    auto calcTime = 
-        std::chrono::duration_cast<std::chrono::microseconds>(ctime1-ctime0).count();
+    auto calcTime =
+        std::chrono::duration_cast<std::chrono::microseconds>(ctime1 - ctime0)
+            .count();
 
     if (invertVolumeFraction)
     {
         alpha = 1.0 - alpha;
     }
 
-    alpha.write(); 
+    alpha.write();
 
     // Begin testing and debugging
     if (writeAllFields)
@@ -163,43 +156,45 @@ int main(int argc, char *argv[])
 
     if (checkVolume)
     {
-        if (Pstream::myProcNo() == 0) // Only compute on master rank in parallel. Thanks to TM.
+        if (Pstream::myProcNo() ==
+            0) // Only compute on master rank in parallel. Thanks to TM.
         {
-            scalar Vsurf = vofCalcPtr->sigDistCalc().surfaceEnclosedVolume(); 
+            scalar Vsurf = vofCalcPtr->sigDistCalc().surfaceEnclosedVolume();
 
-            scalar Valpha = gSum((mesh.V() * alpha)()); 
-            scalar Evsurf = std::abs(Valpha - Vsurf) / Vsurf; 
+            scalar Valpha = gSum((mesh.V() * alpha)());
+            scalar Evsurf = std::abs(Valpha - Vsurf) / Vsurf;
 
-            std::cout << std::setprecision(20) 
-                << "Volume by volume fraction = " << Valpha << nl
-                << "Volume of the surface mesh by divergence theorem (only closed surfaces!) = " << Vsurf << nl 
-                << "Volume error from surface integral = " << Evsurf << nl;
+            std::cout << std::setprecision(20)
+                      << "Volume by volume fraction = " << Valpha << nl
+                      << "Volume of the surface mesh by divergence theorem "
+                         "(only closed surfaces!) = "
+                      << Vsurf << nl
+                      << "Volume error from surface integral = " << Evsurf
+                      << nl;
 
-            std::ofstream errorFile; 
+            std::ofstream errorFile;
             // TODO (TT): make file name algorithm dependent
-            errorFile.open("vof-init-results-" + algName + ".csv"); 
+            errorFile.open("vof-init-results-" + algName + ".csv");
             errorFile << "N_CELLS,"
-                << "N_TRIANGLES,"
-                << "VOLUME_FROM_VOLUME_FRACTION,"
-                << "VOLUME_FROM_SURFACE_INTEGRAL,"
-                << "VOLUME_ERROR_FROM_SURFACE_INTEGRAL,"
-                << "CPU_TIME_MICROSECONDS," 
-                << "MAX_REFINEMENT_LEVEL" << "\n"
-                << mesh.nCells() << "," 
-                << vofCalcPtr->sigDistCalc().nSurfaceElements() << "," 
-                << std::setprecision(20) 
-                << Valpha << "," 
-                << Vsurf << "," 
-                << Evsurf << ","
-                << calcTime << ","
-                << vofCalcPtr->maxRefinementLevel() << "\n";
+                      << "N_TRIANGLES,"
+                      << "VOLUME_FROM_VOLUME_FRACTION,"
+                      << "VOLUME_FROM_SURFACE_INTEGRAL,"
+                      << "VOLUME_ERROR_FROM_SURFACE_INTEGRAL,"
+                      << "CPU_TIME_MICROSECONDS,"
+                      << "MAX_REFINEMENT_LEVEL"
+                      << "\n"
+                      << mesh.nCells() << ","
+                      << vofCalcPtr->sigDistCalc().nSurfaceElements() << ","
+                      << std::setprecision(20) << Valpha << "," << Vsurf << ","
+                      << Evsurf << "," << calcTime << ","
+                      << vofCalcPtr->maxRefinementLevel() << "\n";
         }
     }
 
-    Info<< nl;
+    Info << nl;
     runTime.printExecutionTime(Info);
 
-    Info<< "End\n" << endl;
+    Info << "End\n" << endl;
 
     return 0;
 }

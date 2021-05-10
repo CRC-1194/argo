@@ -1,12 +1,12 @@
-    volScalarField signedDistance
+volScalarField signedDistance
+(
+    IOobject
     (
-        IOobject
-        (
-            fieldName, 
-            runTime.timeName(), 
-            mesh, 
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    );
+        fieldName, 
+        runTime.timeName(), 
+        mesh, 
+        IOobject::MUST_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh
+);
