@@ -71,7 +71,7 @@ namespace Foam::TriSurfaceImmersion
 
 using indexedTet = std::array<label, 4>;
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 class adaptiveTetCellRefinement
 {
 private:
@@ -85,7 +85,7 @@ private:
     const LevelSet& levelSet_;
 
     //- Criterion determining if a tetrahedron needs further refinement or not.
-    RefinementCriterion<LevelSet> criterion_;
+    RefinementCriterion criterion_;
 
     //- Set of unique points used to represent the tetrahedra
     std::vector<point> points_;

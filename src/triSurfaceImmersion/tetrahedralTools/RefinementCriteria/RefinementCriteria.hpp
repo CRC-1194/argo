@@ -43,12 +43,14 @@ SourceFiles
 #include "fvCFD.H"
 
 #include "AdaptiveTetCellRefinement.hpp"
+#include <algorithm>
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam::TriSurfaceImmersion
 {
 
+/*
 template<class LevelSet>
 class boundingBallCriterion
 {
@@ -89,11 +91,106 @@ public:
     //- Return level set value at point p. Not necessarily a signed distance.
     static scalar levelSetValue(const LevelSet& ls, const point& p);
 };
+*/
+
+//--- Refactored intersection criteria functions
+struct boundingBallCriterion{};
+struct signCriterion{};
+
+// --- boundingBallCriterion functions
+template<class IndexedPolyhedron,
+    template<class PointType> class PointContainer,
+    template<class ValueType> class LevelSetValueContainer>
+bool considerIntersected(const point& refPoint,
+    scalar maxDistSqr,
+    const IndexedPolyhedron& poly,
+    const PointContainer<point>& points,
+    const LevelSetValueContainer<scalar>& values,
+    const boundingBallCriterion& criterion)
+{
+    return std::any_of(poly.begin(), poly.end(),
+        [&](label pID){return Foam::magSqr(points[pID] - refPoint) >= maxDistSqr;}
+    );
+}
 
 
+template<class IndexSet, template<class ValueType> class ValueContainer>
+std::tuple<scalar,label> maxDistSqrAndPointID(const IndexSet& ids,
+    const ValueContainer<scalar>& values)
+{
+    label maxID = *(std::max_element(ids.begin(), ids.end(),
+        [&](label a, label b){
+            return (Foam::magSqr(values[a]) < Foam::magSqr(values[b]));}
+    ));
+
+    return std::make_tuple(Foam::magSqr(values[maxID]), maxID);
+}
+
+
+template<class IndexedPolyhedron,
+    template<class PointType> class PointContainer,
+    template<class ValueType> class LevelSetValueContainer>
+bool considerIntersected(const IndexedPolyhedron& poly,
+    const PointContainer<point>& points,
+    const LevelSetValueContainer<scalar>& values,
+    const boundingBallCriterion& criterion)
+{
+    const auto [maxDistSqr, pID] = maxDistSqrAndPointID(poly, values);
+
+    return considerIntersected(points[pID],
+        maxDistSqr, poly, points, values, criterion);
+}
+
+
+template<class LevelSet>
+scalar levelSetValue(const LevelSet& ls,
+    const point& p,
+    const boundingBallCriterion& criterion)
+{
+    return ls.signedDistance(p);
+}
+
+
+// --- signCriterion functions
+template<template<class IndexType> class IndexedPolyhedron,
+    template<class PointType> class PointContainer,
+    template<class ValueType> class LevelSetValueContainer>
+bool considerIntersected(const point& refPoint,
+    scalar refValue,
+    const IndexedPolyhedron<label>& poly,
+    const PointContainer<point>& points,
+    const LevelSetValueContainer<scalar>& values,
+    const signCriterion& criterion)
+{
+    return std::any_of(poly.begin(), poly.end(),
+        [&](label pID){return values[pID]*refValue < 0.0;}
+    );
+}
+
+
+template<template<class IndexType> class IndexedPolyhedron,
+    template<class PointType> class PointContainer,
+    template<class ValueType> class LevelSetValueContainer>
+bool considerIntersected(const IndexedPolyhedron<label>& poly,
+    const PointContainer<point>& points,
+    const LevelSetValueContainer<scalar>& values,
+    const signCriterion& criterion)
+{
+    return considerIntersected(points[poly[0]],
+        values[poly[0]], poly, points, values, criterion);
+}
+
+
+template<class LevelSet>
+scalar levelSetValue(const LevelSet& ls,
+    const point& p,
+    const signCriterion& criterion)
+{
+    return ls.value(p);
+}
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "RefinementCriteriaI.hpp"
+//#include "RefinementCriteriaI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

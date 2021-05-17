@@ -26,7 +26,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 std::array<scalar, 6> adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::edge_lengths(const indexedTet& tet) const
 {
@@ -43,7 +43,7 @@ std::array<scalar, 6> adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 label adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::compute_max_refinement_level()
 {
@@ -71,7 +71,7 @@ label adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::compute_decomposition()
 {
@@ -94,7 +94,7 @@ void adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 label adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::flag_tets_for_refinement(const int level)
 {
@@ -105,7 +105,7 @@ label adaptiveTetCellRefinement<LevelSet,
     for (auto idx = start; idx != end; ++idx)
     {
         refinement_required_[idx] =
-            criterion_.needsRefinement(tets_[idx], points_, levelSetValues_);
+            considerIntersected(tets_[idx], points_, levelSetValues_, criterion_);
 
         if (refinement_required_[idx])
         {
@@ -117,7 +117,7 @@ label adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::update_tet_container_sizes(const int level,
     const int n_new_tets)
@@ -139,7 +139,7 @@ void adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::add_to_map(
     const std::array<edge, 6> tet_edges)
 {
@@ -150,7 +150,7 @@ void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::add_to_map(
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::update_edge_to_point_map(const int level)
 {
@@ -187,7 +187,7 @@ void adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 std::array<std::tuple<label, label>, 6> adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::edges(const indexedTet& tet) const
 {
@@ -200,7 +200,7 @@ std::array<std::tuple<label, label>, 6> adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::create_refined_tets(int level)
 {
@@ -218,7 +218,7 @@ void adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::decompose_and_add_new_tets(const indexedTet& tet,
     const label start_id)
@@ -273,7 +273,7 @@ void adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::computeLevelSetValues(const int level)
 {
@@ -282,11 +282,11 @@ void adaptiveTetCellRefinement<LevelSet,
     for (auto idx = start; idx != end; ++idx)
     {
         levelSetValues_[idx] =
-            criterion_.levelSetValue(levelSet_, points_[idx]);
+            levelSetValue(levelSet_, points_[idx], criterion_);
     }
 }
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::
     save_decomposition_as_vtk(const std::vector<indexedTet>& tets,
         const std::vector<point>& points,
@@ -353,7 +353,7 @@ void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::adaptiveTetCellRefinement(const LevelSet& levelSet,
     const std::vector<point> points,
@@ -380,7 +380,7 @@ adaptiveTetCellRefinement<LevelSet,
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 const std::vector<point>& adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::points()
 {
@@ -390,7 +390,7 @@ const std::vector<point>& adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 const std::vector<scalar>& adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::signedDistance()
 {
@@ -400,7 +400,7 @@ const std::vector<scalar>& adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 std::vector<indexedTet> adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::resultingTets()
 {
@@ -427,7 +427,7 @@ std::vector<indexedTet> adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 label adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::refinementLevel() const
 {
@@ -435,7 +435,7 @@ label adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printLevelInfos()
     const
 {
@@ -452,7 +452,7 @@ void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printLevelInfos()
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printTets() const
 {
     Info << "Indexed tets (n = " << tets_.size() << " in total):\n";
@@ -466,7 +466,7 @@ void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printTets() const
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printPoints()
     const
 {
@@ -481,7 +481,7 @@ void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::printPoints()
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 std::vector<label> adaptiveTetCellRefinement<LevelSet,
     RefinementCriterion>::refinementLevels(const label n_tets)
 {
@@ -509,7 +509,7 @@ std::vector<label> adaptiveTetCellRefinement<LevelSet,
 }
 
 
-template<class LevelSet, template<class LevelSet2> class RefinementCriterion>
+template<class LevelSet, class RefinementCriterion>
 void adaptiveTetCellRefinement<LevelSet, RefinementCriterion>::writeTets(
     const label cellID)
 {
