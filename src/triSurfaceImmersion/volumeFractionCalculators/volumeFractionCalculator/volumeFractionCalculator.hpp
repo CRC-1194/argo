@@ -5,36 +5,72 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2021 AUTHOR,AFFILIATION
+ 
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
-
+ 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+ 
     OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
-
+ 
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
-
+ 
 Class
     Foam::TriSurfaceImmersion::volumeFractionCalculator
-
+ 
 Description
     Interface class enabling runtime type selection for volume fraction
-    calculators, namely surface-mesh-cell-intersection and
-    surface-mesh-cell-approximation.
-
+    calculators, namely surface-mesh-cell-intersection (SMCI) and
+    surface-mesh-cell-approximation (SMCA).
+ 
 SourceFiles
     volumeFractionCalculator.cpp
     volumeFractionCalculatorI.hpp
+ 
+Authors (in alphabetical order):
+ 
+    Dirk Gründing   (gruending@mma.tu-darmstadt.de, main developer, Affiliation 2,3)  
+    Tomislav Maric  (tomislav.maric@gmx.com, main developer, Affiliation 1,3)
+    Tobias Tolle    (bt@lefou-familie.org, main developer, Affiliation 1,3)
+ 
+Additional Contact persons:
+ 
+    Dieter Bothe, bothe@mma.tu-darmstadt.de, head of institute, Affiliation 3
+ 
+Affiliations:
+ 
+    1) Research Group:
+       Lagrangian / Eulerian numerical methods for multiphase flows
+       Research Group Leader: Tomislav Maric
+       Department of Mathematics
+       Technische Universität Darmstadt, Germany
+ 
+    2) Research Group:
+       Arbitrary Lagrangian Eulerian methods for multiphase flows and
+       wetting phenomena
+       Research Group Leader: Dirk Gründing
+       Department of Mathematics
+       Technische Universität Darmstadt, Germany
+ 
+    3) Institute:
+       Mathematical modeling and analysis
+       Head of institute: Dieter Bothe
+       Department of Mathematics
+       Technische Universität Darmstadt, Germany
 
+Acknowledgement:
+ 
+    Funded by the German Research Foundation (DFG):
+    Project-ID 265191195 – SFB 1194, sub-projects B01, B02 and Z-INF
+     
 \*---------------------------------------------------------------------------*/
 
 #ifndef volumeFractionCalculator_H
