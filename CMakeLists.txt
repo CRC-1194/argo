@@ -153,7 +153,7 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc
     src/triSurfaceImmersion/tetrahedralTools/AdaptiveTetCellRefinement
-    src/triSurfaceImmersion/tetrahedralTools/RefinementCriteria
+    src/triSurfaceImmersion/tetrahedralTools/IntersectionCriteria
     src/triSurfaceImmersion/tetrahedralTools/tetVolumeFractionCalculator
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection

@@ -32,7 +32,7 @@ License
 
 #include "addToRunTimeSelectionTable.H"
 
-#include "RefinementCriteria.hpp"
+#include "IntersectionCriteria.hpp"
 #include "signedDistanceCalculator.hpp"
 #include "tetVolumeFractionCalculator.hpp"
 #include "triSurfaceDistCalc.hpp"
@@ -46,26 +46,6 @@ addToRunTimeSelectionTable(
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-// TODO (TT): this is essentially the bounding ball criterion. It should be
-// reused here. Then merge this function with `findIntersectedCells`.
-bool surfaceMeshCellApproximation::intersectionPossible(
-    const label cellID) const
-{
-    const auto& points = this->mesh().points();
-    const auto& cellPointIDs = this->mesh().cellPoints()[cellID];
-    const auto distSqr = pow(sigDistCalcPtr_->cellSignedDist0()[cellID], 2.0);
-    const auto centre = this->mesh().C()[cellID];
-
-    // Idea: if all vertices of a cell have a distance less than the signed
-    // distance of the centre to the interface, then there is no intersection
-    // possible (TT)
-    return std::any_of(cellPointIDs.begin(), cellPointIDs.end(), [&](auto pI) {
-        auto v = points[pI] - centre;
-        return (v & v) >= distSqr;
-    });
-}
-
-
 surfaceMeshCellApproximation::cellDecompositionTuple
 surfaceMeshCellApproximation::decomposeCell(const label cellID) const
 {
@@ -210,10 +190,22 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
 void surfaceMeshCellApproximation::findIntersectedCells()
 {
     const auto& cellClosestPoint = sigDistCalcPtr_->cellClosestPoint();
+    const auto& cellSignedDist = sigDistCalcPtr_->cellSignedDist0();
+    const auto& centres = this->mesh().C();
+    const auto& points = this->mesh().points();
+    const auto& meshCellPoints = this->mesh().cellPoints();
 
     forAll(cellClosestPoint, cellI)
     {
-        if (cellClosestPoint[cellI].hit() && intersectionPossible(cellI))
+        auto distSqr = pow(cellSignedDist[cellI], 2.0);
+
+        if
+        (
+            cellClosestPoint[cellI].hit()
+            &&
+            considerIntersected(centres[cellI], distSqr, meshCellPoints[cellI],
+                points, std::vector<scalar>{}, boundingBallCriterion{})
+        )
         {
             interfaceCellIDs_.push_back(cellI);
         }

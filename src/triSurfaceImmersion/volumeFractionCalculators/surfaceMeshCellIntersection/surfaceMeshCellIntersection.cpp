@@ -36,6 +36,8 @@ License
 
 #include "Geophase.hpp"
 
+#include "IntersectionCriteria.hpp"
+
 namespace Foam::TriSurfaceImmersion
 {
 
@@ -195,26 +197,20 @@ void surfaceMeshCellIntersection::findIntersectedCells()
 
     forAll(cellSignedDist, cellI)
     {
-        // No hit-> cell not within narrow band
-        if (!cellClosestTriangle[cellI].hit())
+        // No hit -> cell not within narrow band
+        if
+        (
+            cellClosestTriangle[cellI].hit()
+            &&
+            considerIntersected(point{}, cellSignedDist[cellI],
+                meshCellPoints[cellI], std::vector<point>{}, pointSignedDist,
+                signCriterion{})
+        )
         {
-            continue;
-        }
-
-        // Todo (TT): this is essentially the sign refinement criterion.
-        // Reuse it here.
-        const auto& cellDist = cellSignedDist[cellI];
-        const auto& cellPoints = meshCellPoints[cellI];
-
-        forAll(cellPoints, pointI)
-        {
-            if ((pointSignedDist[cellPoints[pointI]] * cellDist) < 0)
-            {
-                intersectedCellLabels_.append(cellI);
-                break;
-            }
+            intersectedCellLabels_.append(cellI);
         }
     }
+
     assert((intersectedCellLabels_.size() < mesh.nCells()));
     assert(intersectedCellLabels_.size() > 0);
 }

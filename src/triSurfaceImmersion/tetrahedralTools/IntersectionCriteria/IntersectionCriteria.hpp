@@ -30,19 +30,20 @@ Class
 Description
     Criteria to decide whether a cell is intersected by an interface based
     on the level set values or the signed distances defined at the cell
-    corner points.
+    corner points. 
+    The classes themselves are only used for tag dispatch. The actual
+    criteria are implemented in the overloaded functions
+    'considerIntersected'.
 
 SourceFiles
-    refinementCriteriaI.hpp
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef refinementCriteria_H
-#define refinementCriteria_H
+#ifndef intersectionCriteria_H
+#define intersectionCriteria_H
 
 #include "fvCFD.H"
 
-#include "AdaptiveTetCellRefinement.hpp"
 #include <algorithm>
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -50,62 +51,19 @@ SourceFiles
 namespace Foam::TriSurfaceImmersion
 {
 
-/*
-template<class LevelSet>
-class boundingBallCriterion
-{
-public:
-
-    // Generic interface member functions
-    //- Determine wheter the given tetrahedron needs refinement.
-    //  This function evaluates to true if the there is no bounding ball
-    //  centred around a tetrahedron vertex that is smaller than the ball
-    //  defined by the vertex and its signed distance as radius.
-    static bool needsRefinement(const indexedTet& tet,
-        const std::vector<point>& points,
-        const std::vector<scalar>& signedDistances);
-
-    //- Return signed distance of p to the interface.
-    static scalar levelSetValue(const LevelSet& ls, const point& p);
-
-    // Criterion specific member functions
-    //- Return a tuple with the maximum distance squared and vertex label.
-    static std::tuple<scalar, label> maxDistSqrAndPointID(
-        const indexedTet& tet, const std::vector<scalar>& signedDistances);
-};
-
-
-template<class LevelSet>
-class signCriterion
-{
-public:
-
-    // Generic interface member functions
-    //- Determine wheter the given tetrahedron needs refinement.
-    //  This function evaluates to true if the level set values do not have
-    //  all the same sign.
-    static bool needsRefinemeent(const indexedTet& tet,
-        const std::vector<point>& points,
-        const std::vector<scalar>& levelSetValues);
-
-    //- Return level set value at point p. Not necessarily a signed distance.
-    static scalar levelSetValue(const LevelSet& ls, const point& p);
-};
-*/
-
-//--- Refactored intersection criteria functions
+// Structs used for tag dispatch
 struct boundingBallCriterion{};
 struct signCriterion{};
 
-// --- boundingBallCriterion functions
+// boundingBallCriterion implementation
 template<class IndexedPolyhedron,
-    template<class PointType> class PointContainer,
-    template<class ValueType> class LevelSetValueContainer>
+    class PointContainer,
+    class LevelSetValueContainer>
 bool considerIntersected(const point& refPoint,
     scalar maxDistSqr,
     const IndexedPolyhedron& poly,
-    const PointContainer<point>& points,
-    const LevelSetValueContainer<scalar>& values,
+    const PointContainer& points,
+    const LevelSetValueContainer& values,
     const boundingBallCriterion& criterion)
 {
     return std::any_of(poly.begin(), poly.end(),
@@ -114,9 +72,9 @@ bool considerIntersected(const point& refPoint,
 }
 
 
-template<class IndexSet, template<class ValueType> class ValueContainer>
+template<class IndexSet, class ValueContainer>
 std::tuple<scalar,label> maxDistSqrAndPointID(const IndexSet& ids,
-    const ValueContainer<scalar>& values)
+    const ValueContainer& values)
 {
     label maxID = *(std::max_element(ids.begin(), ids.end(),
         [&](label a, label b){
@@ -128,11 +86,11 @@ std::tuple<scalar,label> maxDistSqrAndPointID(const IndexSet& ids,
 
 
 template<class IndexedPolyhedron,
-    template<class PointType> class PointContainer,
-    template<class ValueType> class LevelSetValueContainer>
+    class PointContainer,
+    class LevelSetValueContainer>
 bool considerIntersected(const IndexedPolyhedron& poly,
-    const PointContainer<point>& points,
-    const LevelSetValueContainer<scalar>& values,
+    const PointContainer& points,
+    const LevelSetValueContainer& values,
     const boundingBallCriterion& criterion)
 {
     const auto [maxDistSqr, pID] = maxDistSqrAndPointID(poly, values);
@@ -151,15 +109,15 @@ scalar levelSetValue(const LevelSet& ls,
 }
 
 
-// --- signCriterion functions
-template<template<class IndexType> class IndexedPolyhedron,
-    template<class PointType> class PointContainer,
-    template<class ValueType> class LevelSetValueContainer>
+// signCriterion implementation 
+template<class IndexedPolyhedron,
+    class PointContainer,
+    class LevelSetValueContainer>
 bool considerIntersected(const point& refPoint,
     scalar refValue,
-    const IndexedPolyhedron<label>& poly,
-    const PointContainer<point>& points,
-    const LevelSetValueContainer<scalar>& values,
+    const IndexedPolyhedron& poly,
+    const PointContainer& points,
+    const LevelSetValueContainer& values,
     const signCriterion& criterion)
 {
     return std::any_of(poly.begin(), poly.end(),
@@ -168,12 +126,12 @@ bool considerIntersected(const point& refPoint,
 }
 
 
-template<template<class IndexType> class IndexedPolyhedron,
-    template<class PointType> class PointContainer,
-    template<class ValueType> class LevelSetValueContainer>
-bool considerIntersected(const IndexedPolyhedron<label>& poly,
-    const PointContainer<point>& points,
-    const LevelSetValueContainer<scalar>& values,
+template<class IndexedPolyhedron,
+    class PointContainer,
+    class LevelSetValueContainer>
+bool considerIntersected(const IndexedPolyhedron& poly,
+    const PointContainer& points,
+    const LevelSetValueContainer& values,
     const signCriterion& criterion)
 {
     return considerIntersected(points[poly[0]],
@@ -188,9 +146,6 @@ scalar levelSetValue(const LevelSet& ls,
 {
     return ls.value(p);
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-//#include "RefinementCriteriaI.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

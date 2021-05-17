@@ -78,9 +78,6 @@ private:
     label maxUsedRefinementLevel_ = 0;
 
     // Private Member Functions
-    //- Return whether an intersection between cell and interface is possible
-    bool intersectionPossible(label cellID) const;
-
     //- Decompose the cell into tetrahedra using its centre and face centres
     cellDecompositionTuple decomposeCell(label cellID) const;
 
