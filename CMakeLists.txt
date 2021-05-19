@@ -121,6 +121,10 @@ find_library(OF_TURBULENCEMODELS turbulenceModels PATHS ${of_lib_path})
 find_library(OF_INCOMPRESSIBLETURBULENCEMODELS incompressibleTransportModels PATHS ${of_lib_path})
 find_library(OF_WAVEMODELS waveModels PATHS ${of_lib_path})
 
+# Additional librariesrequired for high density ratio solvers
+find_library(OF_VOFPHASETURBULENTTRANSPORTMODELS VoFphaseTurbulentTransportModels PATHS ${of_lib_path})
+find_library(OF_INCOMPRESSIBLEINTERPHASETRANSPORTMODELS incompressibleInterPhaseTransportModels PATHS ${of_lib_path})
+
 # Use lib instead of lib64 for libraries.
 set(CMAKE_INSTALL_LIBDIR "$ENV{FOAM_USER_LIBBIN}")
 set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
@@ -367,6 +371,54 @@ target_link_libraries("interIsoPandoraFoam"
     m
 )
 
+# OpenFOAM solvers modified for high density ratios
+add_executable("interIsoRhoFoam"
+    applications/solvers/interIsoRhoFoam/interIsoRhoFoam.cpp)
+target_include_directories("interIsoRhoFoam" SYSTEM PRIVATE
+    ${of_src_path}/dynamicFvMesh/lnInclude
+    ${of_src_path}/dynamicMesh/lnInclude
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/phaseSystemModels/twoPhaseInter/incompressibleInterPhaseTransportModel/lnInclude
+    ${of_src_path}/phaseSystemModels/twoPhaseInter/VoFphaseIncompressibleTurbulenceModels/lnInclude
+    ${of_src_path}/sampling/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/transportModels
+    ${of_src_path}/transportModels/geometricVoF/lnInclude
+    ${of_src_path}/transportModels/twoPhaseMixture/lnInclude
+    ${of_src_path}/transportModels/incompressible/lnInclude
+    ${of_src_path}/transportModels/interfaceProperties/lnInclude
+    ${of_src_path}/transportModels/immiscibleIncompressibleTwoPhaseMixture/lnInclude
+    ${of_src_path}/TurbulenceModels/turbulenceModels/lnInclude
+    ${of_src_path}/TurbulenceModels/incompressible/lnInclude
+    ${of_src_path}/TurbulenceModels/phaseIncompressible/lnInclude
+    ${of_app_path}/solvers/multiphase/interIsoFoam
+    ${of_app_path}/solvers/multiphase/VoF
+    ${of_app_path}/solvers/multiphase/interFoam
+)
+target_link_libraries("interIsoRhoFoam"
+    ${OF_FINITEVOLUME}
+    ${OF_FVOPTIONS}
+    ${OF_MESHTOOLS}
+    ${OF_SAMPLING}
+    ${OF_DYNAMICFVMESH}
+    ${OF_GEOMETRICVOF}
+    ${OF_INCOMPRESSIBLETRANSPORTMODELS}
+    ${OF_INTERFACEPROPERTIES}
+    ${OF_IMMISCIBLEINCOMPRESSIBLETWOPHASEMIXTURE}
+    ${OF_TURBULENCEMODELS}
+    ${OF_INCOMPRESSIBLETURBULENCEMODELS}
+    ${OF_WAVEMODELS}
+    ${OF_SURFMESH}
+    ${OF_VOFPHASETURBULENTTRANSPORTMODELS}
+    ${OF_INCOMPRESSIBLEINTERPHASETRANSPORTMODELS}
+    ${OF_OPENFOAM}
+    dl
+    m
+)
+
 
 # Install executables
 install(TARGETS
@@ -374,6 +426,7 @@ install(TARGETS
         "foamPerturbMesh"
         "geophaseUnitTest"
         "interIsoPandoraFoam"
+        "interIsoRhoFoam"
         "pandoraTestCurvature"
         "surfaceInitVolumeFraction"
         "surfaceInitSignedDistances"

@@ -1,0 +1,39 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2006                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      setFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+defaultFieldValues
+(
+    volVectorFieldValue U (0 0 0)
+);
+
+regions
+(
+    pointToCell
+    {
+        option any;
+        set interfaceRegionCellCorners;
+
+        fieldValues
+        (
+            // TODO: if the velocity for the droplet phase is given in the
+            // parameter file, please make this file a template and replace the
+            // velocity components accordingly
+            volVectorFieldValue U (@!x_velocity!@ @!y_velocity!@ @!z_velocity!@)
+        );
+    }
+);
+
+// ************************************************************************* //
