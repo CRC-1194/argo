@@ -66,7 +66,8 @@ int main(int argc, char *argv[])
         " adaptive re-meshing."
     );
 
-    #include "postProcess.H"
+    // TODO (TT): not compiling with Cmake yet
+    //#include "postProcess.H"
 
     #include "addCheckCaseOptions.H"
     #include "setRootCaseLists.H"
@@ -75,7 +76,7 @@ int main(int argc, char *argv[])
     #include "initContinuityErrs.H"
     #include "createDyMControls.H"
     #include "createFields.H"
-    #include "createConsistentFields.H" //new added
+    #include "createConsistentFields.hpp" //new added
     #include "createAlphaFluxes.H"
     #include "initCorrectPhi.H"
     #include "createUfIfPresent.H"
@@ -171,7 +172,7 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            #include "UEqn.H"
+            #include "UEqn.hpp"
 
             // --- Pressure corrector loop
             while (pimple.correct())
