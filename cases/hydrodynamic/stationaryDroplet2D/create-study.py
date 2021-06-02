@@ -1,6 +1,7 @@
 #!/usr/bin/env python3 
 
 from optparse import OptionParser
+import os
 import sys
 from subprocess import call
 
@@ -40,3 +41,22 @@ call(["pyFoamRunParameterVariation.py", "--no-execute-solver", "--no-server-proc
       "--no-mesh-create", "--no-case-setup", "--cloned-case-prefix=%s" % options.studyname, 
       "--every-variant-one-case-execution",
       "--create-database", options.casedir, options.paramfile])
+
+# Mesh each case and set initial fields
+parameter_dirs = [parameter_dir for parameter_dir in os.listdir(os.curdir) \
+                  if os.path.isdir(parameter_dir) \
+                  and options.studyname in parameter_dir]
+parameter_dirs.sort()
+
+for parameter_dir in parameter_dirs: 
+    pwd = os.getcwd()
+    os.chdir(parameter_dir)
+
+    print(parameter_dir)
+
+    if (args.slurm_run):
+        call("sbatch", "../caseSetup.sbatch")
+    else: 
+        call(args.solver)
+
+    os.chdir(pwd)
