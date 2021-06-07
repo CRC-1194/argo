@@ -117,6 +117,7 @@ int main(int argc, char* argv[])
     auto algName =
         setOptionByPrecedence<word>(initDict, args, "algorithm", "SMCI");
     setOptionByPrecedence<label>(initDict, args, "refinementLevel", -1);
+    setOptionByPrecedence<scalar>(initDict, args, "relError", -1.0);
     setOptionByPrecedence<Switch>(initDict, args, "writeGeometry", false);
     auto invertVolumeFraction =
         setOptionByPrecedence<Switch>(initDict, args, "invert", false);
@@ -173,7 +174,6 @@ int main(int argc, char* argv[])
                       << nl;
 
             std::ofstream errorFile;
-            // TODO (TT): make file name algorithm dependent
             errorFile.open("vof-init-results-" + algName + ".csv");
             errorFile << "N_CELLS,"
                       << "N_TRIANGLES,"

@@ -49,7 +49,15 @@ namespace Foam::TriSurfaceImmersion
 
 class implicitSurface
 {
+protected:
+
+    //- Return surface orientation according to "outward"/"inward"
+    //  "outward": 1.0 (keep original orientation)
+    //  "inward": -1.0 (flip orientation)
+    static scalar orientation(const word& keyword);
+
 public:
+
     // Static Data Members
     TypeName("implicitSurface");
 
@@ -143,6 +151,9 @@ class sphere : public implicitSurface
     //- Sphere radius
     scalar radius_;
 
+    //- Sphere normal orientation
+    scalar orientation_;
+
 public:
 
     // Static Data Members
@@ -151,7 +162,7 @@ public:
 
     // Constructors
     //- Construct from centre and radius
-    sphere(vector center, scalar radius);
+    sphere(vector center, scalar radius, scalar orientation=1.0);
 
     //- Construct from ITstream
     explicit sphere(ITstream& is);
@@ -188,6 +199,9 @@ class ellipsoid : public implicitSurface
     //- Ellipsoid semi axes squared. Used for Computation.
     vector axesSqr_;
 
+    //- Ellipsoid normal orientation
+    scalar orientation_;
+
     //- Compute the squared semi axes
     void setAxesSqr(const vector& axes);
 
@@ -196,10 +210,9 @@ public:
     // Static Data members
     TypeName("ellipsoid");
 
-
     // Constructors
     //- Construct from centre and vector of semi axes
-    ellipsoid(vector center, vector axes);
+    ellipsoid(vector center, vector axes, scalar orientation=1.0);
 
     //- Construct from ITstream
     explicit ellipsoid(ITstream& is);
@@ -236,6 +249,9 @@ class sinc : public implicitSurface
     //- Frequency
     scalar omega_;
 
+    //- Surface orientation
+    scalar orientation_;
+
 public:
 
     // Static Data members
@@ -244,7 +260,7 @@ public:
 
     // Constructors
     //- Construct from orign, amplitude and frequency
-    sinc(vector origin, scalar amplitude, scalar omega);
+    sinc(vector origin, scalar amplitude, scalar omega, scalar orientation=1.0);
 
     //- Construct from ITstream
     explicit sinc(ITstream& is);
