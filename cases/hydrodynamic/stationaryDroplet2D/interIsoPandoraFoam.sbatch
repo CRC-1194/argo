@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -p test24
 #SBATCH -A special00005 
 #SBATCH -J interIsoPandoraFoam  
 #SBATCH -n 4 

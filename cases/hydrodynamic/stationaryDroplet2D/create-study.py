@@ -3,13 +3,14 @@
 from optparse import OptionParser
 import os
 import sys
+import time
 from subprocess import call
 
 usage = """A wrapper for pyFoamRunParameterVariation.py that generates the
 directory structure for a parameter study. 
 
-Meshes are not generated and preprocessing is not done. 
-Used to prepare for execution on a cluster.
+Used to prepare for execution on a cluster. Performs meshing and field
+initialization.
 
 Usage: ./create-study.py -c templateCase -p paramFile -s studyName"""
 
@@ -26,6 +27,10 @@ parser.add_option("-p", "--parameter-file", dest="paramfile",
 parser.add_option("-s", "--study-name", dest="studyname", 
                   help="Name of the parameter study.", 
                   metavar="STUDYNAME")
+
+parser.add_option("-j", "--job-mode", action="store_true", dest="use_slurm",
+                  help="Submit meshing and initialization to SLURM.",
+                  metavar="SLURM")
 
 (options, args) = parser.parse_args()
 
@@ -54,9 +59,12 @@ for parameter_dir in parameter_dirs:
 
     print(parameter_dir)
 
-    if (args.slurm_run):
-        call("sbatch", "../caseSetup.sbatch")
+    if (options.use_slurm):
+        call(["sbatch", "../caseSetup.sbatch"])
+        time.sleep(2)
     else: 
-        call(args.solver)
+        call("blockMesh")
+        call("setAlphaField")
+        call("decomposePar", "-force")
 
     os.chdir(pwd)

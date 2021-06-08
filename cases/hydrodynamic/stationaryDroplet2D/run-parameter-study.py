@@ -36,7 +36,7 @@ if __name__ == '__main__':
         print(parameter_dir)
 
         if (args.slurm_run):
-            call("sbatch", "../" + args.solver + ".sbatch")
+            call(["sbatch", "../" + args.solver + ".sbatch"])
         else: 
             call(args.solver)
 
