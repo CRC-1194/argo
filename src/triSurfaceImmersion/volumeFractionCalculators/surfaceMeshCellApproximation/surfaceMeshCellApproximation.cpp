@@ -29,6 +29,8 @@ License
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <volFieldsFwd.H>
 
 #include "addToRunTimeSelectionTable.H"
 
@@ -124,34 +126,15 @@ label surfaceMeshCellApproximation::nTets(const label cellID) const
 }
 
 
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-surfaceMeshCellApproximation::surfaceMeshCellApproximation(
-    const dictionary& configDict, const fvMesh& mesh)
-    : volumeFractionCalculator{configDict, mesh},
-      sigDistCalcPtr_{
-          signedDistanceCalculator::New(configDict.subDict("distCalc"), mesh)},
-      interfaceCellIDs_{}, maxAllowedRefinementLevel_{
-                               configDict.get<label>("refinementLevel")}
+label surfaceMeshCellApproximation::interfaceCellVolumeFraction(
+        volScalarField& alpha, bool writeDecomposition)
 {
-}
-
-
-// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
-{
-    bulkVolumeFraction(alpha);
-    findIntersectedCells();
-
-    Info << "Computing volume fraction for interface cells..." << endl;
-    Info << "Number of cells flagged as interface cells: "
-         << interfaceCellIDs_.size() << endl;
-
     const auto& V = this->mesh().V();
-    label max_refine = 0;
+    label maxRefine = 0;
 
     // TODO (TT): OpenMP disabled for now. Loop does not execute correct with
     // more than two threads. See issue on GitLab.
-    //#pragma omp parallel for reduction(max:max_refine)
+    //#pragma omp parallel for reduction(max:maxRefine)
     for (const auto cellID : interfaceCellIDs_)
     {
         auto [tets, points, signed_dist] = decomposeCell(cellID);
@@ -173,17 +156,101 @@ void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
         // Bound volume fraction field
         alpha[cellID] = max(min(alpha[cellID], 1.0), 0.0);
 
-        max_refine = std::max(refiner.refinementLevel(), max_refine);
+        maxRefine = std::max(refiner.refinementLevel(), maxRefine);
 
-        if (this->writeGeometry())
+        if (writeDecomposition)
         {
             refiner.writeTets(cellID);
         }
     }
 
-    maxUsedRefinementLevel_ = max_refine;
+    return maxRefine;
+}
 
-    Info << "Finished volume fraction calculation" << endl;
+
+void surfaceMeshCellApproximation::determineRefinementLevel(volScalarField& alpha)
+{
+    /* Currently, there are three ways how the maximum refinement level is set:
+        1) User prescribes maximum refinement level directly.
+            -> integer value > 0
+            -> Nothing more to be done
+        2) "Auto mode": compute the level based on tetrahedra and triangle
+            edge length. Limited to triangulated surfaces.
+            -> value < 0
+            -> The refinement class handles the computation of the refinement
+                level
+        3) "Accuracy driven": compute the refinement level based on a
+            user-prescribed target accuracy of the relative global volume
+            error and an initial error without refinement. Limited to closed,
+            implicit surfaces.
+            -> relVolumeErrorThreshold > 0.0
+            -> Compute refinement level in this function
+    */ 
+
+    if (relVolumeErrorThreshold_ > 0.0)
+    {
+        // Compute volume fraction without refinement. Only use tets from
+        // tetrahedral cell decomposition
+        maxAllowedRefinementLevel_ = 0;
+        interfaceCellVolumeFraction(alpha, false);
+
+        // TODO (TT): for parallel cases using domain decomposition: one processor
+        // should do the calculation and broadcast the computed refinement level.
+        scalar Valpha = gSum((this->mesh().V() * alpha)());
+        scalar Vref = this->sigDistCalc().surfaceEnclosedVolume();
+
+        auto relativeVolumeError = mag(Valpha - Vref)/Vref;
+        auto errorRatio = relativeVolumeError/relVolumeErrorThreshold_;
+
+        // Ideally, this factor should be 2^n, where n is the order of the
+        // volume fraction approximation for a single tetrahedron; for the method
+        // employed here n=2.
+        // In actual numerical experiments for a spherical interface, the value
+        // below was observed for consecutive refinement levels.
+        const scalar beta = 3.9;
+
+        maxAllowedRefinementLevel_ =
+            std::ceil(std::log(errorRatio)/std::log(beta));
+
+        Info<< "Initial relative volume error: " << relativeVolumeError
+            << nl
+            << "Target relative volume error: " << relVolumeErrorThreshold_
+            << nl
+            << "Refinement level required: " << maxAllowedRefinementLevel_
+            << nl
+            << endl;
+        }
+}
+
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+surfaceMeshCellApproximation::surfaceMeshCellApproximation(
+    const dictionary& configDict, const fvMesh& mesh)
+    : volumeFractionCalculator{configDict, mesh},
+      sigDistCalcPtr_{
+          signedDistanceCalculator::New(configDict.subDict("distCalc"), mesh)},
+      interfaceCellIDs_{}, maxAllowedRefinementLevel_{
+                               configDict.get<label>("refinementLevel")},
+      relVolumeErrorThreshold_{configDict.get<scalar>("relError")}
+{
+}
+
+
+// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+void surfaceMeshCellApproximation::calcVolumeFraction(volScalarField& alpha)
+{
+    bulkVolumeFraction(alpha);
+    findIntersectedCells();
+    determineRefinementLevel(alpha);
+
+    Info << "Computing volume fraction for interface cells..." << endl;
+    Info << "Number of cells flagged as interface cells: "
+         << interfaceCellIDs_.size() << endl;
+
+    maxUsedRefinementLevel_ = interfaceCellVolumeFraction(alpha,
+        this->writeGeometry());
+
+    Info << "Finished volume fraction calculation" << nl << endl;
 }
 
 

@@ -1,6 +1,6 @@
 values
 {
-    solver ( surfaceCellVofInit );
+    solver ( surfaceInitVolumeFraction );
 
     N_CELLS
     (
@@ -12,8 +12,17 @@ values
         0.05 0.01 0.0025 
     );
 
-    MAX_REFINEMENT_LEVEL
-    (
-        -1 // Automatic refinement mode for SMCA algorithm
-    );
+
+    //-------------------------------------------------------------------------
+    //  Fixed parameters
+    //-------------------------------------------------------------------------
+
+    MAX_REFINEMENT_LEVEL (-1); // Automatic refinement mode
+
+
+    //-------------------------------------------------------------------------
+    //  Parameters not used by this study
+    //-------------------------------------------------------------------------
+
+    REL_VOLUME_ERROR (-1.0);
 }

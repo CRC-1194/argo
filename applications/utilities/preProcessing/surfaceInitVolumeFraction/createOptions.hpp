@@ -6,43 +6,50 @@ argList::addNote
 argList::addOption
 (
     "surfaceType",
-    "triSurface / levelSet"
-    "Surface type, meaning either a triSurface, e.g. from an STL, or a level set. Default: triSurface"
+    "triSurface / levelSet",
+    "Surface type, meaning either a triSurface, e.g. from an STL, or a level set. \nDefault: triSurface"
 );
 
 argList::addOption
 (
     "surfaceFile",
-    "Surface mesh file."
-    "File containing the interface description. Requires a consistent, inward normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose. Default: surface.stl"
+    "Surface mesh file",
+    "File containing the interface description. Requires a consistent, inward normal orientation. Use OpenFOAM's 'surfaceOrient' tool for this purpose.\nDefault: surface.stl"
 );
 
 argList::addOption
 (
     "narrowBandWidth", 
     "scalar",
-    "Number of cells in interface normal direction constituting the narrow band. Default: 4.0"
+    "Number of cells in interface normal direction constituting the narrow band. \nDefault: 4.0"
 ); 
 
 argList::addOption
 (
     "fieldName", 
     "alpha.water",
-    "Name of the volume fraction field. Default: alpha.water" 
+    "Name of the volume fraction field.\nDefault: alpha.water" 
 ); 
 
 argList::addOption
 (
     "algorithm", 
     "SMCI/SMCA",
-    "Name of the volume fraction calculator. Default: SMCI" 
+    "Name of the volume fraction calculator.\nDefault: SMCI" 
 ); 
 
 argList::addOption
 (
     "refinementLevel", 
     "label",
-    "Maximum refinement level to be used (SMCA only). Default: -1 (auto mode)"
+    "Maximum refinement level to be used (SMCA only).\nDefault: -1 (auto mode)"
+); 
+
+argList::addOption
+(
+    "relError", 
+    "scalar",
+    "Only for closed, implicit surfaces: ensure that the global relative volume error is below the given threshold. Note: using this option overrides the '-refinementLevel' option.\nDefault: -1.0 (Disabled)"
 ); 
 
 argList::addBoolOption

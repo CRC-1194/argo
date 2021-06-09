@@ -1,19 +1,27 @@
 values
 {
-    solver ( smcaVofInit );
+    solver ( surfaceInitVolumeFraction );
 
     N_CELLS
     (
         16
     );
 
-    TRIANGLE_EDGE_LENGTH 
-    (
-        0.002
-    );
-
     MAX_REFINEMENT_LEVEL
     (
         0 1 2 3
     );
+
+    //-------------------------------------------------------------------------
+    //  Fixed parameters
+    //-------------------------------------------------------------------------
+
+    TRIANGLE_EDGE_LENGTH (0.002);
+
+
+    //-------------------------------------------------------------------------
+    //  Parameters not used by this study
+    //-------------------------------------------------------------------------
+
+    REL_VOLUME_ERROR (-1.0);
 }

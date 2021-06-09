@@ -2,14 +2,11 @@ values
 {
     solver ( surfaceInitVolumeFraction );
 
-    N_CELLS
-    (
-        16 32 64 
-    );
+    N_CELLS (16);
 
-    MAX_REFINEMENT_LEVEL
+    REL_VOLUME_ERROR
     (
-        0 2 4 // Note: automatic mode not available for implicit surfaces yet
+        1.0 1.0e-1 1.0e-2 1.0e-3 1.0e-4 1.0e-5 1.0e-6
     );
 
 
@@ -19,5 +16,5 @@ values
 
     TRIANGLE_EDGE_LENGTH (0.05);
 
-    REL_VOLUME_ERROR (-1.0);
+    MAX_REFINEMENT_LEVEL (0);
 }
