@@ -14,16 +14,16 @@ values
 
     N_CURVATURE_AVERAGES
     (
-       5 10 20
+       0 5 10 20
     );
 
     N_CURVATURE_EXTENSIONS
     (
-        3 4 5 
+        2 3 4
     );
 
     N_CURVATURE_REGULARISATIONS
     (
-        0 2 4 
+        0 5 10 15 20 
     ); 
 }
