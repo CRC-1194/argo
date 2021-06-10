@@ -12,25 +12,18 @@ values
         32 64 128 
     );
 
-    N_MARKER_AVERAGES
+    N_CURVATURE_AVERAGES
     (
-       5 
-    );
-
-    N_NORMAL_AVERAGES
-    (
-       5 10 
+        // Add promising values here after evaluation of 2D study
     );
 
     N_CURVATURE_EXTENSIONS
     (
-       2 
+        // Add promising values here after evaluation of 2D study
     );
 
     N_CURVATURE_REGULARISATIONS
     (
-        15 
+        // Add promising values here after evaluation of 2D study
     ); 
-
-    REL_VOLUME_ERROR (1e-5);
 }
