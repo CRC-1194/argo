@@ -26,82 +26,66 @@ License
 \*---------------------------------------------------------------------------*/
 
 
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 const dictionary& signedDistanceCalculator::configDict() const
 {
     return dict_;
 }
 
+
 const fvMesh& signedDistanceCalculator::mesh() const
 {
     return mesh_;
 }
+
 
 const pointMesh& signedDistanceCalculator::pMesh() const
 {
     return pMesh_;
 }
 
+
 scalar signedDistanceCalculator::narrowBandWidth() const
 {
     return narrowBandWidth_;
 }
 
-const DynamicList<pointIndexHit>& signedDistanceCalculator::cellClosestPoint() const
+
+const DynamicList<pointIndexHit>& signedDistanceCalculator::cellClosestPoint()
+    const
 {
     return cellNearestTriangle_;
 }
 
-const DynamicList<pointIndexHit>& signedDistanceCalculator::pointClosestPoint() const
+
+const DynamicList<pointIndexHit>& signedDistanceCalculator::pointClosestPoint()
+    const
 {
     return pointNearestTriangle_;
 }
+
 
 const volScalarField& signedDistanceCalculator::cellSignedDist() const
 {
     return cellSignedDist_;
 }
 
+
 const volScalarField& signedDistanceCalculator::cellSignedDist0() const
 {
     return cellSignedDist0_;
 }
+
 
 const pointScalarField& signedDistanceCalculator::pointSignedDist() const
 {
     return pointSignedDist_;
 }
 
+
 scalar signedDistanceCalculator::outOfNarrowBandValue() const
 {
     return outOfNarrowBandValue_;
 }
-
-// * * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Friend Functions  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Friend Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * IOstream Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Ostream Operator  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
 
 // ************************************************************************* //

@@ -29,43 +29,30 @@ License
 
 #include "DynamicList.H"
 #include "IOobject.H"
-#include "addToRunTimeSelectionTable.H" 
+#include "addToRunTimeSelectionTable.H"
 #include "dictionary.H"
 #include "fvc.H"
 #include "pointIndexHit.H"
 #include "pointMesh.H"
 
-#include "insideOutsidePropagation.hpp"
-#include "signedDistanceCalculator.hpp"
-#include "volFieldsFwd.H"
-
-namespace Foam::TriSurfaceImmersion {
-
-    defineTypeNameAndDebug(volumeFractionCalculator, 0);
-    defineRunTimeSelectionTable(volumeFractionCalculator, Dictionary)
+namespace Foam::TriSurfaceImmersion
+{
+defineTypeNameAndDebug(volumeFractionCalculator, 0);
+defineRunTimeSelectionTable(volumeFractionCalculator, Dictionary);
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-volumeFractionCalculator::volumeFractionCalculator
-(
-    const dictionary& configDict,
-    const fvMesh& mesh
-)
-:
-    mesh_{mesh},
-    runTime_{mesh.time()},
-    pMesh_{mesh},
-    writeGeometry_(configDict.get<Switch>("writeGeometry"))
-{}
+volumeFractionCalculator::volumeFractionCalculator(
+    const dictionary& configDict, const fvMesh& mesh)
+    : mesh_{mesh}, runTime_{mesh.time()}, pMesh_{mesh},
+      writeGeometry_(configDict.get<Switch>("writeGeometry"))
+{
+}
 
 
 // * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * * //
-autoPtr<volumeFractionCalculator>
-volumeFractionCalculator::New
-(
-    const dictionary& configDict,
-    const fvMesh& mesh
-)
+autoPtr<volumeFractionCalculator> volumeFractionCalculator::New(
+    const dictionary& configDict, const fvMesh& mesh)
 {
     const word name = configDict.get<word>("algorithm");
 
@@ -74,13 +61,10 @@ volumeFractionCalculator::New
 
     if (cstrIter == DictionaryConstructorTablePtr_->end())
     {
-        FatalErrorIn (
-            "volumeFractionCalculator::New(const word& name)"
-        )   << "Unknown volumeFractionCalculator type "
-            << name << nl << nl
+        FatalErrorIn("volumeFractionCalculator::New(const word& name)")
+            << "Unknown volumeFractionCalculator type " << name << nl << nl
             << "Valid volumeFractionCalculators are : " << endl
-            << DictionaryConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+            << DictionaryConstructorTablePtr_->sortedToc() << exit(FatalError);
     }
 
     return autoPtr<volumeFractionCalculator>(cstrIter()(configDict, mesh));
@@ -88,18 +72,9 @@ volumeFractionCalculator::New
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-// TODO (TT): in principle, the inside/outside field inOut can be accessed through
-// the signed distance Calculator. However, there happen strange things when accessing
-// it through "sigDistCalc()".
-// For now, this is a functioning workaroud.
-void volumeFractionCalculator::bulkVolumeFraction
-(
-    volScalarField& alpha,
-    const volScalarField& inOut
-)
+void volumeFractionCalculator::bulkVolumeFraction(volScalarField& alpha)
 {
-    alpha = pos(inOut);
+    alpha = pos(this->sigDistCalc().cellSignedDist());
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

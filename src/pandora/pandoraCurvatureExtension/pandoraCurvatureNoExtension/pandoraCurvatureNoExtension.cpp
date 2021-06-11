@@ -57,7 +57,7 @@ pandoraCurvatureNoExtension::pandoraCurvatureNoExtension(const dictionary& dict)
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void pandoraCurvatureNoExtension::extend(volScalarField& curvature, const boolList& isInterfaceCell)
+void pandoraCurvatureNoExtension::extend(volScalarField&, const boolList&)
 {
     // Do nothing
 }

@@ -50,8 +50,8 @@ pandoraCurvatureNoRegularisation::pandoraCurvatureNoRegularisation(const diction
 
 void pandoraCurvatureNoRegularisation::regularise
 (
-    volScalarField& curvature,      // Unused argument
-    const boolList& isInterfaceCell // Unused argument
+    volScalarField&,      // Unused argument
+    const boolList&// Unused argument
 )
 {
     // Do nothing

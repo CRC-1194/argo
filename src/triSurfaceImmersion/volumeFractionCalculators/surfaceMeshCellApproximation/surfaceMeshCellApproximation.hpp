@@ -27,7 +27,7 @@ Class
     Foam::TriSurfaceImmersion::surfaceMeshCellApproximation
 
 Description
-    Implements the surface-mesh-cell-approximation algorithm (SMCA) using 
+    Implements the surface-mesh-cell-approximation algorithm (SMCA) using
     tetrahedral refinement and tet volume fraction approximation
     to compute volume fractions of interface cells.
 
@@ -42,84 +42,80 @@ SourceFiles
 
 #include <vector>
 
-#include "signedDistanceCalculator.hpp"
-#include "volFieldsFwd.H"
-
 #include "AdaptiveTetCellRefinement.hpp"
+#include "signedDistanceCalculator.hpp"
 #include "volumeFractionCalculator.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
+namespace Foam::TriSurfaceImmersion
+{
 
-
-/*---------------------------------------------------------------------------*\ 
+/*---------------------------------------------------------------------------*\
                Class surfaceMeshCellApproximation Declaration
 \*---------------------------------------------------------------------------*/
 
-class surfaceMeshCellApproximation
-:
-    public volumeFractionCalculator
+class surfaceMeshCellApproximation : public volumeFractionCalculator
 {
 private:
-
-    // Private types
-    using cellDecompositionTuple =
-        std::tuple<std::vector<indexedTet>, std::vector<point>, std::vector<scalar>>;
-    struct searchSphere
-    {
-        vector centre;
-        scalar radiusSquared;
-    };
-
-    // Private data
-    autoPtr<signedDistanceCalculator> sigDistCalcPtr_;
-    std::vector<label> interfaceCellIDs_;
-    label maxAllowedRefinementLevel_;
-    label maxUsedRefinementLevel_ = 0;
     
-    // Member functions
-    bool intersectionPossible(label cellID) const;
+    // Private Types
+    //- A triple containing set of indexed tetrahedra, points and sig.distances
+    using cellDecompositionTuple = std::
+        tuple<std::vector<indexedTet>, std::vector<point>, std::vector<scalar>>;
+
+    // Private Data
+    //- Pointer to the signed distance calculator holding interface information
+    autoPtr<signedDistanceCalculator> sigDistCalcPtr_;
+
+    //- Set of interface ceel IDs
+    std::vector<label> interfaceCellIDs_;
+
+    //- Maximum refinement level allowed for tetrahedral refinement
+    label maxAllowedRefinementLevel_;
+
+    //- Maximum refinement level actually used for tetrahedral refinement
+    label maxUsedRefinementLevel_ = 0;
+
+    // Private Member Functions
+    //- Decompose the cell into tetrahedra using its centre and face centres
     cellDecompositionTuple decomposeCell(label cellID) const;
+
+    //- Number of tetrahedra a cell is decomposed into
     label nTets(label cellID) const;
-    //searchSphere cellInterfaceSearchSphere(label cellID) const;
-    //triSurface surfaceSubset(vectorField& vertexNormals, label cellID) const;
 
 
 public:
 
     // Static Data Members
-    TypeName ("SMCA")
+    TypeName("SMCA");
 
 
     // Constructors
-    surfaceMeshCellApproximation
-    (
-        const dictionary& configDict,
-        const fvMesh& mesh
-    );
+    surfaceMeshCellApproximation(
+        const dictionary& configDict, const fvMesh& mesh);
 
 
     // Member Functions
+    //- Return average number of triangles per cell
+    inline scalar nTrianglesPerCell() const override;
 
-    //- Access
+    //- Return number of cells which may be intersected by the interface
+    inline label nIntersectedCells() const override;
 
-    inline const double nTrianglesPerCell() const override;
+    //- Return the maximum refinement level used for tetrahedral refinement
+    inline label maxRefinementLevel() const override;
 
-    inline const label nIntersectedCells() const override;
-
-    inline const label maxRefinementLevel() const override;
-
+    //- Return reference to the signed distance calculator
     const signedDistanceCalculator& sigDistCalc() const override;
 
-    //- Computation
+    //- Compute the volume fraction field alpha
+    void calcVolumeFraction(volScalarField& alpha) override;
 
-    void calcVolumeFraction(volScalarField& alpha) override; 
-
+    //- Find all cells which may be intersected by the interface
     void findIntersectedCells() override;
 
-    //- Write
-
+    //- Write additional fields used during the computation of volume fractions
     void writeFields() const override;
 };
 
@@ -130,7 +126,7 @@ public:
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-}  // namespace Foam::TriSurfaceImmersion
+} // namespace Foam::TriSurfaceImmersion
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

@@ -1,21 +1,22 @@
-include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 include(FetchContent)
 
 cmake_minimum_required(VERSION 3.13)
 
-project(geom-vof-init VERSION 1.0
-        DESCRIPTION "Computing volume fractions by intersecting unstructured meshes"
+project(Argo VERSION 1.0
+        DESCRIPTION "The 'argo' project is an OpenFOAM module that implements unstructured Lagrangian / Eulerian Interface (LEIA) methods for multiphase flow simulations in complex geometries."
         LANGUAGES CXX)
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Build dependencies
+####################################################################################################
+#   Fetch and build dependencies
+####################################################################################################
 
 # - Dependency: geophase
 FetchContent_Declare(geophase
-    GIT_REPOSITORY          git@git.rwth-aachen.de:leia/geophase.git
+    GIT_REPOSITORY          https://git.rwth-aachen.de/leia/geophase.git
     # TODO: Replace the branch with a new GIT_TAG for geophase as soon as everything runs.  
     #       geophase modifications are needed to make geometrical init work, so the geom-vof-init 
     #       branch is used. 
@@ -42,8 +43,14 @@ target_include_directories(geophase INTERFACE
     ${geophase_SOURCE_DIR}/include/geometrical_algorithm/
     ${geophase_SOURCE_DIR}/include/geometrical_model/
 )
+
 # OpenMP support
 find_package(OpenMP REQUIRED)
+
+
+####################################################################################################
+#   Read and store OpenFOAM environment and configuration
+####################################################################################################
 
 # Read build relevant OpenFOAM environment variables and cache them
 set(of_wm_project_dir "$ENV{WM_PROJECT_DIR}" CACHE PATH "Path to OpenFOAM project folder.")
@@ -118,57 +125,53 @@ find_library(OF_WAVEMODELS waveModels PATHS ${of_lib_path})
 set(CMAKE_INSTALL_LIBDIR "$ENV{FOAM_USER_LIBBIN}")
 set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 
-# Build the library
+
+####################################################################################################
+#   Argo libraries  
+####################################################################################################
+
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
 add_library("triSurfaceImmersion" SHARED
-    src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection/geomMeshIntersection.cpp
-    src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools/geomTriSurfaceTools.cpp
     src/triSurfaceImmersion/implicitSurfaces/implicitSurfaces.cpp
-    src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator/tetVofCalculator.cpp
-    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/orientedPlane.cpp
-    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces/triSurfaceAdapter.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator/searchDistanceCalculator.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/levelSetDistCalc/levelSetDistCalc.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator/signedDistanceCalculator.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc/triSurfaceDistCalc.cpp
-    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
+    src/triSurfaceImmersion/tetrahedralTools/tetVolumeFractionCalculator/tetVolumeFractionCalculator.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation/surfaceMeshCellApproximation.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection/surfaceMeshCellIntersection.cpp
+    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
 )
-
 target_include_directories("triSurfaceImmersion" PUBLIC
-    src/triSurfaceImmersion/geomMeshIntersection/geomMeshIntersection
-    src/triSurfaceImmersion/geomMeshIntersection/geomReconstructError
-    src/triSurfaceImmersion/geomMeshIntersection/geomTriSurfaceTools
     src/triSurfaceImmersion/implicitSurfaces
     src/triSurfaceImmersion/include
-    src/triSurfaceImmersion/polynomialVofInitialization/AdaptiveTetCellRefinement
-    src/triSurfaceImmersion/polynomialVofInitialization/tetVofCalculator
-    src/triSurfaceImmersion/polynomialVofInitialization/orientedSurfaces
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/levelSetDistCalc
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/signedDistanceCalculator
     src/triSurfaceImmersion/signedDistanceCalculation/signedDistanceCalculator/triSurfaceDistCalc
-    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
+    src/triSurfaceImmersion/tetrahedralTools/AdaptiveTetCellRefinement
+    src/triSurfaceImmersion/tetrahedralTools/IntersectionCriteria
+    src/triSurfaceImmersion/tetrahedralTools/tetVolumeFractionCalculator
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellApproximation
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection
+    src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
 )
-
-target_include_directories("triSurfaceImmersion" PUBLIC SYSTEM
+target_include_directories("triSurfaceImmersion" SYSTEM PUBLIC 
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
 )
-
 target_link_libraries("triSurfaceImmersion"
     geophase
     ${OpenMP_CXX_LIBRARIES}
 )
+# TODO: enable if OPenMP is re-enabled (TT)
+#target_compile_options("triSurfaceImmersion" PRIVATE "-fopenmp")
 
 
 add_library("pandora" SHARED
@@ -187,7 +190,6 @@ add_library("pandora" SHARED
     src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureRegularisation/pandoraCurvatureRegularisation.cpp
     src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureTangentialAverageRegularisation/pandoraCurvatureTangentialAverageRegularisation.cpp
 )
-
 target_include_directories("pandora" PUBLIC
     src/pandora/curvatureFunctionObject
     src/pandora/pandora
@@ -204,17 +206,12 @@ target_include_directories("pandora" PUBLIC
     src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureRegularisation
     src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureTangentialAverageRegularisation
 )
-
-target_include_directories("pandora" PUBLIC SYSTEM
+target_include_directories("pandora" SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
 )
-
-
-# TODO: enable if OPenMP is re-enabled (TT)
-#target_compile_options("triSurfaceImmersion" PRIVATE "-fopenmp")
 
 # Install the libraries 
 install(TARGETS
@@ -224,10 +221,14 @@ install(TARGETS
 )
 
 
-# Build executables
+####################################################################################################
+#   Argo applications
+####################################################################################################
+
+# Testing only
 add_executable("geophaseUnitTest"
-                applications/geophaseUnitTest/geophaseUnitTest.cpp)
-target_include_directories("geophaseUnitTest" PRIVATE 
+                applications/test/geophaseUnitTest/geophaseUnitTest.cpp)
+            target_include_directories("geophaseUnitTest" SYSTEM PRIVATE 
     src/triSurfaceImmersion/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -246,9 +247,26 @@ target_link_libraries("geophaseUnitTest"
 add_test(NAME unitTests COMMAND geophaseUnitTest)
 set_tests_properties(unitTests PROPERTIES LABELS "UNIT")
 
-# Preprocessing
+add_executable("pandoraTestCurvature"
+    applications/test/pandoraTestCurvature/pandoraTestCurvature.cpp
+)
+target_include_directories("pandoraTestCurvature" SYSTEM PRIVATE 
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/transportModels/geometricVoF/lnInclude
+)
+target_link_libraries("pandoraTestCurvature"
+    "pandora"
+    ${OF_FINITEVOLUME}
+    ${OF_MESHTOOLS}
+    ${OF_SURFMESH}
+    ${OF_GEOMETRICVOF}
+)
+
+# Utilities: preprocessing
 add_executable("surfaceInitVolumeFraction"
-               applications/surfaceInitVolumeFraction/surfaceInitVolumeFraction.cpp)
+               applications/utilities/preProcessing/surfaceInitVolumeFraction/surfaceInitVolumeFraction.cpp)
 target_link_libraries("surfaceInitVolumeFraction"
     "triSurfaceImmersion"
     ${OF_FINITEVOLUME}
@@ -259,7 +277,7 @@ target_link_libraries("surfaceInitVolumeFraction"
 )
 
 add_executable("surfaceInitSignedDistances"
-               applications/surfaceInitSignedDistances/surfaceInitSignedDistances.cpp)
+               applications/utilities/preProcessing/surfaceInitSignedDistances/surfaceInitSignedDistances.cpp)
 target_link_libraries("surfaceInitSignedDistances"
     "triSurfaceImmersion"
     ${OF_FINITEVOLUME}
@@ -269,9 +287,10 @@ target_link_libraries("surfaceInitSignedDistances"
     m
 )
 
+# Utilities: mesh manipulation
 add_executable("foamPerturbMesh"
-               applications/foamPerturbMesh/foamPerturbMesh.cpp)
-target_include_directories("foamPerturbMesh" PRIVATE 
+               applications/utilities/mesh/manipulation/foamPerturbMesh/foamPerturbMesh.cpp)
+target_include_directories("foamPerturbMesh" SYSTEM PRIVATE 
     src/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -287,9 +306,10 @@ target_link_libraries("foamPerturbMesh"
     m
 )
 
+# Utilities: miscellaneous
 add_executable("computeLiquidVolume"
-    applications/computeLiquidVolume/computeLiquidVolume.cpp)
-target_include_directories("computeLiquidVolume" PRIVATE 
+    applications/utilities/miscellaneous/computeLiquidVolume/computeLiquidVolume.cpp)
+target_include_directories("computeLiquidVolume" SYSTEM PRIVATE 
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
@@ -305,10 +325,10 @@ target_link_libraries("computeLiquidVolume"
     m
 )
 
-# Pandora executables
+# Solvers
 add_executable("interIsoPandoraFoam"
-    applications/interIsoPandoraFoam/interIsoPandoraFoam.cpp)
-target_include_directories("interIsoPandoraFoam" PRIVATE
+    applications/solvers/interIsoPandoraFoam/interIsoPandoraFoam.cpp)
+target_include_directories("interIsoPandoraFoam" SYSTEM PRIVATE 
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/sampling/lnInclude
@@ -347,34 +367,14 @@ target_link_libraries("interIsoPandoraFoam"
     m
 )
 
-add_executable("pandoraTestCurvature"
-    applications/pandoraTestCurvature/pandoraTestCurvature.cpp
-)
-target_include_directories("pandoraTestCurvature" PRIVATE
-    ${of_src_path}/finiteVolume/lnInclude
-    ${of_src_path}/meshTools/lnInclude
-    ${of_src_path}/surfMesh/lnInclude
-    ${of_src_path}/transportModels/geometricVoF/lnInclude
-)
-target_link_libraries("pandoraTestCurvature"
-    "pandora"
-    ${OF_FINITEVOLUME}
-    ${OF_MESHTOOLS}
-    ${OF_SURFMESH}
-    ${OF_GEOMETRICVOF}
-)
 
 # Install executables
 install(TARGETS
-        # Pandora
+        "computeLiquidVolume"
+        "foamPerturbMesh"
+        "geophaseUnitTest"
         "interIsoPandoraFoam"
         "pandoraTestCurvature"
-        # TriSurfaceImmersion
-        # Refactored
         "surfaceInitVolumeFraction"
         "surfaceInitSignedDistances"
-        # Pre-refactor
-        "geophaseUnitTest"
-        "foamPerturbMesh"
-        "computeLiquidVolume"
         RUNTIME)

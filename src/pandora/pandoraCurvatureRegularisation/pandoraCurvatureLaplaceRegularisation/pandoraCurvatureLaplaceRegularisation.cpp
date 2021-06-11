@@ -51,13 +51,15 @@ pandoraCurvatureLaplaceRegularisation::pandoraCurvatureLaplaceRegularisation(con
 void pandoraCurvatureLaplaceRegularisation::regularise
 (
     volScalarField& curvature,
-    const boolList& isInterfaceCell // Unsued argument
+    const boolList&// Unsued argument
 )
 {
     // Average curvature with fvc::average ("Laplace smoothing").
-    const label nAverages = this->regularisationDict().get<label>("nAverages");
+    const auto nAverages = this->regularisationDict().get<label>("nAverages");
     for (int i = 0; i < nAverages; ++i)
+    {
         curvature = fvc::average(curvature);
+    }
 }
 
 // * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //

@@ -26,15 +26,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
-
-
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 const implicitSurface& levelSetDistCalc::surface() const
 {
@@ -46,6 +37,7 @@ label levelSetDistCalc::maxIter() const
 {
     return maxIt_;
 }
+
 
 scalar levelSetDistCalc::epsilon() const
 {
@@ -63,24 +55,6 @@ const pointScalarField& levelSetDistCalc::pointLevelSetValues() const
 {
     return pointLevelSetValues_;
 }
-
-
-// * * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Friend Functions  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Friend Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * IOstream Operators  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * Ostream Operator  * * * * * * * * * * * * * //
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 
 // ************************************************************************* //

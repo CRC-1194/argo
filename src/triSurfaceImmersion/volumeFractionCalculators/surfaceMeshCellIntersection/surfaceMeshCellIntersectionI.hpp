@@ -30,20 +30,23 @@ License
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-const double surfaceMeshCellIntersection::nTrianglesPerCell() const
+scalar surfaceMeshCellIntersection::nTrianglesPerCell() const
 {
     return nTrianglesPerCell_;
 }
 
-const label surfaceMeshCellIntersection::nIntersectedCells() const
+
+label surfaceMeshCellIntersection::nIntersectedCells() const
 {
     return intersectedCellLabels_.size();
 }
 
-const label surfaceMeshCellIntersection::maxRefinementLevel() const
+
+label surfaceMeshCellIntersection::maxRefinementLevel() const
 {
     return 0;
 }
+
 
 const signedDistanceCalculator& surfaceMeshCellIntersection::sigDistCalc() const
 {

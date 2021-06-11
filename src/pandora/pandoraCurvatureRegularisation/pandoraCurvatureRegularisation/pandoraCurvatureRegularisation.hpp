@@ -73,7 +73,7 @@ public:
             const dictionary& dict 
         ), 
         (dict)
-    );
+    )
 
     // Constructors
 

@@ -24,13 +24,13 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::insideOutsidePropagation
+    Foam::TriSurfaceImmersion::insideOutsidePropagation
 
 Author
     Idea:
     Tomislav Maric
     maric@mma.tu-darmstadt.de
-    Mathematical Modelling and Analysis Group 
+    Mathematical Modelling and Analysis Group
     Thermo-Fluids and Interfaces
     TU Darmstadt
     Germany
@@ -38,7 +38,7 @@ Author
     Implementation:
     Tobias Tolle
     tolle@mma.tu-darmstadt.de
-    Mathematical Modelling and Analysis Group 
+    Mathematical Modelling and Analysis Group
     Thermo-Fluids and Interfaces
     TU Darmstadt
     Germany
@@ -62,20 +62,22 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
-
-
+namespace Foam::TriSurfaceImmersion
+{
 /*---------------------------------------------------------------------------*\
                          Class insideOutsidePropagation Declaration
 \*---------------------------------------------------------------------------*/
 
 class insideOutsidePropagation
 {
-
 public:
-
     // Member Functions
-    static tmp<volScalarField> propagateInsideOutside(const volScalarField& signedDistance);
+    // - Propagate inside/outside information
+    //   Propagate inside/outside information of the given field to the
+    //   entire domain. The value for cells without a valid signed distance
+    //   needs to be 0.0.
+    static tmp<volScalarField> propagateInsideOutside(
+        const volScalarField& signedDistance);
 };
 
 

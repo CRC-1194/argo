@@ -24,7 +24,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::searchDistanceCalculator
+    Foam::TriSurfaceImmersion::searchDistanceCalculator
 
 Description
     Compute search distances at cell centres and cell corner points of a
@@ -32,8 +32,8 @@ Description
     search operations.
 
 SourceFiles
-    searchDistanceCalculatorI.H
-    searchDistanceCalculator.C
+    searchDistanceCalculatorI.hpp
+    searchDistanceCalculator.cpp
 
 \*---------------------------------------------------------------------------*/
 
@@ -47,49 +47,54 @@ SourceFiles
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam::TriSurfaceImmersion {
-
-
+namespace Foam::TriSurfaceImmersion
+{
 /*---------------------------------------------------------------------------*\
-                         Class searchDistanceCalculator Declaration
+                    Class searchDistanceCalculator Declaration
 \*---------------------------------------------------------------------------*/
 
 class searchDistanceCalculator
 {
 private:
-    
     //- Reference to the volume mesh
     const fvMesh& mesh_;
 
     //- Set width of the narrow band in number of cells
     const scalar searchDistFactor_;
 
-    //- Squared search distance field in cell centers. 
+    //- Squared search distance field in cell centers.
     volScalarField cellSqrSearchDist_;
 
     //- Point mesh constituted by cell corner points
     pointMesh pMesh_;
 
-    //- Inverse Distance Interpolation : cell centers to cell corners. 
+    //- Inverse Distance Interpolation : cell centers to cell corners.
     volPointInterpolation cellsToPointsInterp_;
 
-    //- Squared search distance at cell corner points. 
-    pointScalarField pointSqrSearchDist_;  
+    //- Squared search distance at cell corner points.
+    pointScalarField pointSqrSearchDist_;
 
 public:
 
     // Constructors
-    explicit searchDistanceCalculator(const fvMesh& mesh, scalar searchDistFactor=4.0);
+    explicit searchDistanceCalculator(
+        const fvMesh& mesh, scalar searchDistFactor = 4.0);
+
 
     // Member Functions
-
-    //- Access
+    //- Return reference to the underlying mesh.
     inline const fvMesh& mesh() const;
+
+    //- Return the factor used to scale the cell dependent search distance.
     inline scalar searchDistFactor() const;
+
+    //- Return the squared search distance for cell centres
     inline const volScalarField& cellSqrSearchDist() const;
+
+    //- Return the squared search distance for cell corner points.
     inline const pointScalarField& pointSqrSearchDist() const;
 
-    //- Write
+    //- Write the squared search distance fields
     void writeFields() const;
 };
 

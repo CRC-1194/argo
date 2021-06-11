@@ -32,15 +32,18 @@ const fvMesh& searchDistanceCalculator::mesh() const
     return mesh_;
 }
 
+
 scalar searchDistanceCalculator::searchDistFactor() const
 {
     return searchDistFactor_;
 }
 
+
 const volScalarField& searchDistanceCalculator::cellSqrSearchDist() const
 {
     return cellSqrSearchDist_;
 }
+
 
 const pointScalarField& searchDistanceCalculator::pointSqrSearchDist() const
 {

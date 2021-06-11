@@ -216,7 +216,7 @@ bool curvatureFunctionObject::write()
     return true;
 }
 
-bool curvatureFunctionObject::read(const dictionary& dict)
+bool curvatureFunctionObject::read(const dictionary&)
 {
     return true;
 }

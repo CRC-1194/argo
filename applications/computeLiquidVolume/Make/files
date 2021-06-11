@@ -1,3 +1,0 @@
-computeLiquidVolume.cpp
-
-EXE = $(FOAM_USER_APPBIN)/computeLiquidVolume
