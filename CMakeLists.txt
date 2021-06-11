@@ -213,10 +213,87 @@ target_include_directories("pandora" SYSTEM PUBLIC
     ${of_src_path}/OpenFOAM/lnInclude
 )
 
+
+add_library("twoPhaseValidation" SHARED
+    # NOTE: commented lines give errors due to missing header files (TT)
+    src/twoPhaseValidation/divFree/divFreeFunctionObject/divFreeFunctionObject.C
+    src/twoPhaseValidation/divFree/fieldModels/deformation2DFieldModel/deformation2DFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/deformationFieldModel/deformationFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/divFreeFieldModel/divFreeFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/harmonicFieldModel/harmonicFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/periodicFieldModel/periodicFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/rotationFieldModel/rotationFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/shear2DFieldModel/shear2DFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/shearFieldModel/shearFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/supermanFieldModel/supermanFieldModel.C
+    src/twoPhaseValidation/divFree/fieldModels/translationFieldModel/translationFieldModel.C
+    #src/twoPhaseValidation/error/fieldErrorBoundedness/fieldErrorsBoundedness.C
+    src/twoPhaseValidation/error/fieldErrorBoundedness/volScalarFieldErrorBoundedness.C
+    src/twoPhaseValidation/error/fieldErrorComposite/fieldErrorComposites.C
+    src/twoPhaseValidation/error/fieldError/fieldErrors.C
+    src/twoPhaseValidation/error/fieldErrorFunctionObject/fieldErrorFunctionObject.C
+    #src/twoPhaseValidation/error/fieldErrorInterfaceSharpness2/fieldErrorsInterfaceSharpness2.C
+    src/twoPhaseValidation/error/fieldErrorInterfaceSharpness2/volScalarFieldErrorInterfaceSharpness2.C
+    #src/twoPhaseValidation/error/fieldErrorInterfaceSharpness3/fieldErrorsInterfaceSharpness3.C
+    src/twoPhaseValidation/error/fieldErrorInterfaceSharpness3/volScalarFieldErrorInterfaceSharpness3.C
+    #src/twoPhaseValidation/error/fieldErrorInterfaceSharpness/fieldErrorsInterfaceSharpness.C
+    src/twoPhaseValidation/error/fieldErrorInterfaceSharpness/volScalarFieldErrorInterfaceSharpness.C
+    src/twoPhaseValidation/error/fieldErrorL1/fieldErrorsL1.C
+    src/twoPhaseValidation/error/fieldErrorL1normalized/fieldErrorsL1normalized.C
+    src/twoPhaseValidation/error/fieldErrorVolume/fieldErrorsVolume.C
+    src/twoPhaseValidation/hydrodynamics/hydrodynamicFunctionObject/hydrodynamicFunctionObject.C
+    src/twoPhaseValidation/hydrodynamics/oscillatingDropletFunctionObject/oscillatingDropletFunctionObject.C
+    src/twoPhaseValidation/hydrodynamics/risingBubbleFunctionObject/risingBubbleFunctionObject.C
+    src/twoPhaseValidation/hydrodynamics/stationaryDropletFunctionObject/stationaryDropletFunctionObject.C
+)
+target_include_directories("twoPhaseValidation" PUBLIC
+    src/twoPhaseValidation/divFree/divFreeFunctionObject
+    src/twoPhaseValidation/divFree/fieldModels/deformation2DFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/deformationFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/divFreeFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/harmonicFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/periodicFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/rotationFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/shear2DFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/shearFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/supermanFieldModel
+    src/twoPhaseValidation/divFree/fieldModels/translationFieldModel
+    src/twoPhaseValidation/error/fieldError
+    src/twoPhaseValidation/error/fieldErrorBoundedness
+    src/twoPhaseValidation/error/fieldErrorComposite
+    src/twoPhaseValidation/error/fieldErrorFunctionObject
+    src/twoPhaseValidation/error/fieldErrorInterfaceSharpness
+    src/twoPhaseValidation/error/fieldErrorInterfaceSharpness2
+    src/twoPhaseValidation/error/fieldErrorInterfaceSharpness3
+    src/twoPhaseValidation/error/fieldErrorL1
+    src/twoPhaseValidation/error/fieldErrorL1normalized
+    src/twoPhaseValidation/error/fieldErrorVolume
+    src/twoPhaseValidation/error/testing
+    src/twoPhaseValidation/hydrodynamics/hydrodynamicFunctionObject
+    src/twoPhaseValidation/hydrodynamics/oscillatingDropletFunctionObject
+    src/twoPhaseValidation/hydrodynamics/risingBubbleFunctionObject
+    src/twoPhaseValidation/hydrodynamics/stationaryDropletFunctionObject
+    src/twoPhaseValidation/meshMagnitudeTemplate
+)
+# Using PUBLIC here removes the need to specify again the required include directories
+# for the applications.
+target_include_directories("twoPhaseValidation" SYSTEM PUBLIC
+    ${of_src_path}/finiteVolume/lnInclude
+    ${of_src_path}/meshTools/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/OSspecific/POSIX/lnInclude
+    ${of_src_path}/OpenFOAM/lnInclude
+)
+#target_link_libraries("twoPhaseValidation"
+#    ${OF_DEPS}
+#)
+
+
 # Install the libraries 
 install(TARGETS
     "pandora"
     "triSurfaceImmersion"
+    "twoPhaseValidation"
     LIBRARY
 )
 
