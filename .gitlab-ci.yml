@@ -60,7 +60,7 @@ build_release:
         ##
         - FOAM_USER_APPBIN/*
 
-param_study:
+initialization_param_study:
   stage: running
   dependencies:
     - build_release
@@ -94,6 +94,40 @@ param_study:
         - cases/initialization/3Dinit/*.pdf 
         - cases/initialization/3Dinit/*.ipynb
         - cases/initialization/3Dinit/results/*
+
+density_ratio_param_study:
+  stage: running
+  dependencies:
+    - build_release
+  script: 
+
+    ##
+    ## Configure the OpenFOAM environment
+    ## 
+    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
+
+    ##
+    ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
+    ##
+    - if [ ! -d "$FOAM_USER_APPBIN" ]; then mkdir -p "$FOAM_USER_APPBIN"; fi
+    - cp FOAM_USER_APPBIN/* $FOAM_USER_APPBIN
+
+    ##
+    ## Re-use user-defined OF libraries from the FOAM_USER_LIBBIN artifact
+    ##
+    - if [ ! -d "$FOAM_USER_LIBBIN" ]; then mkdir -p "$FOAM_USER_LIBBIN"; fi
+    - cp FOAM_USER_LIBBIN/* $FOAM_USER_LIBBIN
+   
+    # Run the parameter variation tests 
+    - source cases/scripts/bashrc
+    - cd cases/hydrodynamic/translatingDroplet3D
+    - lent_prepare_study_variants.py densityRatioInfluence.parameter -m block
+    - lent_parallel_study_run.py densityRatioInfluence.parameter interIsoFoam -m block -n 4
+    - jupyter-nbconvert --execute --to=html test-nb.ipynb
+
+  artifacts:
+    paths:
+        - cases/hydrodynamic/translatingDroplet3D/test-nb.html
 
 #convert_notebooks:
 #  stage: visualization 
