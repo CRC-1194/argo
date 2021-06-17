@@ -6,7 +6,18 @@ stages:
     #- visualization    // Not defined yet (TT)
     #- testing          // Not defined yet (TT)
 
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.build-rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+
 build_debug:
+  extends: .build-rules
   stage: building
   script:
 
@@ -21,6 +32,7 @@ build_debug:
     - ./install.sh Debug
 
 build_release:
+  extends: .build-rules
   stage: building
   script:
 
