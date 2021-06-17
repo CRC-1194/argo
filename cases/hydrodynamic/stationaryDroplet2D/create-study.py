@@ -1,42 +1,31 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 
-from optparse import OptionParser
-import sys
+from argparse import ArgumentParser
 from subprocess import call
 
 usage = """A wrapper for pyFoamRunParameterVariation.py that generates the
-directory structure for a parameter study. 
+directory structure for a parameter study.
 
-Meshes are not generated and preprocessing is not done. 
+Meshes are not generated and preprocessing is not done.
 Used to prepare for execution on a cluster.
 
 Usage: ./create-study.py -c templateCase -p paramFile -s studyName"""
 
-parser = OptionParser(usage=usage)
+parser = ArgumentParser(usage=usage)
+parser.add_argument("-c", "--case", dest="casedir",
+                    help="Template case directory.",
+                    metavar="CASEDIR")
 
-parser.add_option("-c", "--case", dest="casedir",
-                  help="Template case directory.", 
-                  metavar="CASEDIR")
+parser.add_argument("-p", "--parameter-file", dest="paramfile",
+                    help="PyFoam parameter file used by pyFoamRunParameterVariation.py.",
+                    metavar="PARAMFILE")
 
-parser.add_option("-p", "--parameter-file", dest="paramfile", 
-                  help="PyFoam parameter file used by pyFoamRunParameterVariation.py.", 
-                  metavar="PARAMFILE")
+parser.add_argument("-s", "--study-name", dest="studyname",
+                    help="Name of the parameter study.",
+                    metavar="STUDYNAME")
+args = vars(parser.parse_args())
 
-parser.add_option("-s", "--study-name", dest="studyname", 
-                  help="Name of the parameter study.", 
-                  metavar="STUDYNAME")
-
-(options, args) = parser.parse_args()
-
-if ((options.casedir == None) or  
-    (options.paramfile == None) or 
-    (options.studyname == None)): 
-    print ("Error: case or parameter option not used. Use --help option for more information.") 
-    sys.exit(1)
-
-(options, args) = parser.parse_args()
-
-call(["pyFoamRunParameterVariation.py", "--no-execute-solver", "--no-server-process", 
-      "--no-mesh-create", "--no-case-setup", "--cloned-case-prefix=%s" % options.studyname, 
+call(["pyFoamRunParameterVariation.py", "--no-execute-solver", "--no-server-process",
+      "--no-mesh-create", "--no-case-setup", "--cloned-case-prefix=%s" % args['studyname'],
       "--every-variant-one-case-execution",
-      "--create-database", options.casedir, options.paramfile])
+      "--create-database", args['casedir'], args['paramfile']])
