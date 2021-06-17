@@ -11,56 +11,42 @@ def main():
     #---- Command line arguments ----------------------------------------------
     parser = ArgumentParser(description="Prepare the variations for the given parameter study")
 
-    parser.add_argument("studyname",
+    parser.add_argument("parameter_file",
                         help="Name of the parameter file for the study")
-    parser.add_argument("-p","--prefix",
-                        help="Prefix added to the name of the study folders. The result is prefix-studyname_00... etc.",
+    parser.add_argument("-p", "--prefix",
+                        help="Prefix added to the name of the study folders. The result is prefix-parameter_file_00... etc.",
                         default="",
                         dest="studyprefix")
-    parser.add_argument("-ap","--additional-parameters",
-                        help="List of additional parameters files to be used.",
-                        default="",
-                        dest="additionalParameterFiles")
-    parser.add_argument("-m","--mesh-type",
+    parser.add_argument("-t", "--template-case",
+                        help="Name of the template case directory. Default: templateCase",
+                        default="templateCase",
+                        dest="template_case")
+    parser.add_argument("-m", "--mesh-type",
                         help="Mesh type to be used.",
                         required=True,
                         choices=["block", "cartesian", "poly", "hexrefined"],
                         dest="meshtype")
-    parser.add_argument("-md","--mesh-dict-name",
-                        help="Prescribe the name of the mesh dictionary file to be used. Use this if different studies require different meshing approaches. NOTE: it is assumed that the mesh dict is always templated so that resolution can be a study parameter.",
-                        default=None,
-                        dest="meshdictname")
-    parser.add_argument("-v","--variants",
+    parser.add_argument("-v", "--variants",
                         help="Only use the specified variations. By default, all variations are used. Argument can either be a single number (e.g. 42), a list of numbers (e.g. '3,5,11') or a range ('3 - 10')",
                         default="all",
                         dest="variants")
-    parser.add_argument("-np","--no-preprocessing",
+    parser.add_argument("-np", "--no-preprocessing",
                         help="Do not execute any further preprocessing steps: no invocation of a mesher and no execution of caseSetup.sh",
                         action="store_true",
                         default=False,
                         dest="no_preprocess")
+    #--------------------------------------------------------------------------
 
     args = parser.parse_args()
 
-
-    #----- check input parameters for validity --------------------
-
-    # Prepare the parameter file
-    studyname = psp.create_parameter_file_from_string(args.studyname + "," +
-                                            args.additionalParameterFiles)
-
-    caseName = "template_copy_" + args.meshtype
-    templateName = trc.pattern_cases("templateCase_*")
-    templateName = templateName[0]
-
-    ## Setup a clean copy of the template case
-    psp.copy_case_template(caseName, templateName, args.meshtype, args.meshdictname)
+    parameter_file = args.parameter_file
+    case_name = args.template_case
 
     # Create vector of all variants to be set up
     variationNumbers = psp.create_variant_vector(args.variants)
 
     studyprefix = args.studyprefix
-    if studyprefix != "":
+    if studyprefix:
         studyprefix = studyprefix + "-"
 
     # Assemble the parameter variation command according to the given options
@@ -71,9 +57,9 @@ def main():
                  "--no-server-process",
                  "--no-execute-solver",
                  "--parameter-file=default.parameter",
-                 "--cloned-case-prefix="+studyprefix+args.studyname,
-                 caseName,
-                 studyname
+                 "--cloned-case-prefix="+studyprefix+args.parameter_file.rsplit('.', maxsplit=1)[0],
+                 case_name,
+                 parameter_file
                  ]
 
     # Preprocessing options

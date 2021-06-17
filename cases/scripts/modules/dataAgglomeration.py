@@ -14,10 +14,11 @@ import dataframeWithMetadata as dwm
 
 class data_collector:
     """
-    Collect data from all files and directories matching user prescribed patterns.
+    Collect data from text files in directories matching a user-prescribed pattern.
 
-    This class uses regular expression patterns (one for files and one for
-    directories) to find all data belonging to a collection. The primary
+    This class uses a regular expression pattern to find all directories belonging to a study.
+    From each directory a text file containing the data is read.
+    The primary
     responsibility of this class is to create a dict of Pandas DataFrames where
     each dataframe represents data from a file. The variation ID (from PyFoam)
     is used as dict key. This is accompanied
@@ -35,15 +36,15 @@ class data_collector:
                                     Required for constructing the Pandas Multiindex.
     """
 
-    def __init__(self, directory_pattern, file_pattern, subdirectory=""):
+    def __init__(self, directory_pattern, path_to_file, subdirectory=""):
         """
         Instantiate a data_collector with a directory- and file pattern.
 
         This constructor requires two arguments:
             - directory_pattern: string containing a regular expression. All directories
                 matching this pattern are considered for data collection.
-            - file_pattern: string containing a regular expression. All files
-                matching this pattern are considered for data collection.
+            - path_to_file: path to the text file within a study directory containing the
+                data to be collected, e.g. 'postProcessing/minMaxU/0/fieldMinMax.dat'.
 
             Keyword arguments:
             - subdirectory: name of the subdirectory where the studydirectories are located. (default: current directory)
@@ -53,7 +54,7 @@ class data_collector:
         # Regular expressions patterns for finding directories
         # associated with a study and the files containing the data
         self.directory_pattern = re.compile(directory_pattern)
-        self.file_pattern = re.compile(file_pattern)
+        self.path_to_file = path_to_file
         self.variation_number_pattern = re.compile("[0-9]{5}")
 
         # Collected data
@@ -66,7 +67,7 @@ class data_collector:
         self.already_collected = False
 
     def set_directory_pattern(self, pattern):
-        """Change the pattern of the directories which shall be considered for collection."""
+        """Set the pattern of the directories which shall be considered for collection."""
         self.directory_pattern = re.compile(pattern)
 
     def study_directories(self):
@@ -93,37 +94,48 @@ class data_collector:
 
     def has_valid_results(self, directory):
         """
-        Search the given directory for a file with valid results.
+        Search the given directory for a valid data file.
 
-        Searches the given directory for a file matching the file_pattern.
-        A directory is considered to have valid data if it contains a file
-        matching the pattern and the matching file is not empty.
-        Returns the full path to the file as a string if successful.
-        Otherwise 'False' is returned
+        Checks if the given directory contains a data file as specified by
+        the user. Returns False if either the file does not exist
+        or it is empty.
         """
         # Check if a data file exists
         variation_number = self.extract_variation_number(directory)
-        result_file_name = ""
-        for file in os.listdir(directory):
-            matched = self.file_pattern.search(file)
-            if matched:
-                result_file_name = os.path.join(directory, file)
+        full_file_path = os.path.join(directory, self.path_to_file)
 
-        # Check if it actually contains data
-        if result_file_name:
-            if os.stat(result_file_name).st_size == 0:
-                self.invalid_variations[variation_number] = "File empty"
-                return False
-            else:
-                return  result_file_name
-        else:
+        if not os.path.isfile(full_file_path):
             self.invalid_variations[variation_number] = "No data file"
             return False
 
-    def read_dataframe_from_csv(self, file_name):
-        """Read Pandas DataFrame from csv, ignore columns with empty header"""
+        if os.stat(full_file_path).st_size == 0:
+            self.invalid_variations[variation_number] = "File empty"
+            return False
+        else:
+            return True
+
+
+    def read_dataframe_from_file(self, file_name):
+        """
+        Read Pandas DataFrame from text file, ignore columns with empty header.
+
+        Distinguish two formats:
+        - *.csv: written by function objects/applications of the argo project. Use ','
+            as separator.
+        - *.dat: written by OpenFOAM function object. Uses tab '\t' as separator.
+
+        """
         # Remember: by default, pandas names a headerless column 'Unnamed N' 
-        df = pd.read_csv(file_name, usecols=lambda x: not ('Unnamed' in x), comment='#')
+        if file_name.endswith('.csv'):
+            df = pd.read_csv(file_name, usecols=lambda x: not ('Unnamed' in x), comment='#')
+        elif file_name.endswith('.dat'):
+            df = pd.read_table(file_name, header=1)
+            df.columns = [column.strip('#') for column in df.columns]
+            df.columns = [column.strip(' ') for column in df.columns]
+            df.columns = [column.rstrip(' ') for column in df.columns]
+        else:
+            sys.exit("Error: unknown file extension", file_name.rsplit('.')[0],
+                     ". Valid extensions are .csv and .dat.")
 
         return df
 
@@ -137,9 +149,9 @@ class data_collector:
 
         # Iterate folders:
         for directory in directories:
-            file_name = self.has_valid_results(directory)
-            if file_name:
-                variation_dataframe = self.read_dataframe_from_csv(file_name)
+            if self.has_valid_results(directory):
+                full_file_path = os.path.join(directory, self.path_to_file)
+                variation_dataframe = self.read_dataframe_from_file(full_file_path)
                 variation_id = self.extract_variation_number(directory)
                 self.valid_variations.append(variation_id)
                 self.datapoints_per_variant_[variation_id] = len(variation_dataframe.index)
@@ -331,13 +343,12 @@ class data_agglomerator:
         of plots and tables from the data.
     """
 
-    def __init__(self, parameter_file_name, directory_pattern="", file_pattern=r"Results\.csv$"):
+    def __init__(self, parameter_file_name, path_to_file, directory_pattern=""):
         """
         Constructor of the data_agglomerator requiring the name of a parameter file.
 
         Keyword arguments:
         directory_pattern -- regular expression for finding the study directories (default: parameter file name)
-        file_pattern -- regular expression for finding the data files (default 'Results\.csv$')
         """
         self.parameter_file_name = parameter_file_name
         self.multiindex_assembler = multiindex_assembler(parameter_file_name)
@@ -349,7 +360,7 @@ class data_agglomerator:
         else:
             directory_pattern = regex_from_study_directory_name(pattern)
 
-        self.data_collector = data_collector(directory_pattern, file_pattern, subdirectory=study_subdirectory) 
+        self.data_collector = data_collector(directory_pattern, path_to_file, subdirectory=study_subdirectory) 
         self.dataframe = pd.DataFrame()
         self.already_computed = False
 

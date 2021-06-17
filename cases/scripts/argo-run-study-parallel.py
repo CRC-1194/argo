@@ -6,8 +6,6 @@ import subprocess
 import sys
 import time
 
-from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
-
 import testReportCore as trc
 
 # The solution to control the number parallel running processes is taken / adapted from
@@ -57,15 +55,13 @@ def main():
 
     #---- Command line arguments ----------------------------------------------
     parser = ArgumentParser(description="Execute a parameter study in parallel using N processes.")
-    parser.add_argument("studyname",
-                        help="Name of the parameter file for the study")
     parser.add_argument("solver",
                         help="Name of the solver to run the study with.")
-    parser.add_argument("-m","--mesh-type",
-                        help="Mesh type/approach to be used",
+    parser.add_argument("-d","--dir-pattern",
+                        help="Pattern of the directories belonging to the study.",
+                        type=str,
                         required=True,
-                        choices=["block", "cartesian", "hexrefined", "poly"],
-                        dest="meshtype")
+                        dest="dir_pattern")
     parser.add_argument("-n","--num-processes",
                         help="The number of processes running in parallel",
                         type=int,
@@ -75,15 +71,12 @@ def main():
     args = parser.parse_args()
 
     # Get list of variation folders
-    studyDirectories = trc.pattern_cases(args.studyname+"_*_"+args.meshtype)
+    studyDirectories = trc.pattern_cases(args.dir_pattern + "*")
 
     if not studyDirectories:
-        print("Error: no directories found for study",args.studyname,".")
+        print("Error: no directories found for study",args.dir_pattern,".")
         print("Exiting.")
         sys.exit()
-
-    # Extract the application name from the parameter file
-    variationData = ParsedParameterFile(args.studyname, noHeader=True, noVectorOrTensor=True).getValueDict()
 
     # Set the global parameters for parallel run
     solver = args.solver
@@ -92,7 +85,7 @@ def main():
 
     # User Info
     print("------------ Run Info ----------------")
-    print("Running",args.studyname,"using the solver",solver,"with",maxNumProcesses,
+    print("Running",args.dir_pattern,"using the solver",solver,"with",maxNumProcesses,
             "processes.")
     print("Start_time: ",datetime.datetime.now().time())
 
