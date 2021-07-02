@@ -5,11 +5,14 @@ from argparse import ArgumentParser
 import testReportCore as trc
 import parameterStudyPreparation as psp
 
+app_description="""Prepare the case directories for a given parameter study. Does not perform any
+preprocessing steps like meshing or field initialization.
+"""
 
 def main():
 
     #---- Command line arguments ----------------------------------------------
-    parser = ArgumentParser(description="Prepare the variations for the given parameter study")
+    parser = ArgumentParser(description=app_description)
 
     parser.add_argument("parameter_file",
                         help="Name of the parameter file for the study")
@@ -21,20 +24,10 @@ def main():
                         help="Name of the template case directory. Default: templateCase",
                         default="templateCase",
                         dest="template_case")
-    parser.add_argument("-m", "--mesh-type",
-                        help="Mesh type to be used.",
-                        required=True,
-                        choices=["block", "cartesian", "poly", "hexrefined"],
-                        dest="meshtype")
     parser.add_argument("-v", "--variants",
                         help="Only use the specified variations. By default, all variations are used. Argument can either be a single number (e.g. 42), a list of numbers (e.g. '3,5,11') or a range ('3 - 10')",
                         default="all",
                         dest="variants")
-    parser.add_argument("-np", "--no-preprocessing",
-                        help="Do not execute any further preprocessing steps: no invocation of a mesher and no execution of caseSetup.sh",
-                        action="store_true",
-                        default=False,
-                        dest="no_preprocess")
     #--------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -56,22 +49,19 @@ def main():
                  "--create-database", 
                  "--no-server-process",
                  "--no-execute-solver",
+                 "--no-post-templates",
+                 "--no-final-templates",
+                 "--no-mesh-create",
+                 "--no-case-setup",
                  "--parameter-file=default.parameter",
                  "--cloned-case-prefix="+studyprefix+args.parameter_file.rsplit('.', maxsplit=1)[0],
                  case_name,
                  parameter_file
                  ]
 
-    # Preprocessing options
-    if args.no_preprocess:
-        command.append("--no-mesh-create")
-        command.append("--no-case-setup")
-    else:
-        command.append("--mesh-create-script="+args.meshtype+"Mesh.sh")
-
     # Finally, create the variations
     psp.setup_variants(command, variationNumbers)
-    
+
 
 if __name__ == "__main__":
     main()

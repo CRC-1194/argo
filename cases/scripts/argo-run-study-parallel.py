@@ -2,11 +2,16 @@
 
 from argparse import ArgumentParser
 import datetime 
+import os
 import subprocess
 import sys
 import time
 
 import testReportCore as trc
+
+app_description="""Execute a parameter study with a user-specified solver.
+Can execute n variants in parallel.
+"""
 
 # The solution to control the number parallel running processes is taken / adapted from
 # https://stackoverflow.com/questions/18123325/always-run-a-constant-number-of-subprocesses-in-parallel
@@ -17,7 +22,7 @@ nVariants = 1
 solver = ""
 Processes = []
 
-def start_new(variantList):
+def start_new(variantList, n_mpi):
     """ Start a new subprocess if there is work to do """
     global nextVariant
     global Processes
@@ -27,14 +32,22 @@ def start_new(variantList):
         # This makes it more likely that the end time info
         # will be correct
         if nextVariant == nVariants-1:
-            proc = subprocess.Popen([solver, "-case", variantList[nextVariant]]).wait()
+            if n_mpi > 1:
+                proc = subprocess.Popen(["mpirun", "-n", str(n_mpi), solver, 
+                                        "-parallel", "-case", variantList[nextVariant]]).wait()
+            else:
+                proc = subprocess.Popen([solver, "-case", variantList[nextVariant]]).wait()
         else:
-            proc = subprocess.Popen([solver, "-case", variantList[nextVariant]])
+            if n_mpi > 1:
+                proc = subprocess.Popen(["mpirun", "-n", str(n_mpi), solver, "-parallel",
+                    "-case", variantList[nextVariant]])
+            else:
+                proc = subprocess.Popen([solver, "-case", variantList[nextVariant]])
         print ("Started to process variant", variantList[nextVariant].rsplit('/',1)[1])
         nextVariant += 1
         Processes.append(proc)
 
-def check_running(variantList):
+def check_running(variantList, n_mpi):
    """ Check any running processes and start new ones if there are spare slots."""
    global Processes
    global nextVariant
@@ -43,8 +56,8 @@ def check_running(variantList):
       if Processes[p].poll() is not None: # If the process hasn't finished will return None
          del Processes[p] # Remove from list - this is why we needed reverse order
 
-   while (len(Processes) < maxNumProcesses) and (nextVariant < nVariants): # More to do and some spare slots
-      start_new(variantList)
+   while (len(Processes) <= maxNumProcesses) and (nextVariant < nVariants): # More to do and some spare slots
+      start_new(variantList, n_mpi)
 
 
 def main():
@@ -54,7 +67,7 @@ def main():
     global nVariants
 
     #---- Command line arguments ----------------------------------------------
-    parser = ArgumentParser(description="Execute a parameter study in parallel using N processes.")
+    parser = ArgumentParser(description=app_description)
     parser.add_argument("solver",
                         help="Name of the solver to run the study with.")
     parser.add_argument("-d","--dir-pattern",
@@ -63,10 +76,20 @@ def main():
                         required=True,
                         dest="dir_pattern")
     parser.add_argument("-n","--num-processes",
-                        help="The number of processes running in parallel",
+                        help="The number of processes running in parallel.\n Default: 1",
                         type=int,
-                        required=True,
+                        default=1,
                         dest="numprocesses")
+    parser.add_argument("-j", "--job-mode",
+                        help="Submit solver execution as SLURM jobs. Expects to find a SLURM script named solver_name.sbatch.",
+                        action="store_true",
+                        default=False,
+                        dest="job_mode")
+    parser.add_argument("-u","--use-mpi",
+                        help="Call solver in parallel using the given number of processes.\n Has no effect if --job-mode is used.",
+                        type=int,
+                        default=0,
+                        dest="num_mpi_procs")
 
     args = parser.parse_args()
 
@@ -83,20 +106,46 @@ def main():
     nVariants = len(studyDirectories)
     maxNumProcesses = args.numprocesses
 
-    # User Info
-    print("------------ Run Info ----------------")
-    print("Running",args.dir_pattern,"using the solver",solver,"with",maxNumProcesses,
-            "processes.")
-    print("Start_time: ",datetime.datetime.now().time())
+    #--------------------------------------------------------------------------
+    #   SLURM batch mode
+    #--------------------------------------------------------------------------
+    if args.job_mode:
+        job_script = solver + ".sbatch";
+        if not os.path.isfile(job_script):
+            sys.exit("Error: no SLURM script named '" + job_script + "' found.\nExiting.")
 
-    # Spawn processes
-    check_running(studyDirectories) # This will start the max processes running
-    while (nextVariant < nVariants): # Some thing still going on.
-        time.sleep(0.1) # You may wish to change the time for this
-        check_running(studyDirectories)
+        print("Submitting jobs to SLURM using job script", job_script)
 
-    print("End_time: ",datetime.datetime.now().time())
-    print("Done!")
+        for index in range(len(studyDirectories)):
+           pwd = os.getcwd()
+           os.chdir(studyDirectories[index])
+
+           print("Submitting job", index, "/", len(studyDirectories))
+           call(["sbatch", "../" + job_script])
+           time.sleep(2)
+
+           os.chdir(pwd)
+
+    else:
+    #--------------------------------------------------------------------------
+    #   Direct execution
+    #--------------------------------------------------------------------------
+        # User Info
+        print("------------ Run Info ----------------")
+        print("Running",args.dir_pattern,"using the solver",solver,"with",maxNumProcesses,
+                "processes.")
+        if args.num_mpi_procs > 1:
+            print("Running with MPI using", args.num_mpi_procs, "mpi processes each.")
+        print("Start_time: ",datetime.datetime.now().time())
+
+        # Spawn processes
+        check_running(studyDirectories, args.num_mpi_procs) # This will start the max processes running
+        while (nextVariant < nVariants): # Some thing still going on.
+            time.sleep(0.1) # You may wish to change the time for this
+            check_running(studyDirectories, args.num_mpi_procs)
+
+        print("End_time: ",datetime.datetime.now().time())
+        print("Done!")
 
 if __name__ == "__main__":
     main()
