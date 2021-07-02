@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from subprocess import run
 import os
 import sys
+import time
 
 
 app_description = """ Initialize all test cases that match a given pattern.
@@ -25,27 +26,19 @@ def find_case_directories(pattern):
     return case_dirs
 
 def submit_slurm_job(command, log_name=""):
-    # Default SLURM options
-    slurm_opts = {}
-    # Required arguments
-    slurm_opts["--partition"] = "test30m"
-    slurm_opts["--account"] = "special000005"
-    slurm_opts["--mem-per-cpu"] = "5000"
-    slurm_opts["--time"] = "00:15:00"
-    # Optional arguments
-    slurm_opts["--job-name"] = log_name
-    slurm_opts["--output"] = "log." + log_name
+    partition = "test30m"
+    account = "special00005"
+    ntasks = "1"
+    mem_per_cpu = "5000"
+    time_limit = "00:15:00" # Read: hh:mm:ss, h-> hours, m-> minutes, s-> seconds
+    slurm_command = ("srun --partition %s --account %s --ntasks %s --mem-per-cpu %s "
+                     "--time %s "
+                     "--job-name=%s --output=log.%s %s >/dev/null 2>&1 &" % 
+                     (partition, account, ntasks, mem_per_cpu,
+                      time_limit,
+                      log_name, log_name, command))
 
-    slurm_command = ["srun"]
-    
-    for key,value in slurm_opts.items():
-        slurm_command.append(key)
-        slurm_command.append(value)
-
-    for entry in command:
-        slurm_command.append(entry)
-
-    run(slurm_command)
+    run(slurm_command, shell=True)
 
     # Force wait after submitting job to avoid overloading the SLURM manager
     time.sleep(1)
@@ -54,7 +47,7 @@ def execute_init_step(command, use_slurm, log_name=""):
     if use_slurm:
         submit_slurm_job(command, log_name=log_name)
     else:
-        run(command)
+        run(command, shell=True)
 
 
 #---- Command line arguments ----------------------------------------------
@@ -92,22 +85,24 @@ if __name__ == '__main__':
 
 
     case_dirs = find_case_directories(args.directory_pattern)
-
+    
+    case_count = 0
     for case in case_dirs:
         pwd = os.getcwd()
         os.chdir(case)
 
-        print("Initializing", case, "...")
+        case_count = case_count + 1
+        print("(%s/%s) Initializing %s ..." % (str(case_count), str(len(case_dirs)), case))
 
         # Meshing
-        execute_init_step([args.mesh_app], args.job_mode, log_name=args.mesh_app)
+        execute_init_step(args.mesh_app, args.job_mode, log_name=args.mesh_app)
 
         # Field initialization
         if args.init_script:
-            execute_init_step(["sh", "./"+args.init_script], args.job_mode, log_name=args.init_script)
+            execute_init_step("sh ./"+args.init_script, args.job_mode, log_name=args.init_script)
 
         # Domain decomposition
         if args.parallel:
-            execute_init_step(["decomposePar", "-force"], args.job_mode, log_name="decomposePar")
+            execute_init_step("decomposePar -force", args.job_mode, log_name="decomposePar")
 
         os.chdir(pwd)

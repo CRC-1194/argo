@@ -120,9 +120,9 @@ def main():
            pwd = os.getcwd()
            os.chdir(studyDirectories[index])
 
-           print("Submitting job", index, "/", len(studyDirectories))
-           call(["sbatch", "../" + job_script])
-           time.sleep(2)
+           print("\nSubmitting job", index+1, "/", len(studyDirectories))
+           subprocess.run(["sbatch", "../" + job_script])
+           time.sleep(1)
 
            os.chdir(pwd)
 
