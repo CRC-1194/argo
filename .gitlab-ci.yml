@@ -123,8 +123,9 @@ density_ratio_param_study:
     # Run the parameter variation tests 
     - source cases/scripts/bashrc
     - cd cases/hydrodynamic/translatingDroplet3D
-    - lent_prepare_study_variants.py densityRatioInfluence.parameter -m block
-    - lent_parallel_study_run.py densityRatioInfluence.parameter interIsoFoam -m block -n 4
+    - argo-create-parameter-study.py densityRatioInfluence.parameter -v "0,2,4,6"
+    - argo-initilize-parameter-study.py densityRatioInfluence_0000 -m blockMesh -f initFields.sh
+    - argo-run-study.py interIsoFoam -d densityRatioInfluence_0000 -n 4
     - jupyter-nbconvert --execute --to=html test-nb.ipynb
 
   artifacts:

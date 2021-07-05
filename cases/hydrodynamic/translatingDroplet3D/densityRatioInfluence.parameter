@@ -22,7 +22,7 @@ values{
     // Parameters from constant/transportProperties
     rho_droplet
     (
-        1 1e02 //1e03 1e04 
+        1 1e02 1e03 1e04 
     );
 
     nu_droplet ( 0.0 );
@@ -39,7 +39,7 @@ values{
     // Parameters from system/blockMeshDict
     resolution 
     (   
-        16 //32 64
+        16 32 64
     ); 
 
 
