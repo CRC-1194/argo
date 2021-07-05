@@ -31,6 +31,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "error.H"
 #include "mathematicalConstants.H"
+#include <quaternion.H>
 
 namespace Foam::TriSurfaceImmersion
 {
@@ -102,6 +103,9 @@ scalar implicitSurface::orientation(const word& keyword)
             << "Valid keyword are 'outward' (no change in orientation) "
             << "and 'inward' (flip orientation)"
             << exit(FatalError);
+
+        // Disable compiler warning, statement never reached (TT)
+        return 0.0;
     }
 }
 
@@ -246,6 +250,131 @@ vector sphere::center() const
 scalar sphere::radius() const
 {
     return radius_;
+}
+
+
+// * * * * * * * * * * * * Class cylinder * * * * * * * * * * * //
+
+// * * * * * * * * * * * * * * Static Members * * * * * * * * * * * * * //
+
+defineTypeNameAndDebug(cylinder, false);
+addToRunTimeSelectionTable(implicitSurface, cylinder, ITstream);
+addToRunTimeSelectionTable(implicitSurface, cylinder, Dictionary);
+
+
+// * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+cylinder::cylinder(vector axis, vector pointOnAxis, scalar radius, scalar height, scalar orientation)
+    : axis_{axis}, pointOnAxis_{pointOnAxis},radius_{radius}, height_{height}, orientation_{orientation}
+{
+    initializeRotation();
+}
+
+
+cylinder::cylinder(ITstream& is)
+{
+    is >> axis_;
+    is >> pointOnAxis_;
+    is >> radius_;
+    is >> height_;
+    is >> orientation_;
+
+    initializeRotation();
+}
+
+
+cylinder::cylinder(const dictionary& configDict)
+    : axis_{configDict.get<vector>("axis")},
+      pointOnAxis_{configDict.get<vector>("pointOnAxis")},
+      radius_{configDict.get<scalar>("radius")},
+      height_{configDict.get<scalar>("height")}
+{
+    auto keyword = configDict.getOrDefault<word>("orientation", "outward");
+    orientation_ = orientation(keyword);
+    axis_ /= mag(axis_);
+    initializeRotation();
+}
+
+
+// * * * * * * * * * * * * * Member Functions * * * * * * * * * * * * * //
+void cylinder::initializeRotation()
+{
+    // In the cylinder aligned coordinate system the z-axis aligns with
+    // the cylinder centre axis
+    auto rotationAxis = axis_ ^ vector{0,0,1};
+
+    // Catch case when the cylinder axis is parallel to the z-direction
+    if (mag(rotationAxis) > SMALL)
+    {
+        rotationAxis /= mag(rotationAxis);
+        auto rotationAngle = Foam::acos(vector{0,0,1} & axis_);
+        rotation_ = quaternion{rotationAxis, rotationAngle};
+    }
+    else
+    {
+        rotation_ = quaternion{vector{0,0,1}, 0.0};
+    }
+}
+
+
+vector cylinder::transformToCylinderKOS(const vector& x) const
+{
+    // The cylinder with infinite extension in z-direction is essentially
+    // a 2D problem. Thus, the z-components of the transformed x is
+    // disregarded.
+    auto localX = rotation_.transform(x - pointOnAxis_);
+    localX.z() = 0.0;
+    return localX;
+}
+
+
+scalar cylinder::value(const vector& x) const
+{
+    auto localX = transformToCylinderKOS(x);
+    return orientation_*(magSqr(localX) - radius_*radius_);
+}
+
+
+scalar cylinder::operator()(const vector& x) const
+{
+    return value(x);
+}
+
+
+vector cylinder::grad(const vector& x) const
+{
+    auto localX = transformToCylinderKOS(x);
+    return rotation_.invTransform(orientation_*2.0*localX);
+}
+
+
+scalar cylinder::volume() const
+{
+    return Foam::constant::mathematical::pi * pow(radius_, 2.0) * height_;
+}
+
+
+vector cylinder::axis() const
+{
+    return axis_;
+}
+
+
+vector cylinder::pointOnAxis() const
+{
+    return pointOnAxis_;
+}
+
+
+scalar cylinder::radius() const
+{
+    return radius_;
+}
+
+
+scalar cylinder::height() const
+{
+    return height_;
 }
 
 
