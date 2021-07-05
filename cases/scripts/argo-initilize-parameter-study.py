@@ -54,7 +54,7 @@ def execute_init_step(command, use_slurm, log_name=""):
 parser = ArgumentParser(description=app_description)
 
 parser.add_argument("directory_pattern",
-                    help="Pattern matching those directory names which are to be initialized.")
+                    help="Pattern matching those directory names which are to be initialized, e.g. myAwesomeStudy_000")
 parser.add_argument("-m", "--meshing-application",
                     help="Use this application for mesh creation, e.g. blockMesh.\nDefault: blockMesh",
                     required=True,
