@@ -226,16 +226,13 @@ class multiindex_assembler:
         variation_data=ParsedParameterFile(self.parameter_file_name,
                                           noHeader=True,
                                           noVectorOrTensor=True).getValueDict()
-        print(variation_data)
         parameter_names = []
         parameter_values = []
         n_variations = 1
 
         # Read the parameters and their corresponding set of values
         for parameter in variation_data["values"]:
-            print("Parameter =", parameter)
             values = variation_data["values"][parameter]
-            print("Values =", values)
             if len(values) > 1:
                 # Type check for values: PyFoam may read some of the parameter values,
                 # e.g. logical switches (on/off), as non-hashable types which will
