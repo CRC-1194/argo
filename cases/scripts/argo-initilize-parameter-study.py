@@ -99,7 +99,17 @@ if __name__ == '__main__':
 
         # Field initialization
         if args.init_script:
-            execute_init_step("sh ./"+args.init_script, args.job_mode, log_name=args.init_script)
+            # Note: the template replacement process invoked in 'argo-create-parameter-study.py'
+            #       removes the She-Bang from the init script. So we need to use the file extension
+            #       to detect the suitable interpreter (TT)
+            script_env = ""
+            if args.init_script.endswith('.py'):
+                script_env = "python3"
+            elif args.init_script.endswith('.sh'):
+                script_env = "bash"
+            else:
+                sys.exit("Error: unsupported script format", args.init_script.rsplit('.')[0], ". Use either .sh for BASH or .py for Python3.")
+            execute_init_step(script_env + " " + args.init_script, args.job_mode, log_name=args.init_script)
 
         # Domain decomposition
         if args.parallel:

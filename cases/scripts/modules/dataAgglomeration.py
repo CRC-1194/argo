@@ -232,19 +232,25 @@ class multiindex_assembler:
 
         # Read the parameters and their corresponding set of values
         for parameter in variation_data["values"]:
-            values = variation_data["values"][parameter]
-            if len(values) > 1:
-                # Type check for values: PyFoam may read some of the parameter values,
-                # e.g. logical switches (on/off), as non-hashable types which will
-                # cause an error later when creating the dataframe.
-                # These types are converted here
-                self.convert_nonhashable_types(values)
+            # Do not keep the solver. The study has not necessarily been executed
+            #   with the one mentioned in the parameter file (TT)
+            if parameter == "solver":
+                continue
 
-                # It is necessary to prepend the values rather than to append
-                # to obtain the variations in the same order as in PyFoam
-                parameter_names.insert(0, parameter)
-                parameter_values.insert(0, values)
-                n_variations = n_variations*len(values)
+            values = variation_data["values"][parameter]
+            # Keep all parameter values even if they are constant (TT)
+            #if len(values) > 1:
+            # Type check for values: PyFoam may read some of the parameter values,
+            # e.g. logical switches (on/off), as non-hashable types which will
+            # cause an error later when creating the dataframe.
+            # These types are converted here
+            self.convert_nonhashable_types(values)
+
+            # It is necessary to prepend the values rather than to append
+            # to obtain the variations in the same order as in PyFoam
+            parameter_names.insert(0, parameter)
+            parameter_values.insert(0, values)
+            n_variations = n_variations*len(values)
 
         self.parameter_vector_frame = pd.DataFrame(columns=parameter_names,
                                                     index=range(0, n_variations-1))
@@ -327,7 +333,8 @@ class multiindex_assembler:
         """Construct and return a Pandas MultiIndex."""
         self.compute_complete_index()
         self.remove_missing_variations(found_variations)
-        self.remove_constant_parameters()
+        # Keep all parameter values even if they are constant (TT)
+        #self.remove_constant_parameters()
 
         return self.assemble_multiindex(datapoints_per_variant)
 

@@ -3,6 +3,8 @@
 from argparse import ArgumentParser
 import datetime 
 import os
+import shlex        # Parse shell arguments for solver, see
+                    # https://docs.python.org/3/library/subprocess.html#subprocess.Popen
 import subprocess
 import sys
 import time
@@ -22,32 +24,36 @@ nVariants = 1
 solver = ""
 Processes = []
 
-def start_new(variantList, n_mpi):
+def start_new(variantList, n_mpi, solver_args):
     """ Start a new subprocess if there is work to do """
     global nextVariant
     global Processes
+
+    args = shlex.split(solver_args)
 
     if nextVariant < nVariants:
         # Make the script wait for the last spawned subprocess.
         # This makes it more likely that the end time info
         # will be correct
+        solver_command = [solver] + args + ["-case", variantList[nextVariant]]
+        mpi_prefix = ["mpirun", "-n", str(n_mpi)]
+
         if nextVariant == nVariants-1:
             if n_mpi > 1:
-                proc = subprocess.Popen(["mpirun", "-n", str(n_mpi), solver, 
-                                        "-parallel", "-case", variantList[nextVariant]]).wait()
+                proc = subprocess.Popen(mpi_prefix + solver_command + ["-parallel"]).wait()
             else:
-                proc = subprocess.Popen([solver, "-case", variantList[nextVariant]]).wait()
+                proc = subprocess.Popen(solver_command).wait()
         else:
             if n_mpi > 1:
-                proc = subprocess.Popen(["mpirun", "-n", str(n_mpi), solver, "-parallel",
-                    "-case", variantList[nextVariant]])
+                proc = subprocess.Popen(mpi_prefix + solver_command + ["-parallel"])
             else:
-                proc = subprocess.Popen([solver, "-case", variantList[nextVariant]])
+                proc = subprocess.Popen(solver_command)
+
         print ("Started to process variant", variantList[nextVariant].rsplit('/',1)[1])
         nextVariant += 1
         Processes.append(proc)
 
-def check_running(variantList, n_mpi):
+def check_running(variantList, n_mpi, solver_args):
    """ Check any running processes and start new ones if there are spare slots."""
    global Processes
    global nextVariant
@@ -57,7 +63,7 @@ def check_running(variantList, n_mpi):
          del Processes[p] # Remove from list - this is why we needed reverse order
 
    while (len(Processes) <= maxNumProcesses) and (nextVariant < nVariants): # More to do and some spare slots
-      start_new(variantList, n_mpi)
+      start_new(variantList, n_mpi, solver_args)
 
 
 def main():
@@ -70,6 +76,11 @@ def main():
     parser = ArgumentParser(description=app_description)
     parser.add_argument("solver",
                         help="Name of the solver to run the study with.")
+    parser.add_argument("--solver-args",
+                        help="Additional arguments to pass to the solver. This option is ignored if SLURM is used.\n Default: None",
+                        type=str,
+                        default="",
+                        dest="solver_args")
     parser.add_argument("-d","--dir-pattern",
                         help="Pattern of the directories belonging to the study.",
                         type=str,
@@ -139,10 +150,10 @@ def main():
         print("Start_time: ",datetime.datetime.now().time())
 
         # Spawn processes
-        check_running(studyDirectories, args.num_mpi_procs) # This will start the max processes running
+        check_running(studyDirectories, args.num_mpi_procs, args.solver_args) # This will start the max processes running
         while (nextVariant < nVariants): # Some thing still going on.
             time.sleep(0.1) # You may wish to change the time for this
-            check_running(studyDirectories, args.num_mpi_procs)
+            check_running(studyDirectories, args.num_mpi_procs, args.solver_args)
 
         print("End_time: ",datetime.datetime.now().time())
         print("Done!")
