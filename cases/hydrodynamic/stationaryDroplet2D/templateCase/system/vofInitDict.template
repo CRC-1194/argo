@@ -24,8 +24,8 @@ distCalc
     surface         cylinder;
     axis            (0 0 1);
     pointOnAxis     (0.002 0.002 0.0);
-    radius          0.00005;
-    height          0.01;
+    radius          0.0005;
+    height          1e-5;
     orientation     inward;
     narrowBandWidth 1.0;
     bulkValue       0.0;

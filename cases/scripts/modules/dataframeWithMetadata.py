@@ -133,11 +133,23 @@ def write_dataframe_with_metadata(file_name, dataframe, metadata={}, has_multiin
     metadata -- dictionary containing the metadata (default: empty dict)
     has_multiindex -- flag if the dataframe uses a multiindex (default: True)
     """
+    # Move index levels with constant value to metadata
+    print(dataframe.index.levels)
+    print(dataframe.index.names)
+    levels_to_drop = []
+
+    for idx in range(len(dataframe.index.names)):
+        if len(dataframe.index.levels[idx]) == 1:
+            levels_to_drop.append(idx)
+            metadata[dataframe.index.names[idx]] = dataframe.index.levels[idx][0]
+
+    dataframe.reset_index(level=levels_to_drop, drop=True, inplace=True)
+
+
     # If dataframe has a multiindex, write the number of index columns as
     # metadata
     if has_multiindex:
-        n_index_columns = str(len(dataframe.index.names))
-        metadata['n_index_columns'] = n_index_columns
+        metadata['n_index_columns'] = str(dataframe.index.nlevels)
 
     # Ensure proper file name suffix
     if not (file_name.endswith('.csv') or file_name.endswith('.CSV')):
