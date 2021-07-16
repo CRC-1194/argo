@@ -21,11 +21,11 @@ include(ArgoMacros)
 # - Dependency: geophase
 FetchContent_Declare(geophase
     GIT_REPOSITORY          https://git.rwth-aachen.de/leia/geophase.git
-    # TODO: Replace the branch with a new GIT_TAG for geophase as soon as everything runs.  
-    #       geophase modifications are needed to make geometrical init work, so the geom-vof-init 
-    #       branch is used. 
-    #GIT_TAG                 v1.0 
-    GIT_TAG                 master 
+    # TODO: Replace the branch with a new GIT_TAG for geophase as soon as everything runs.
+    #       geophase modifications are needed to make geometrical init work, so the geom-vof-init
+    #       branch is used.
+    #GIT_TAG                 v1.0
+    GIT_TAG                 master
     GIT_SHALLOW             YES
     GIT_PROGRESS            YES
     USES_TERMINAL_DOWNLOAD  YES
@@ -37,9 +37,9 @@ if(NOT geophase_POPULATED)
     FetchContent_Populate(geophase)
 endif()
 
-add_library(geophase INTERFACE) 
-target_include_directories(geophase INTERFACE 
-    ${geophase_SOURCE_DIR}/include/ 
+add_library(geophase INTERFACE)
+target_include_directories(geophase INTERFACE
+    ${geophase_SOURCE_DIR}/include/
     ${geophase_SOURCE_DIR}/include/core/
     ${geophase_SOURCE_DIR}/include/io/
     ${geophase_SOURCE_DIR}/include/io/vtk/
@@ -92,7 +92,7 @@ add_compile_definitions(
     WM_${of_wm_precision_option}
     WM_ARCH_OPTION=${of_wm_arch_option}
     ${of_wm_arch}
-    OPENFOAM="$ENV{WM_PROJECT_VERSION}" # Figures out OF version. TM. 
+    OPENFOAM="$ENV{WM_PROJECT_VERSION}" # Figures out OF version. TM.
     NoRepository
 )
 
@@ -135,12 +135,13 @@ set(CMAKE_INSTALL_BINDIR "$ENV{FOAM_USER_APPBIN}")
 
 
 ####################################################################################################
-#   Argo libraries  
+#   Argo libraries
 ####################################################################################################
 
 # TODO: CMake book recommends to leave out the type of library (STATIC SHARED MODULE).
 #       Check which type is required / reasonable for this project (TT)
-add_library("triSurfaceImmersion" SHARED
+set(LIB_TRISURFACE_IMMERSION "triSurfaceImmersion")
+add_library(${LIB_TRISURFACE_IMMERSION} SHARED
     src/triSurfaceImmersion/implicitSurfaces/implicitSurfaces.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation/insideOutsidePropagation.cpp
     src/triSurfaceImmersion/signedDistanceCalculation/searchDistanceCalculator/searchDistanceCalculator.cpp
@@ -152,7 +153,7 @@ add_library("triSurfaceImmersion" SHARED
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection/surfaceMeshCellIntersection.cpp
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator/volumeFractionCalculator.cpp
 )
-target_include_directories("triSurfaceImmersion" PUBLIC
+target_include_directories(${LIB_TRISURFACE_IMMERSION} PUBLIC
     src/triSurfaceImmersion/implicitSurfaces
     src/triSurfaceImmersion/include
     src/triSurfaceImmersion/signedDistanceCalculation/insideOutsidePropagation
@@ -167,19 +168,19 @@ target_include_directories("triSurfaceImmersion" PUBLIC
     src/triSurfaceImmersion/volumeFractionCalculators/surfaceMeshCellIntersection
     src/triSurfaceImmersion/volumeFractionCalculators/volumeFractionCalculator
 )
-target_include_directories("triSurfaceImmersion" SYSTEM PUBLIC 
+target_include_directories(${LIB_TRISURFACE_IMMERSION} SYSTEM PUBLIC
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
 )
-target_link_libraries("triSurfaceImmersion"
+target_link_libraries(${LIB_TRISURFACE_IMMERSION}
     geophase
     ${OpenMP_CXX_LIBRARIES}
 )
 # TODO: enable if OPenMP is re-enabled (TT)
-#target_compile_options("triSurfaceImmersion" PRIVATE "-fopenmp")
+#target_compile_options(${LIB_TRISURFACE_IMMERSION} PRIVATE "-fopenmp")
 
 
 add_library("pandora" SHARED
@@ -297,10 +298,10 @@ target_include_directories("twoPhaseValidation" SYSTEM PUBLIC
 #)
 
 
-# Install the libraries 
+# Install the libraries
 install(TARGETS
     "pandora"
-    "triSurfaceImmersion"
+    ${LIB_TRISURFACE_IMMERSION}
     "twoPhaseValidation"
     LIBRARY
 )
@@ -313,7 +314,7 @@ install(TARGETS
 # Testing only
 add_executable("geophaseUnitTest"
                 applications/test/geophaseUnitTest/geophaseUnitTest.cpp)
-            target_include_directories("geophaseUnitTest" SYSTEM PRIVATE 
+            target_include_directories("geophaseUnitTest" SYSTEM PRIVATE
     src/triSurfaceImmersion/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -321,7 +322,7 @@ add_executable("geophaseUnitTest"
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
 )
-target_link_libraries("geophaseUnitTest" 
+target_link_libraries("geophaseUnitTest"
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -335,7 +336,7 @@ set_tests_properties(unitTests PROPERTIES LABELS "UNIT")
 add_executable("pandoraTestCurvature"
     applications/test/pandoraTestCurvature/pandoraTestCurvature.cpp
 )
-target_include_directories("pandoraTestCurvature" SYSTEM PRIVATE 
+target_include_directories("pandoraTestCurvature" SYSTEM PRIVATE
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -353,7 +354,7 @@ target_link_libraries("pandoraTestCurvature"
 add_executable("surfaceInitVolumeFraction"
                applications/utilities/preProcessing/surfaceInitVolumeFraction/surfaceInitVolumeFraction.cpp)
 target_link_libraries("surfaceInitVolumeFraction"
-    "triSurfaceImmersion"
+    ${LIB_TRISURFACE_IMMERSION}
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -364,7 +365,7 @@ target_link_libraries("surfaceInitVolumeFraction"
 add_executable("surfaceInitSignedDistances"
                applications/utilities/preProcessing/surfaceInitSignedDistances/surfaceInitSignedDistances.cpp)
 target_link_libraries("surfaceInitSignedDistances"
-    "triSurfaceImmersion"
+    ${LIB_TRISURFACE_IMMERSION}
     ${OF_FINITEVOLUME}
     ${OF_MESHTOOLS}
     ${OF_OPENFOAM}
@@ -375,7 +376,7 @@ target_link_libraries("surfaceInitSignedDistances"
 # Utilities: mesh manipulation
 add_executable("foamPerturbMesh"
                applications/utilities/mesh/manipulation/foamPerturbMesh/foamPerturbMesh.cpp)
-target_include_directories("foamPerturbMesh" SYSTEM PRIVATE 
+target_include_directories("foamPerturbMesh" SYSTEM PRIVATE
     src/include
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
@@ -394,7 +395,7 @@ target_link_libraries("foamPerturbMesh"
 # Utilities: miscellaneous
 add_executable("computeLiquidVolume"
     applications/utilities/miscellaneous/computeLiquidVolume/computeLiquidVolume.cpp)
-target_include_directories("computeLiquidVolume" SYSTEM PRIVATE 
+target_include_directories("computeLiquidVolume" SYSTEM PRIVATE
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/surfMesh/lnInclude
     ${of_src_path}/meshTools/lnInclude
@@ -413,7 +414,7 @@ target_link_libraries("computeLiquidVolume"
 # Solvers
 add_executable("interIsoPandoraFoam"
     applications/solvers/interIsoPandoraFoam/interIsoPandoraFoam.cpp)
-target_include_directories("interIsoPandoraFoam" SYSTEM PRIVATE 
+target_include_directories("interIsoPandoraFoam" SYSTEM PRIVATE
     ${of_src_path}/finiteVolume/lnInclude
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/sampling/lnInclude
