@@ -558,3 +558,6 @@ install(TARGETS
         "surfaceInitVolumeFraction"
         "surfaceInitSignedDistances"
         RUNTIME)
+
+# include unit test suite
+add_subdirectory(test)
