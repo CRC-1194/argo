@@ -178,6 +178,7 @@ target_include_directories(${LIB_TRISURFACE_IMMERSION} SYSTEM PUBLIC
 target_link_libraries(${LIB_TRISURFACE_IMMERSION}
     geophase
     ${OpenMP_CXX_LIBRARIES}
+    ${OF_FINITEVOLUME}
 )
 # TODO: enable if OPenMP is re-enabled (TT)
 #target_compile_options(${LIB_TRISURFACE_IMMERSION} PRIVATE "-fopenmp")
