@@ -10,6 +10,10 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# include our cmake macros
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules")
+include(ArgoMacros)
+
 ####################################################################################################
 #   Fetch and build dependencies
 ####################################################################################################
