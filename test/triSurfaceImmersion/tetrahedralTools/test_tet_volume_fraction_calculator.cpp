@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <quaternion.H>
+
 #include <tetVolumeFractionCalculator.hpp>
 
 template<typename ctype = double>
@@ -51,49 +53,14 @@ void check_volume(const Tetrahedron<ctype>& tet)
     }
 }
 
-// Rotate a vector around an axis by a given angle.
-// The rotation matrix is taken from:
-// https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
-template<class ctype = double>
-void rotate(point& p,
-            const point& scaledAxis,
-            const ctype angle)
-{
-    using std::sin;
-    using std::cos;
-    using std::sqrt;
-
-    const auto cosPhi = cos(angle);
-    const auto sinPhi = sin(angle);
-    const auto oneMinusCosPhi = 1.0 - cosPhi;
-
-    point axis = scaledAxis;
-    axis.normalise();
-
-    point Rx({cosPhi + axis.x()*axis.x()*oneMinusCosPhi,
-              axis.x()*axis.y()*oneMinusCosPhi - axis.z()*sinPhi,
-              axis.x()*axis.z()*oneMinusCosPhi + axis.y()*sinPhi});
-    point Ry({axis.y()*axis.x()*oneMinusCosPhi + axis.z()*sinPhi,
-              cosPhi + axis.y()*axis.y()*oneMinusCosPhi,
-              axis.y()*axis.z()*oneMinusCosPhi - axis.x()*sinPhi});
-    point Rz({axis.z()*axis.x()*oneMinusCosPhi - axis.y()*sinPhi,
-              axis.z()*axis.y()*oneMinusCosPhi + axis.x()*sinPhi,
-              cosPhi + axis.z()*axis.z()*oneMinusCosPhi});
-
-    const auto dot_product = [] (const auto& a, const auto& b)
-    { return a.x()*b.x() + a.y()*b.y() + a.z()*b.z(); };
-
-    p = point{dot_product(Rx, p),
-              dot_product(Ry, p),
-              dot_product(Rz, p)};
-}
-
 template<typename ctype, typename Points>
 void rotate(Points& points, const point& axis, const ctype angle)
 {
+    Foam::quaternion rotation{axis, angle};
+
     std::for_each(points.begin(),
                   points.end(),
-                  [&] (auto& p) { rotate(p, axis, angle); });
+                  [&] (auto& p) { rotation.transform(p); });
 }
 
 template<typename Points>
