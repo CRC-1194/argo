@@ -31,6 +31,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "dictionary.H"
 #include "fvc.H"
+#include "processorFvPatchField.H"
 
 namespace Foam {
 
@@ -103,6 +104,36 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
             }
         }
 
+        // TODO: iterate processor boundaries and repeat steps above
+        auto& meshBoundaries = curvature.boundaryFieldRef();
+
+        for (auto& mBoundary : meshBoundaries)
+        {
+            if (isType<processorFvPatch>(mBoundary.patch()))
+            {
+                Info << "On processor patch..." << nl;
+                const auto& pPatch = mBoundary.patch();
+                const auto& faceToCell = pPatch.faceCells();
+                const auto& neighbourValues = mBoundary.patchNeighbourField().ref();
+
+                forAll(mBoundary, I)
+                {
+                    if (curvature[faceToCell[I]] == tagValue_ && neighbourValues[I] == tagValue_)
+                    {
+                        mBoundary[I] = tagValue_;
+                    }
+                    else if (curvature[faceToCell[I]] != tagValue_ && neighbourValues[I] == tagValue_)
+                    {
+                        mBoundary[I] = curvature[faceToCell[I]];
+                    }
+                    else if (curvature[faceToCell[I]] == tagValue_ && neighbourValues[I] != tagValue_)
+                    {
+                        mBoundary[I] = neighbourValues[I];
+                    }
+                }
+            }
+        }
+
         // Compute surface sums and face count for cells
         faceCount = 0; 
         surfaceSum = 0.0;
@@ -115,6 +146,25 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
                 surfaceSum[owner[fid]] += faceCurvature[fid];
                 faceCount[neighbour[fid]] += 1;
                 surfaceSum[neighbour[fid]] += faceCurvature[fid];
+            }
+        }
+
+        // TODO: iterate processor boundaries and repeat steps above
+        for (const auto& mBoundary : meshBoundaries)
+        {
+            if (isType<processorFvPatch>(mBoundary.patch()))
+            {
+                const auto& pPatch = mBoundary.patch();
+                const auto& faceToCell = pPatch.faceCells();
+
+                forAll(mBoundary, I)
+                {
+                    if (mBoundary[I] != tagValue_)
+                    {
+                        faceCount[faceToCell[I]] += 1;
+                        surfaceSum[faceToCell[I]] += mBoundary[I];
+                    }
+                }
             }
         }
 
