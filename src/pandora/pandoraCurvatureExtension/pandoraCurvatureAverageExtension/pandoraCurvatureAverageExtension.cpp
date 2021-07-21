@@ -111,11 +111,14 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
         {
             if (isType<processorFvPatch>(mBoundary.patch()))
             {
-                Info << "On processor patch..." << mBoundary.patch().name() << nl;
+                // Ensure processor neighbour fields are up-to-date
+                mBoundary.initEvaluate();
+                mBoundary.evaluate();
+
                 const auto& pPatch = mBoundary.patch();
                 const auto& faceToCell = pPatch.faceCells();
-                const auto neighbourValuesTmp = mBoundary.patchNeighbourField();
-                const auto& neighbourValues = neighbourValuesTmp.ref();
+                auto neighbourValuesTmp = mBoundary.patchNeighbourField();
+                const auto& neighbourValues = neighbourValuesTmp.cref();
 
                 forAll(mBoundary, I)
                 {
