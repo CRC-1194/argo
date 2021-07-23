@@ -104,7 +104,6 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
             }
         }
 
-        // TODO: iterate processor boundaries and repeat steps above
         auto& meshBoundaries = curvature.boundaryFieldRef();
 
         for (auto& mBoundary : meshBoundaries)
@@ -187,6 +186,21 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
         if (curvature[cid] == tagValue_)
         {
             curvature[cid] = 0.0;
+        }
+    }
+
+    auto& meshBoundaries = curvature.boundaryFieldRef();
+    for (auto& mBoundary : meshBoundaries)
+    {
+        if (isType<processorFvPatch>(mBoundary.patch()))
+        {
+            forAll(mBoundary, I)
+            {
+                if (mBoundary[I] == tagValue_)
+                {
+                    mBoundary[I] = 0.0;
+                }
+            }
         }
     }
 }
