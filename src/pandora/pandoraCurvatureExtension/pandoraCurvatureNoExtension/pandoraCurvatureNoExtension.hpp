@@ -78,7 +78,7 @@ public:
 
 
     // Member Functions
-    virtual void extend(volScalarField& curvature, const boolList& isInterfaceCell);
+    virtual void extend(volScalarField& curvature, const volScalarField& isInterfaceCell);
 };
 
 

@@ -73,7 +73,7 @@ public:
 
     // Member Functions
 
-    virtual void regularise(volScalarField& curvature, const boolList& isInterfaceCell); 
+    virtual void regularise(volScalarField& curvature, const volScalarField& isInterfaceCell); 
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -60,7 +60,7 @@ pandoraCurvatureAverageExtension::pandoraCurvatureAverageExtension(const diction
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const boolList& isInterfaceCell)
+void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const volScalarField& isInterfaceCell)
 {
     const auto& mesh = curvature.mesh();
     const auto& owner = mesh.owner();
@@ -74,7 +74,7 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
 
     forAll(curvature, cid)
     {
-        if (!isInterfaceCell[cid])
+        if (isInterfaceCell[cid] != 1.0)
         {
             curvature[cid] = tagValue_; 
         }

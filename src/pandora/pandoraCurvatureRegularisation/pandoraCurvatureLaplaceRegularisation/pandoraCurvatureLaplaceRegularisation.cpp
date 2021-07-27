@@ -51,7 +51,7 @@ pandoraCurvatureLaplaceRegularisation::pandoraCurvatureLaplaceRegularisation(con
 void pandoraCurvatureLaplaceRegularisation::regularise
 (
     volScalarField& curvature,
-    const boolList&// Unsued argument
+    const volScalarField&// Unused argument
 )
 {
     // Average curvature with fvc::average ("Laplace smoothing").

@@ -51,7 +51,7 @@ pandoraCurvatureNoRegularisation::pandoraCurvatureNoRegularisation(const diction
 void pandoraCurvatureNoRegularisation::regularise
 (
     volScalarField&,      // Unused argument
-    const boolList&// Unused argument
+    const volScalarField&// Unused argument
 )
 {
     // Do nothing

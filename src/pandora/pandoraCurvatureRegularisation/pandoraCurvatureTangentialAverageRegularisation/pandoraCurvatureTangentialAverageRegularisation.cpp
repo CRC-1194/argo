@@ -30,6 +30,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "dictionary.H"
 #include "fvc.H"
+#include "processorFvPatchField.H"
 
 namespace Foam {
 
@@ -52,7 +53,7 @@ pandoraCurvatureTangentialAverageRegularisation::pandoraCurvatureTangentialAvera
 void pandoraCurvatureTangentialAverageRegularisation::regularise
 (
     volScalarField& curvature,
-    const boolList& isInterfaceCell
+    const volScalarField& isInterfaceCell
 )
 {
     const auto& mesh = curvature.mesh();
@@ -61,7 +62,7 @@ void pandoraCurvatureTangentialAverageRegularisation::regularise
 
     forAll(curvature, cid)
     {
-        if (!isInterfaceCell[cid])
+        if (isInterfaceCell[cid] != 1.0)
         {
             curvature[cid] = 0.0;
         }
@@ -77,7 +78,7 @@ void pandoraCurvatureTangentialAverageRegularisation::regularise
 
         forAll (faceCurvature, fid)
         {
-            if (isInterfaceCell[owner[fid]] && isInterfaceCell[neighbour[fid]])
+            if ((isInterfaceCell[owner[fid]] == 1.0) && (isInterfaceCell[neighbour[fid]] == 1.0))
             {
                 // Curvature okay: face shared by interface cells
                 count[owner[fid]] += 1;
@@ -85,6 +86,35 @@ void pandoraCurvatureTangentialAverageRegularisation::regularise
 
                 count[neighbour[fid]] += 1;
                 curvatureSum[neighbour[fid]] += faceCurvature[fid];
+            }
+        }
+
+        // Iterate processor boundaries
+        const auto& isInterfaceCellBoundary = isInterfaceCell.boundaryField();
+        const auto& faceCurvatureBoundary = faceCurvature.boundaryField();
+
+        //for (auto& mBoundary : isInterfaceCellBoundary)
+        forAll(isInterfaceCellBoundary, patchID)
+        {
+            const auto& isInterfaceCellPatch = isInterfaceCellBoundary[patchID];
+            const auto& faceCurvaturePatch = faceCurvatureBoundary[patchID];
+
+            if (isType<processorFvPatch>(isInterfaceCellPatch.patch()))
+            {
+                // Values of isInterfaceCell do not change here. Ensure at computation of
+                // isInterFaceCell that processor neighbour fields are up-to-date (TT)
+                const auto& faceToCell = isInterfaceCellPatch.patch().faceCells();
+                const auto& neighbourValues = isInterfaceCellPatch.patchNeighbourField().cref();
+
+                forAll(isInterfaceCellPatch, I)
+                {
+                    if ((isInterfaceCell[faceToCell[I]] == 1.0) && (neighbourValues[I] == 1.0))
+                    {
+                        // Curvature okay: face shared by interface cells
+                        count[faceToCell[I]] += 1;
+                        curvatureSum[faceToCell[I]] += faceCurvaturePatch[I];
+                    }
+                }
             }
         }
 

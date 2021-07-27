@@ -72,11 +72,11 @@ errorNorms computeErrorNorms(const volScalarField& field)
     return errors;
 }
 
-void filterCurvatureErrors(volScalarField& errors, const boolList& isInterfaceCell)
+void filterCurvatureErrors(volScalarField& errors, const volScalarField& isInterfaceCell)
 {
     forAll(errors, cid)
     {
-        if (!isInterfaceCell[cid])
+        if (isInterfaceCell[cid] == 0.0)
         {
             errors[cid] = 0.0;
         }
@@ -116,6 +116,19 @@ int main(int argc, char *argv[])
     };
 
     #include "createFields.hpp"
+    // TODO (TT): Refactor
+    volScalarField isInterfaceCell{alpha};
+    forAll(isInterfaceCell, I)
+    {
+        if ((0.1 < isInterfaceCell[I]) && (isInterfaceCell[I] < 0.9))
+        {
+            isInterfaceCell[I] = 1.0;
+        }
+        else
+        {
+            isInterfaceCell[I] = 0.0;
+        }
+    }
     //
     // Mark cells whose curvature influences surface tension
     auto surfaceTensionFacesTmp = fvc::snGrad(alpha);
@@ -151,23 +164,23 @@ int main(int argc, char *argv[])
     volScalarField& cellCurvature = curvPtr->cellCurvature();
     cellCurvature.write();
     curvatureErrorField = (cellCurvature - exactCurvature)/exactCurvature;
-    filterCurvatureErrors(curvatureErrorField, advector.surf().interfaceCell());
+    filterCurvatureErrors(curvatureErrorField, isInterfaceCell);
     curvatureModelErrors = computeErrorNorms(curvatureErrorField);
     curvatureErrorField.write();
 
     // Regularisation
     cellCurvature.rename("curvature_regularised");
-    regularisationPtr_->regularise(cellCurvature, advector.surf().interfaceCell());
+    regularisationPtr_->regularise(cellCurvature, isInterfaceCell);
     cellCurvature.write();
     curvatureErrorField = (cellCurvature - exactCurvature)/exactCurvature;
-    filterCurvatureErrors(curvatureErrorField, advector.surf().interfaceCell());
+    filterCurvatureErrors(curvatureErrorField, isInterfaceCell);
     curvatureRegularisedErrors = computeErrorNorms(curvatureErrorField);
     curvatureErrorField.rename("curvature_errors_regularised");
     curvatureErrorField.write();
 
     // Extension
     cellCurvature.rename("curvature_extended");
-    extensionPtr_->extend(cellCurvature, advector.surf().interfaceCell());
+    extensionPtr_->extend(cellCurvature, isInterfaceCell);
     cellCurvature.write();
     curvatureErrorField = (cellCurvature - exactCurvature)/exactCurvature*curvatureRequired;
     curvatureExtensionErrors = computeErrorNorms(curvatureErrorField);

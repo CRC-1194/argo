@@ -57,7 +57,7 @@ pandoraCurvatureNoExtension::pandoraCurvatureNoExtension(const dictionary& dict)
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void pandoraCurvatureNoExtension::extend(volScalarField&, const boolList&)
+void pandoraCurvatureNoExtension::extend(volScalarField&, const volScalarField&)
 {
     // Do nothing
 }

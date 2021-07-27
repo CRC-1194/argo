@@ -98,10 +98,24 @@ Foam::pandora::pandora(const fvMesh& mesh)
 
 const surfaceScalarField& pandora::surfaceTensionForce
 (
-    const volScalarField& indicator,
-    const boolList& isInterfaceCell
+    const volScalarField& indicator
 )
 {
+    // TODO (TT): move this to an appropriate member function if it works
+    volScalarField isInterfaceCell{indicator};
+    forAll(isInterfaceCell, I)
+    {
+        if ((0.1 < isInterfaceCell[I]) && (isInterfaceCell[I] < 0.9))
+        {
+            isInterfaceCell[I] = 1.0;
+        }
+        else
+        {
+            isInterfaceCell[I] = 0.0;
+        }
+    }
+    isInterfaceCell.correctBoundaryConditions();
+
     volScalarField& cellCurvature = curvPtr_->cellCurvature();
 
     curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell); 

@@ -71,8 +71,8 @@ SourceFiles
 #include "typeInfo.H"
 
 #include "pandoraCurvature.hpp"
-#include "pandoraCurvatureRegularisation.hpp"
 #include "pandoraCurvatureExtension.hpp"
+#include "pandoraCurvatureRegularisation.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -118,8 +118,7 @@ public:
 
     const surfaceScalarField& surfaceTensionForce
     (
-        const volScalarField& indicator,
-        const boolList& isInterfaceCell
+        const volScalarField& indicator
     ); 
 };
 
