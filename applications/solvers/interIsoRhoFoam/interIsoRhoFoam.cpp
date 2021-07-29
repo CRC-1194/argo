@@ -166,18 +166,24 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
-            mixture.correct();
+            // If rhoPhi is computed and upated in alphaEqnSubcycle.H
+            // there is no need to calculate it explicitly, so 
+            // TODO: Remove this 
+            //alphaface == mag(cutfaceInfo.subFaceArea())*areaDim/mesh.magSf();
+            //rhof == alphaface*rho1+(1-alphaface)*rho2;
+            //muf == alphaface*rho1*nu1+(1-alphaface)*rho2*nu2;
+            //rhoPhi == rhof * phi; //test new rhoPhi
 
-            alphaface == mag(cutfaceInfo.subFaceArea())*areaDim/mesh.magSf();
-            rhof == alphaface*rho1+(1-alphaface)*rho2;
-            muf == alphaface*rho1*nu1+(1-alphaface)*rho2*nu2;
-            rhoPhi == rhof * phi; //test new rhoPhi
-
+            // Solve for \rho_c^{n+1} using the mass conservation equation.
             fvScalarMatrix rhoEqn
             (
                  fvm::ddt(rho) + fvc::div(rhoPhi)
             );
             rhoEqn.solve();
+            // mixture.correct() corrects the laminar viscosity and sigma*K
+
+            mixture.correct();
+
 
             if (pimple.frozenFlow())
             {
