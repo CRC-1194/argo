@@ -97,6 +97,12 @@ class pandora
 
     surfaceScalarField fSigma_;
 
+    volScalarField isInterfaceCell_;
+    label lastUpdate_;
+
+    void updateInterfaceCells(const volScalarField& indicator);
+
+
 public:
 
     // Static Data Members
@@ -120,6 +126,11 @@ public:
     (
         const volScalarField& indicator
     ); 
+
+    const volScalarField& isInterfaceCell
+    (
+        const volScalarField& indicator
+    );
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

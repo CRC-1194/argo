@@ -29,6 +29,7 @@ License
 
 #include "surfaceInterpolate.H"
 #include "fvcSnGrad.H"
+#include "processorFvPatch.H"
 
 namespace Foam {
 
@@ -43,6 +44,130 @@ defineTypeNameAndDebug(pandora, false);
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+void pandora::updateInterfaceCells(const volScalarField& indicator)
+{
+    // isInterfaceCells already up-to-date
+    if (lastUpdate_ == indicator.mesh().time().timeIndex())
+    {
+        return;
+    }
+
+    /*  Central idea for determining whether a cell is an interface cell
+     *  (a.k.a. a cell intersected by the fluid interface) is the following:
+     *  assuming the interface is located at points for which the indicator value
+     *  is 0.5, we need to find those cells which contain such points. Here we
+     *  use the cell connection across faces to find such points. Although
+     *  this does not guarantee to detect all interface cells, this approach
+     *  relies on the available parallelization provided by OpenFOAM and
+     *  detection may only fail for underresolved interfaces (TT).
+     */
+     
+    // Detect via face based indicator values
+    auto indicatorFaceTmp = fvc::interpolate(indicator);
+    const auto& alphaf= indicatorFaceTmp.cref();
+
+    const auto& owner = indicator.mesh().owner();
+    const auto& neighbour = indicator.mesh().neighbour();
+
+    forAll(alphaf, fid)
+    {
+        if (mag(alphaf[fid] - 0.5) < SMALL)
+        {
+            isInterfaceCell_[owner[fid]] = 1.0;
+            isInterfaceCell_[neighbour[fid]] = 1.0;
+            continue;
+        }
+
+        if ((alphaf[fid] < 0.5 && 0.5 < indicator[owner[fid]]) || 
+            (alphaf[fid] > 0.5 && 0.5 > indicator[owner[fid]]))
+        {
+            isInterfaceCell_[owner[fid]] = 1.0;
+        }
+
+        if ((alphaf[fid] < 0.5 && 0.5 < indicator[neighbour[fid]]) || 
+            (alphaf[fid] > 0.5 && 0.5 > indicator[neighbour[fid]]))
+        {
+            isInterfaceCell_[neighbour[fid]] = 1.0;
+        }
+    }
+
+    const auto& meshBoundary = alphaf.boundaryField();
+
+    for (const auto& alphab : meshBoundary)
+    {
+        if (isA<processorFvPatch>(alphab.patch()))
+        {
+            const auto& faceToCell = alphab.patch().faceCells();
+
+            forAll(alphab, I)
+            {
+                if ((alphab[I] < 0.5 && 0.5 < indicator[faceToCell[I]]) || 
+                    (alphab[I] > 0.5 && 0.5 > indicator[faceToCell[I]]))
+                {
+                    isInterfaceCell_[faceToCell[I]] = 1.0;
+                }
+            }
+        }
+    }
+
+    // Detect via indicator threshold
+    forAll(isInterfaceCell_, cid)
+    {
+        const scalar eps = 0.01;
+        if (eps < indicator[cid] && indicator[cid] < 1.0-eps)
+        {
+            isInterfaceCell_[cid] = 1.0;
+        }
+    }
+    isInterfaceCell_.correctBoundaryConditions();
+
+    // Close potential gaps betwwen interface cells. Some of the 
+    // curvature regularisation classes need a proper connectivity, meaning
+    // that interface cells share a face.
+    auto iCellFaceTmp = fvc::interpolate(isInterfaceCell_);
+    const auto& iCellFace = iCellFaceTmp.cref();
+    volScalarField faceCount{"faceCount", isInterfaceCell_};
+    faceCount = 0.0;
+
+    forAll(iCellFace, fid)
+    {
+        if (iCellFace[fid] > 0.0)
+        {
+            faceCount[owner[fid]] += 1.0;
+            faceCount[neighbour[fid]] += 1.0;
+        }
+    }
+
+    const auto& iCellBoundaries = iCellFace.boundaryField();
+
+    for (const auto& iCellb: iCellBoundaries)
+    {
+        if (isA<processorFvPatch>(iCellb.patch()))
+        {
+            const auto& faceToCell = iCellb.patch().faceCells();
+
+            forAll(iCellb, I)
+            {
+                if (iCellb[I] > 0.0)
+                {
+                    faceCount[faceToCell[I]] += 1.0;
+                }
+            }
+        }
+    }
+
+    forAll(isInterfaceCell_, cid)
+    {
+        const scalar smallEps = 1.0e-8;
+        if ((faceCount[cid] >= 2.0) && (smallEps < indicator[cid]) && (indicator[cid] < (1.0-smallEps)))
+        {
+            isInterfaceCell_[cid] = 1.0;
+        }
+    }
+    isInterfaceCell_.correctBoundaryConditions();
+
+    lastUpdate_ = indicator.mesh().time().timeIndex();
+}
 
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
@@ -90,7 +215,20 @@ Foam::pandora::pandora(const fvMesh& mesh)
         ),
         mesh, 
         dimensionedScalar("fSigma", dimForce / pow(dimLength,3), 0) 
-    )
+    ),
+    isInterfaceCell_{
+        IOobject
+        (
+            "isInterfaceCell",
+            mesh.time().timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh,
+        dimensionedScalar{"zero", dimless, 0}
+    },
+    lastUpdate_{-1}
 {}
 
 
@@ -101,31 +239,29 @@ const surfaceScalarField& pandora::surfaceTensionForce
     const volScalarField& indicator
 )
 {
-    // TODO (TT): move this to an appropriate member function if it works
-    volScalarField isInterfaceCell{indicator};
-    forAll(isInterfaceCell, I)
-    {
-        if ((0.1 < isInterfaceCell[I]) && (isInterfaceCell[I] < 0.9))
-        {
-            isInterfaceCell[I] = 1.0;
-        }
-        else
-        {
-            isInterfaceCell[I] = 0.0;
-        }
-    }
-    isInterfaceCell.correctBoundaryConditions();
+    updateInterfaceCells(indicator);
 
     volScalarField& cellCurvature = curvPtr_->cellCurvature();
 
-    curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell); 
+    curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell_); 
 
-    curvExtensionPtr_->extend(cellCurvature, isInterfaceCell); 
+    curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
 
     fSigma_ = 
         sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);
 
     return fSigma_;
+}
+
+
+const volScalarField& pandora::isInterfaceCell
+(
+    const volScalarField& indicator
+)
+{
+    updateInterfaceCells(indicator);
+
+    return isInterfaceCell_;
 }
 
 // * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //

@@ -33,6 +33,7 @@ Description
 #include "fvCFD.H"
 #include "isoAdvection.H"
 
+#include "pandora.hpp"
 #include "pandoraCurvature.hpp"
 #include "pandoraCurvatureExtension.hpp"
 #include "pandoraCurvatureRegularisation.hpp"
@@ -116,20 +117,7 @@ int main(int argc, char *argv[])
     };
 
     #include "createFields.hpp"
-    // TODO (TT): Refactor
-    volScalarField isInterfaceCell{alpha};
-    forAll(isInterfaceCell, I)
-    {
-        if ((0.1 < isInterfaceCell[I]) && (isInterfaceCell[I] < 0.9))
-        {
-            isInterfaceCell[I] = 1.0;
-        }
-        else
-        {
-            isInterfaceCell[I] = 0.0;
-        }
-    }
-    //
+    
     // Mark cells whose curvature influences surface tension
     auto surfaceTensionFacesTmp = fvc::snGrad(alpha);
     const auto& surfaceTensionFaces = surfaceTensionFacesTmp.ref();
@@ -147,6 +135,8 @@ int main(int argc, char *argv[])
     curvatureRequired.write();
 
     dictionary pandoraDict{mesh.solutionDict().subDict("pandora")};
+    pandora pandoraObj{mesh};
+    const auto& isInterfaceCell = pandoraObj.isInterfaceCell(alpha);
     autoPtr<pandoraCurvature> curvPtr(pandoraCurvature::New(mesh, pandoraDict));
     autoPtr<pandoraCurvatureRegularisation> regularisationPtr_{
         pandoraCurvatureRegularisation::New(pandoraDict)
