@@ -15,8 +15,10 @@ FoamFile
 
 radius  @!radius!@;
 
-w #calc "$radius * 8";
-h #calc "$radius * 8";
+// The factor 11 is required to provide a sufficiently large domain
+// for the Zuzio study (TT).
+w #calc "$radius * 11";
+h #calc "$radius * 11";
 
 scale 1.00;
 
