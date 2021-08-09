@@ -120,24 +120,30 @@ void check_volume_fraction(const Tetrahedron<ctype>& tet,
 }
 
 template<typename ctype>
-void check_zero_volume_fraction(const Tetrahedron<ctype>& tet)
-{ check_volume_fraction(tet, get_signed_dists_empty(tet), 0.0, 1e-8); }
-
-template<typename ctype>
-void check_unit_volume_fraction(const Tetrahedron<ctype>& tet)
-{ check_volume_fraction(tet, get_signed_dists_full(tet), 1.0, 1e-8); }
-
-template<typename ctype>
-void check_halved_volume_fraction(const Tetrahedron<ctype>& tet)
-{ check_volume_fraction(tet, get_signed_dists_halved(tet), 0.875, 1e-8); }
+void check_omega_plus_volume(const Tetrahedron<ctype>& tet,
+                             const std::vector<ctype>& signed_distances,
+                             const ctype expected,
+                             const ctype eps)
+{
+    using namespace Foam::TriSurfaceImmersion;
+    const tetVolumeFractionCalculator calculator{};
+    const auto f = calculator.omegaPlusVolume(tet.labels, signed_distances, tet.points);
+    check_equality(f, expected, eps, "omegaPlusVolume");
+}
 
 template<typename ctype>
 void do_checks(const Tetrahedron<ctype>& tet)
 {
     check_volume(tet);
-    check_zero_volume_fraction(tet);
-    check_unit_volume_fraction(tet);
-    check_halved_volume_fraction(tet);
+
+    check_volume_fraction(tet, get_signed_dists_empty(tet),  0.0,   1e-8);
+    check_volume_fraction(tet, get_signed_dists_full(tet),   1.0,   1e-8);
+    check_volume_fraction(tet, get_signed_dists_halved(tet), 0.875, 1e-8);
+
+    const auto v = tet.volume;
+    check_omega_plus_volume(tet, get_signed_dists_empty(tet),  0.0,     1e-8);
+    check_omega_plus_volume(tet, get_signed_dists_full(tet),   v,       v*1e-8);
+    check_omega_plus_volume(tet, get_signed_dists_halved(tet), 0.875*v, v*1e-8);
 }
 
 int main()
