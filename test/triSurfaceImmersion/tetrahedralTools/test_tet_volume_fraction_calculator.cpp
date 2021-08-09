@@ -44,6 +44,31 @@ void rotate(Points& points, const point& axis, const ctype angle)
                   [&] (auto& p) { rotation.transform(p); });
 }
 
+template<typename ctype>
+std::vector<ctype> get_signed_dists_full(const Tetrahedron<ctype>& tet)
+{
+    std::vector<ctype> signed_distances(tet.points.size(), tet.height);
+    signed_distances[tet.points.size() - 1] = 0.0;
+    return signed_distances;
+}
+
+template<typename ctype>
+std::vector<ctype> get_signed_dists_empty(const Tetrahedron<ctype>& tet)
+{
+    std::vector<ctype> signed_distances(tet.points.size(), 0.0);
+    signed_distances[tet.points.size() - 1] = -1.0*tet.height;
+    return signed_distances;
+}
+
+template<typename ctype>
+std::vector<ctype> get_signed_dists_halved(const Tetrahedron<ctype>& tet)
+{
+    const auto halfHeight = tet.height/2.0;
+    std::vector<ctype> signed_distances(tet.points.size(), halfHeight);
+    signed_distances[tet.points.size() - 1] = -1.0*halfHeight;
+    return signed_distances;
+}
+
 template<typename Points>
 void displace(Points& points, const point& origin)
 {
@@ -83,44 +108,28 @@ void check_volume(const Tetrahedron<ctype>& tet)
 }
 
 template<typename ctype>
-void check_zero_volume_fraction(const Tetrahedron<ctype>& tet)
+void check_volume_fraction(const Tetrahedron<ctype>& tet,
+                           const std::vector<ctype>& signed_distances,
+                           const ctype expected,
+                           const ctype eps)
 {
-    std::vector<ctype> signed_distances(tet.points.size(), 0.0);
-    signed_distances[tet.points.size() - 1] = -1.0*tet.height;
-
     using namespace Foam::TriSurfaceImmersion;
     const tetVolumeFractionCalculator calculator{};
-    const auto v = calculator.volumeFraction(tet.labels, signed_distances);
-    const double expected = 0.0;
-    const double eps = 1e-8;
-    check_equality(v, expected, eps, "volume fraction");
+    const auto f = calculator.volumeFraction(tet.labels, signed_distances);
+    check_equality(f, expected, eps, "volume fraction");
 }
+
+template<typename ctype>
+void check_zero_volume_fraction(const Tetrahedron<ctype>& tet)
+{ check_volume_fraction(tet, get_signed_dists_empty(tet), 0.0, 1e-8); }
 
 template<typename ctype>
 void check_unit_volume_fraction(const Tetrahedron<ctype>& tet)
-{
-    std::vector<ctype> signed_distances(tet.points.size(), tet.height);
-    signed_distances[tet.points.size() - 1] = 0.0;
-
-    using namespace Foam::TriSurfaceImmersion;
-    const tetVolumeFractionCalculator calculator{};
-    const auto v = calculator.volumeFraction(tet.labels, signed_distances);
-    const double expected = 1.0;
-    check_equality(v, expected, expected*1e-8, "volume fraction");
-}
+{ check_volume_fraction(tet, get_signed_dists_full(tet), 1.0, 1e-8); }
 
 template<typename ctype>
 void check_halved_volume_fraction(const Tetrahedron<ctype>& tet)
-{
-    std::vector<ctype> signed_distances(tet.points.size(), tet.height/2.0);
-    signed_distances[tet.points.size() - 1] = -1.0*tet.height/2.0;
-
-    using namespace Foam::TriSurfaceImmersion;
-    const tetVolumeFractionCalculator calculator{};
-    const auto v = calculator.volumeFraction(tet.labels, signed_distances);
-    const double expected = 0.875;
-    check_equality(v, expected, expected*1e-8, "volume fraction");
-}
+{ check_volume_fraction(tet, get_signed_dists_halved(tet), 0.875, 1e-8); }
 
 template<typename ctype>
 void do_checks(const Tetrahedron<ctype>& tet)
