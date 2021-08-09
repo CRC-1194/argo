@@ -4,16 +4,20 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <algorithm>
 
 #include <quaternion.H>
 
 #include <tetVolumeFractionCalculator.hpp>
 
+using Points = std::vector<point>;
+using Labels = std::array<label, 4>;
+
 template<typename ctype = double>
 struct Tetrahedron
 {
-    std::vector<point> points;
-    std::array<label, 4> labels;
+    Points points;
+    Labels labels;
     ctype volume;
     ctype height;
 };
@@ -117,6 +121,26 @@ void check_volume_fraction(const Tetrahedron<ctype>& tet,
     const tetVolumeFractionCalculator calculator{};
     const auto f = calculator.volumeFraction(tet.labels, signed_distances);
     check_equality(f, expected, eps, "volume fraction");
+
+    // test function taking multiple tets
+    std::vector<Labels> tet_list;
+    std::vector<ctype> sd_list;
+    for (int i = 0; i < 3; i++)
+    {
+        auto tmp = tet.labels;
+        const auto offset = tet.labels.size()*i;
+        std::for_each(tmp.begin(), tmp.end(), [offset] (auto& label) { label += offset; });
+
+        tet_list.push_back(std::move(tmp));
+        sd_list.insert(sd_list.end(), signed_distances.begin(), signed_distances.end());
+    }
+
+    const auto fractions = calculator.volumeFractions(tet_list, sd_list);
+    std::for_each(
+        fractions.begin(),
+        fractions.end(),
+        [&] (const auto& f) { return check_equality(f, expected, eps, "volume fractions"); }
+    );
 }
 
 template<typename ctype>
@@ -127,8 +151,30 @@ void check_omega_plus_volume(const Tetrahedron<ctype>& tet,
 {
     using namespace Foam::TriSurfaceImmersion;
     const tetVolumeFractionCalculator calculator{};
-    const auto f = calculator.omegaPlusVolume(tet.labels, signed_distances, tet.points);
-    check_equality(f, expected, eps, "omegaPlusVolume");
+    const auto v = calculator.omegaPlusVolume(tet.labels, signed_distances, tet.points);
+    check_equality(v, expected, eps, "omegaPlusVolume");
+
+    // test function taking multiple tets
+    std::vector<Labels> tet_list;
+    std::vector<ctype> sd_list;
+    Points p_list;
+    for (int i = 0; i < 3; i++)
+    {
+        auto tmp = tet.labels;
+        const auto offset = tet.labels.size()*i;
+        std::for_each(tmp.begin(), tmp.end(), [offset] (auto& label) { label += offset; });
+
+        tet_list.emplace_back(std::move(tmp));
+        p_list.insert(p_list.end(), tet.points.begin(), tet.points.end());
+        sd_list.insert(sd_list.end(), signed_distances.begin(), signed_distances.end());
+    }
+
+    const auto volumes = calculator.omegaPlusVolumes(tet_list, sd_list, p_list);
+    std::for_each(
+        volumes.begin(),
+        volumes.end(),
+        [&] (const auto& v) { return check_equality(v, expected, eps, "omegaPlusVolumes"); }
+    );
 }
 
 template<typename ctype>
