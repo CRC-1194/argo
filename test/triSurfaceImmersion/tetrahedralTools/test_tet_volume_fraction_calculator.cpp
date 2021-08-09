@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 #include <quaternion.H>
 
@@ -14,9 +15,10 @@ struct Tetrahedron
     std::vector<point> points;
     std::array<label, 4> labels;
     ctype volume;
+    ctype height;
 };
 
-template<typename ctype = double>
+template<typename ctype>
 Tetrahedron<ctype> make_tetrahedron(ctype scale)
 {
     return {
@@ -25,32 +27,11 @@ Tetrahedron<ctype> make_tetrahedron(ctype scale)
             {scale,     0.0,       0.0},
             {0.0,       scale,     0.0},
             {scale*0.5, scale*0.5, scale},
-        }},                             // points
-        {0, 1, 2, 3},                   // labels
-        1.0/3.0*(0.5*scale*scale)*scale // volume
+        }},                              // points
+        {0, 1, 2, 3},                    // labels
+        1.0/3.0*(0.5*scale*scale)*scale, // volume
+        scale                            // height
     };
-}
-
-template<typename ctype = double>
-bool compare_equal(ctype a, ctype b, ctype eps)
-{
-    using std::abs;
-    return abs(a - b) < eps;
-}
-
-template<typename ctype>
-void check_volume(const Tetrahedron<ctype>& tet)
-{
-    using namespace Foam::TriSurfaceImmersion;
-    const auto v = tetVolumeFractionCalculator::volume(tet.labels, tet.points);
-    const auto expected = tet.volume;
-
-    if (!compare_equal(v, expected, expected*1e-8))
-    {
-        std::cout << "Computed vs expected volume: "
-                  << v << " / " << expected << std::endl;
-        throw std::runtime_error("volume mismatch detected");
-    }
 }
 
 template<typename ctype, typename Points>
@@ -71,6 +52,85 @@ void displace(Points& points, const point& origin)
                   [&] (auto& p) { p += origin; });
 }
 
+template<typename ctype>
+bool compare_equal(ctype a, ctype b, ctype eps)
+{
+    using std::abs;
+    return abs(a - b) < eps;
+}
+
+template<typename ctype>
+void check_equality(ctype computed,
+                    ctype expected,
+                    ctype eps,
+                    const std::string& quantityName)
+{
+    if (!compare_equal(computed, expected, eps))
+    {
+        std::cout << "Computed vs expected " << quantityName << ": "
+                  << computed << " / " << expected << std::endl;
+        throw std::runtime_error(quantityName + " mismatch detected");
+    }
+}
+
+template<typename ctype>
+void check_volume(const Tetrahedron<ctype>& tet)
+{
+    using namespace Foam::TriSurfaceImmersion;
+    const auto v = tetVolumeFractionCalculator::volume(tet.labels, tet.points);
+    const auto expected = tet.volume;
+    check_equality(v, expected, expected*1e-8, "volume");
+}
+
+template<typename ctype>
+void check_zero_volume_fraction(const Tetrahedron<ctype>& tet)
+{
+    std::vector<ctype> signed_distances(tet.points.size(), 0.0);
+    signed_distances[tet.points.size() - 1] = -1.0*tet.height;
+
+    using namespace Foam::TriSurfaceImmersion;
+    const tetVolumeFractionCalculator calculator{};
+    const auto v = calculator.volumeFraction(tet.labels, signed_distances);
+    const double expected = 0.0;
+    const double eps = 1e-8;
+    check_equality(v, expected, eps, "volume fraction");
+}
+
+template<typename ctype>
+void check_unit_volume_fraction(const Tetrahedron<ctype>& tet)
+{
+    std::vector<ctype> signed_distances(tet.points.size(), tet.height);
+    signed_distances[tet.points.size() - 1] = 0.0;
+
+    using namespace Foam::TriSurfaceImmersion;
+    const tetVolumeFractionCalculator calculator{};
+    const auto v = calculator.volumeFraction(tet.labels, signed_distances);
+    const double expected = 1.0;
+    check_equality(v, expected, expected*1e-8, "volume fraction");
+}
+
+template<typename ctype>
+void check_halved_volume_fraction(const Tetrahedron<ctype>& tet)
+{
+    std::vector<ctype> signed_distances(tet.points.size(), tet.height/2.0);
+    signed_distances[tet.points.size() - 1] = -1.0*tet.height/2.0;
+
+    using namespace Foam::TriSurfaceImmersion;
+    const tetVolumeFractionCalculator calculator{};
+    const auto v = calculator.volumeFraction(tet.labels, signed_distances);
+    const double expected = 0.875;
+    check_equality(v, expected, expected*1e-8, "volume fraction");
+}
+
+template<typename ctype>
+void do_checks(const Tetrahedron<ctype>& tet)
+{
+    check_volume(tet);
+    check_zero_volume_fraction(tet);
+    check_unit_volume_fraction(tet);
+    check_halved_volume_fraction(tet);
+}
+
 int main()
 {
     using ctype = double;
@@ -84,22 +144,23 @@ int main()
 
         std::cout << " -- testing raw tet" << std::endl;
         const auto tet = make_tetrahedron(sf);
-        check_volume(tet);
+        do_checks(tet);
 
         std::cout << " -- testing displaced tet" << std::endl;
         auto tet_displaced = tet;
         displace(tet_displaced.points, origin);
-        check_volume(tet_displaced);
+        do_checks(tet_displaced);
 
         std::cout << " -- testing rotated tet" << std::endl;
         auto tet_rotated = tet;
         rotate(tet_rotated.points, rot_axis, M_PI/4.0);
-        check_volume(tet_rotated);
+        do_checks(tet_rotated);
 
         std::cout << " -- testing rotated/displaced tet" << std::endl;
         auto tet_rot_displaced = tet_rotated;
         displace(tet_rot_displaced.points, origin);
-        check_volume(tet_rot_displaced);
+        do_checks(tet_rot_displaced);
+
     }
 
     return 0;
