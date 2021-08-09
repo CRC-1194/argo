@@ -74,7 +74,7 @@ void pandoraCurvatureTangentialAverageRegularisation::regularise
     for (label iter = 0; iter != nAveragingIterations_; ++iter)
     {
         auto faceCurvatureTmp = fvc::interpolate(curvature);
-        auto& faceCurvature = faceCurvatureTmp.ref();
+        const auto& faceCurvature = faceCurvatureTmp.cref();
 
         forAll (faceCurvature, fid)
         {
@@ -93,7 +93,6 @@ void pandoraCurvatureTangentialAverageRegularisation::regularise
         const auto& isInterfaceCellBoundary = isInterfaceCell.boundaryField();
         const auto& faceCurvatureBoundary = faceCurvature.boundaryField();
 
-        //for (auto& mBoundary : isInterfaceCellBoundary)
         forAll(isInterfaceCellBoundary, patchID)
         {
             const auto& isInterfaceCellPatch = isInterfaceCellBoundary[patchID];
@@ -128,6 +127,9 @@ void pandoraCurvatureTangentialAverageRegularisation::regularise
 
         count = 0;
         curvatureSum = 0.0;
+
+        // Update processor neighbour values of curvature field
+        curvature.correctBoundaryConditions();
     }
 }
 
