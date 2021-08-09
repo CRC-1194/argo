@@ -40,12 +40,18 @@ function(add_argo_test)
         ${ADDARGOTEST_NAME}
         PUBLIC ${ADDARGOTEST_COMPILE_DEFINITIONS}
     )
-    target_compile_options(
-        ${ADDARGOTEST_NAME}
-        PUBLIC ${ADDARGOTEST_COMPILE_FLAGS}
-    )
 
-    target_link_libraries(${ADDARGOTEST_NAME} ${ADDARGOTEST_LINK_LIBRARIES})
+    if (ADDARGOTEST_COMPILE_FLAGS)
+        target_compile_options(
+            ${ADDARGOTEST_NAME}
+            PUBLIC ${ADDARGOTEST_COMPILE_FLAGS}
+        )
+    endif ()
+
+    if (ADDARGOTEST_LINK_LIBRARIES)
+        target_link_libraries(${ADDARGOTEST_NAME} ${ADDARGOTEST_LINK_LIBRARIES})
+    endif ()
+
     set(ADDARGOTEST_TARGET ${ADDARGOTEST_NAME})
   elseif (NOT CONDS_FULFILLED)
     message(STATUS "Test ${ADDARGOTEST_NAME} is disabled due to unmet requirements")
