@@ -123,19 +123,8 @@ void check_volume_fraction(const Tetrahedron<ctype>& tet,
     check_equality(f, expected, eps, "volume fraction");
 
     // test function taking multiple tets
-    std::vector<Labels> tet_list;
-    std::vector<ctype> sd_list;
-    for (int i = 0; i < 3; i++)
-    {
-        auto tmp = tet.labels;
-        const auto offset = tet.labels.size()*i;
-        std::for_each(tmp.begin(), tmp.end(), [offset] (auto& label) { label += offset; });
-
-        tet_list.push_back(std::move(tmp));
-        sd_list.insert(sd_list.end(), signed_distances.begin(), signed_distances.end());
-    }
-
-    const auto fractions = calculator.volumeFractions(tet_list, sd_list);
+    std::vector<Labels> tet_list{tet.labels, tet.labels, tet.labels};
+    const auto fractions = calculator.volumeFractions(tet_list, signed_distances);
     std::for_each(
         fractions.begin(),
         fractions.end(),
@@ -155,21 +144,8 @@ void check_omega_plus_volume(const Tetrahedron<ctype>& tet,
     check_equality(v, expected, eps, "omegaPlusVolume");
 
     // test function taking multiple tets
-    std::vector<Labels> tet_list;
-    std::vector<ctype> sd_list;
-    Points p_list;
-    for (int i = 0; i < 3; i++)
-    {
-        auto tmp = tet.labels;
-        const auto offset = tet.labels.size()*i;
-        std::for_each(tmp.begin(), tmp.end(), [offset] (auto& label) { label += offset; });
-
-        tet_list.emplace_back(std::move(tmp));
-        p_list.insert(p_list.end(), tet.points.begin(), tet.points.end());
-        sd_list.insert(sd_list.end(), signed_distances.begin(), signed_distances.end());
-    }
-
-    const auto volumes = calculator.omegaPlusVolumes(tet_list, sd_list, p_list);
+    std::vector<Labels> tet_list{tet.labels, tet.labels, tet.labels};
+    const auto volumes = calculator.omegaPlusVolumes(tet_list, signed_distances, tet.points);
     std::for_each(
         volumes.begin(),
         volumes.end(),
