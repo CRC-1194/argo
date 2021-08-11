@@ -12,7 +12,11 @@ import time
 import testReportCore as trc
 
 app_description="""Execute a parameter study with a user-specified solver.
-Can execute n variants in parallel.
+The script can execute multiple cases of a study in parallel using the option
+'--num-cases-parallel / -nc'.
+If you also want to run each case in parallel, set the number of MPI processes with
+the option '--num-mpi-processes / -np'. 
+The total number of processes created is nc*np.
 """
 
 # The solution to control the number parallel running processes is taken / adapted from
@@ -86,18 +90,18 @@ def main():
                         type=str,
                         required=True,
                         dest="dir_pattern")
-    parser.add_argument("-n","--num-processes",
-                        help="The number of processes running in parallel.\n Default: 1",
+    parser.add_argument("-nc","--num-cases-parallel",
+                        help="The number of cases run in parallel.\n Default: 1",
                         type=int,
                         default=1,
-                        dest="numprocesses")
+                        dest="numcases")
     parser.add_argument("-j", "--job-mode",
                         help="Submit solver execution as SLURM jobs. Expects to find a SLURM script named solver_name.sbatch.",
                         action="store_true",
                         default=False,
                         dest="job_mode")
-    parser.add_argument("-u","--use-mpi",
-                        help="Call solver in parallel using the given number of processes.\n Has no effect if --job-mode is used.",
+    parser.add_argument("-np","--num-mpi-processes",
+                        help="Number of MPI processes per case for parallel case execution.\n Has no effect if --job-mode is used.",
                         type=int,
                         default=0,
                         dest="num_mpi_procs")
@@ -115,7 +119,7 @@ def main():
     # Set the global parameters for parallel run
     solver = args.solver
     nVariants = len(studyDirectories)
-    maxNumProcesses = args.numprocesses
+    maxNumProcesses = args.numcases
 
     #--------------------------------------------------------------------------
     #   SLURM batch mode
