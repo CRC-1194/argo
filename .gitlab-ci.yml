@@ -84,10 +84,10 @@ initialization_param_study:
   stage: running
   dependencies:
     - build_release
-  extends: .prepare_openfoam_and_binaries
   only:
     variables:
       - $REPRODUCE_INIT_PAPER_RESULTS != null
+  extends: .prepare_openfoam_and_binaries
   script: 
    
     # Run the parameter variation tests 
@@ -114,7 +114,7 @@ density_ratio_param_study:
     - cd cases/hydrodynamic/translatingDroplet3D
     - argo-create-parameter-study.py densityRatioInfluence.parameter -v "0,2,4,6"
     - argo-initilize-parameter-study.py densityRatioInfluence_0000 -m blockMesh -f initFields.sh
-    - argo-run-study.py interIsoRhoFoam -d densityRatioInfluence_0000 -n 4
+    - argo-run-study.py interIsoRhoFoam -d densityRatioInfluence_0000 -nc 4
     - jupyter-nbconvert --execute --to=html test-nb.ipynb
 
   artifacts:
