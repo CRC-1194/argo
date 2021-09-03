@@ -1,7 +1,7 @@
 image: "openfoam-v2012_ubuntu-focal:latest"
 
 .prepare_openfoam_and_binaries:
-  script:
+  before_script:
     ##
     ## Configure the OpenFOAM environment
     ## 
