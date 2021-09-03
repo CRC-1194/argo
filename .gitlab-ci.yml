@@ -1,5 +1,25 @@
 image: "openfoam-v2012_ubuntu-focal:latest"
 
+.prepare_openfoam_and_binaries:
+  script:
+    ##
+    ## Configure the OpenFOAM environment
+    ## 
+    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
+
+    ##
+    ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
+    ##
+    - if [ ! -d "$FOAM_USER_APPBIN" ]; then mkdir -p "$FOAM_USER_APPBIN"; fi
+    - cp FOAM_USER_APPBIN/* $FOAM_USER_APPBIN
+
+    ##
+    ## Re-use user-defined OF libraries from the FOAM_USER_LIBBIN artifact
+    ##
+    - if [ ! -d "$FOAM_USER_LIBBIN" ]; then mkdir -p "$FOAM_USER_LIBBIN"; fi
+    - cp FOAM_USER_LIBBIN/* $FOAM_USER_LIBBIN
+
+
 stages:
   - building
   - running
@@ -64,24 +84,11 @@ initialization_param_study:
   stage: running
   dependencies:
     - build_release
+  extends: .prepare_openfoam_and_binaries
+  only:
+    variables:
+      - $REPRODUCE_INIT_PAPER_RESULTS != null
   script: 
-
-    ##
-    ## Configure the OpenFOAM environment
-    ## 
-    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
-
-    ##
-    ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
-    ##
-    - if [ ! -d "$FOAM_USER_APPBIN" ]; then mkdir -p "$FOAM_USER_APPBIN"; fi
-    - cp FOAM_USER_APPBIN/* $FOAM_USER_APPBIN
-
-    ##
-    ## Re-use user-defined OF libraries from the FOAM_USER_LIBBIN artifact
-    ##
-    - if [ ! -d "$FOAM_USER_LIBBIN" ]; then mkdir -p "$FOAM_USER_LIBBIN"; fi
-    - cp FOAM_USER_LIBBIN/* $FOAM_USER_LIBBIN
    
     # Run the parameter variation tests 
     - cd cases/initialization/3Dinit
@@ -99,26 +106,8 @@ density_ratio_param_study:
   stage: running
   dependencies:
     - build_release
+  extends: .prepare_openfoam_and_binaries
   script: 
-
-    ##
-    ## Configure the OpenFOAM environment
-    ## 
-    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
-    ## Debug
-    - cat /opt/OpenFOAM/OpenFOAM-v2012/etc/controlDict
-
-    ##
-    ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
-    ##
-    - if [ ! -d "$FOAM_USER_APPBIN" ]; then mkdir -p "$FOAM_USER_APPBIN"; fi
-    - cp FOAM_USER_APPBIN/* $FOAM_USER_APPBIN
-
-    ##
-    ## Re-use user-defined OF libraries from the FOAM_USER_LIBBIN artifact
-    ##
-    - if [ ! -d "$FOAM_USER_LIBBIN" ]; then mkdir -p "$FOAM_USER_LIBBIN"; fi
-    - cp FOAM_USER_LIBBIN/* $FOAM_USER_LIBBIN
    
     # Run the parameter variation tests 
     - source cases/scripts/bashrc
