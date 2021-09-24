@@ -18,7 +18,7 @@ radius  @!radius!@;
 w #calc "$radius * 5";
 h #calc "$radius * 8";
 
-convertToMeters 1.00;
+scale 1.00;
 
 vertices
 (
