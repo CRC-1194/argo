@@ -67,6 +67,8 @@ Description
 #include "CorrectPhi.H"
 #include "fvcSmooth.H"
 #include "dynamicRefineFvMesh.H"
+#include "reconstructionSchemes.H"
+#include "upwind.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -79,6 +81,13 @@ int main(int argc, char *argv[])
         "With optional mesh motion and mesh topology changes including"
         " adaptive re-meshing.\n"
         "The solver is derived from interFoam"
+    );
+
+    argList::addOption
+    (
+        "tScheme",
+        "time scheme name",
+        "Euler, CrankNicolson"
     );
 
     // TODO (TT): Does not work with CMake yet.
@@ -111,6 +120,11 @@ int main(int argc, char *argv[])
         ++runTime;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
+
+        // TODO: double-check, discussion points
+        // - check what oldTime() does here really
+        rhoPhi.oldTime() == rhoPhi; 
+        // #include "computeRhof.H"
 
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
@@ -163,8 +177,41 @@ int main(int argc, char *argv[])
                 }
             }
 
+
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
+
+            // Equation 21 in Overleaf for Euler integration, for n
+            // What do we want: 
+            // symbolic: rhoPhi^{n+1} = (rho1 - rho2)*alphaf^{n+1}*phi^m + rho2*phi^m;
+            //
+            // code rhoPhi = (rho1 - rho2)*alphaf*phi + rho2*phi;
+            // 
+            // what we have:
+            //
+//             rhoPhi = (rho1 - rho2)*advector.alphaPhi() + rho2*phi;
+            #include "computeRhof.H"
+            rhoPhi == rhof * phi;
+
+            // in Momentum equation, convective term:
+            // rho_f^{n+1} F_f^m v_f^{n+1} - implict Euler 
+
+            // Solve for \rho_c^{n+1} using the mass conservation equation.
+            if (args.get<word>("tScheme") == "Euler")
+            {
+               // Option 1
+               fvScalarMatrix rhoEqn
+               (
+                     fvm::ddt(rho) + fvc::div(rhoPhi)
+               );
+               rhoEqn.solve();
+               
+               // Option 2: besser, weil wir keinen Eintrag im system/fvSolution brauchen
+               // TODO: rho.oldTime() == rho; 
+               // rho == rho.oldTime() - runTime.time().deltaT()*fvc::surfaceIntegrate(rhoPhi); 
+               // auskommentieren wenn oben rho = rho.oldTime()... steht.
+               //rho.correctBoundaryConditions();
+            }
 
             // If rhoPhi is computed and upated in alphaEqnSubcycle.H
             // there is no need to calculate it explicitly, so 
@@ -174,14 +221,25 @@ int main(int argc, char *argv[])
             //muf == alphaface*rho1*nu1+(1-alphaface)*rho2*nu2;
             //rhoPhi == rhof * phi; //test new rhoPhi
 
-            // Solve for \rho_c^{n+1} using the mass conservation equation.
-            fvScalarMatrix rhoEqn
-            (
-                 fvm::ddt(rho) + fvc::div(rhoPhi)
-            );
-            rhoEqn.solve();
-            // mixture.correct() corrects the laminar viscosity and sigma*K
 
+            if (args.get<word>("tScheme") == "CrankNicolson")
+            {
+               // Option 1
+               // CrankNicolson für RhoEqn
+               //fvScalarMatrix rhoEqn
+               //(
+                     //fvm::ddt(rho) + fvm::div(rhoPhi)
+               //);
+               //rhoEqn.solve();
+               // in system/fvSchemes für dddt(rho) Crank Nicolson auswählen.
+               
+               // Option 2
+               // CrankNicolson für RhoEqn
+               rho = rho.oldTime() - 
+                   0.5*runTime.time().deltaT()*fvc::surfaceIntegrate(rhoPhi.oldTime() + rhoPhi);
+            }
+
+            // mixture.correct() corrects the laminar viscosity and sigma*K
             mixture.correct();
 
 
@@ -190,6 +248,7 @@ int main(int argc, char *argv[])
                 continue;
             }
 
+            // Will UEqn use rhoPhi.oldTime() with CrankNicolson?
             #include "UEqn.hpp"
 
             // --- Pressure corrector loop
@@ -204,6 +263,7 @@ int main(int argc, char *argv[])
             }
         }
 
+        rhoFromAlphaf == rho;
         // Reset the density using cell-centered volume fractions.
         rho == alpha1*rho1 + (1.0 - alpha1)*rho2;
         runTime.write();
