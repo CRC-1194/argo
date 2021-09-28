@@ -1,6 +1,3 @@
-// FIXME: This shouldn't be boilerplate, refactor. TM. 
-// Compute rhoPhi using the old approach since it is valid for all bulk cells
-rhof.oldTime() == rhof;
 rhof == fvc::interpolate(rho);
 // --> alphaf == fvc::interpolate(alpha1);
 
@@ -13,22 +10,25 @@ const auto& faceNeighbour = mesh.neighbour();
 // //const auto& cellList = mesh.cells();
 // //const auto& phiIn = phi.primitiveField();
 
-const surfaceScalarField& alphafUpwind = upwind<scalar>(phi.mesh(), phi).interpolate(alpha1);
+// == : overwrite the boundary conditions as well!  
+// - overloaded operator
+// operator==(const GeometricField<scalar, fvPatchField, volMesh>&)
+alphaf == upwind<scalar>(phi.mesh(), phi).interpolate(alpha1);
 
 // // const auto& meshVertices = mesh.points();
 // // const auto& meshFaces = mesh.faces();
 
  const reconstructionSchemes& surf = advector.surf(); //Jun: reference to reconstructionSchemes
 // // const DynamicField<label>& interfaceLabels = surf.interfaceLabels(); // Jun: list of interface cells
- const boolList& isASurfaceCell = surf.interfaceCell();
- const surfaceScalarField& magSf = mesh.magSf();
+const boolList& isASurfaceCell = surf.interfaceCell();
+const surfaceScalarField& magSf = mesh.magSf();
 
-forAll(rhoPhi, faceI) 
+forAll(alphaf, faceI) // alphaf geometric calculation
 { 
     const scalar& sfArea = magSf[faceI];
-    alphaf[faceI] = alphafUpwind[faceI];
     
-    if (phi[faceI] > 10*SMALL)
+    //if (phi[faceI] > 10*SMALL)
+    if (phi[faceI] > 0)
     {
         if(isASurfaceCell[faceOwner[faceI]])
         {
@@ -39,7 +39,8 @@ forAll(rhoPhi, faceI)
            alphaf[faceI] = mag(cutFace.subFaceArea()) / sfArea; 
         } 
     } 
-    else if (phi[faceI] < -10*SMALL)
+    //else if (phi[faceI] < -10*SMALL)
+    else //if (phi[faceI] < -10*SMALL)
     {
         if(isASurfaceCell[faceNeighbour[faceI]])
         {
@@ -50,52 +51,57 @@ forAll(rhoPhi, faceI)
            alphaf[faceI] = mag(cutFace.subFaceArea()) / sfArea; 
         }        
     }
-    else
-    {
-        if (isASurfaceCell[faceOwner[faceI]] && !(isASurfaceCell[faceNeighbour[faceI]]))
-        {
-            alphaf[faceI] = alpha1[faceNeighbour[faceI]];
-        }
-        else if(isASurfaceCell[faceNeighbour[faceI]] && !(isASurfaceCell[faceOwner[faceI]]))
-        {
-            alphaf[faceI] = alpha1[faceOwner[faceI]];
-        }
-    } 
+    //else
+    //{
+        //if (isASurfaceCell[faceOwner[faceI]] && !(isASurfaceCell[faceNeighbour[faceI]]))
+        //{
+            //alphaf[faceI] = alpha1[faceNeighbour[faceI]];
+        //}
+        //else if(isASurfaceCell[faceNeighbour[faceI]] && !(isASurfaceCell[faceOwner[faceI]]))
+        //{
+            //alphaf[faceI] = alpha1[faceOwner[faceI]];
+        //}
+    //} 
 
-    rhof[faceI] = alphaf[faceI]*rho1.value() + (1 - alphaf[faceI])*rho2.value();
-    muf[faceI] = alphaf[faceI]*rho1.value()*nu1.value() +(1 - alphaf[faceI])*rho2.value()*nu2.value(); 
+    //rhof[faceI] = alphaf[faceI]*rho1.value() + (1 - alphaf[faceI])*rho2.value();
+    //muf[faceI] = alphaf[faceI]*rho1.value()*nu1.value() +(1 - alphaf[faceI])*rho2.value()*nu2.value(); 
 }
 
+Info << "rho1 = " << rho1 << endl;
+Info << "rho2 = " << rho2 << endl;
 
-const surfaceScalarField::Boundary& phib = phi.boundaryField();
-// const polyBoundaryMesh& boundaryMesh = mesh.boundaryMesh();
-surfaceScalarField::Boundary& alphafb = alphaf.boundaryFieldRef();
-const surfaceScalarField::Boundary& magSfb = magSf.boundaryField();
-surfaceScalarField::Boundary& rhofb = rhof.boundaryFieldRef();
-surfaceScalarField::Boundary& mufb = muf.boundaryFieldRef();
+rhof == alphaf*rho1 + (1 - alphaf)*rho2;
+muf == alphaf*rho1*nu1 + (1 - alphaf)*rho2*nu2;
 
-forAll(mesh.boundaryMesh(), patchID) 
-{
-    const UList<label>& boundaryCells = mesh.boundaryMesh()[patchID].faceCells();
-    forAll (mesh.boundaryMesh()[patchID],faceI)
-    {
-        // const label& faceI = mesh.boundaryMesh()[patchID].start() + face;
+//const surfaceScalarField::Boundary& phib = phi.boundaryField();
+//// const polyBoundaryMesh& boundaryMesh = mesh.boundaryMesh();
+//surfaceScalarField::Boundary& alphafb = alphaf.boundaryFieldRef();
+//const surfaceScalarField::Boundary& magSfb = magSf.boundaryField();
+//surfaceScalarField::Boundary& rhofb = rhof.boundaryFieldRef();
+//surfaceScalarField::Boundary& mufb = muf.boundaryFieldRef();
 
-         alphafb[patchID][faceI] =  alpha1[boundaryCells[faceI]]; //alphafUpwind.boundaryField()[patchID][faceI];
+//forAll(mesh.boundaryMesh(), patchID) 
+//{
+    //const UList<label>& boundaryCells = mesh.boundaryMesh()[patchID].faceCells();
+    //forAll (mesh.boundaryMesh()[patchID],faceI)
+    //{
+        //// const label& faceI = mesh.boundaryMesh()[patchID].start() + face;
 
-        if(isASurfaceCell[boundaryCells[faceI]] && (mag(phib[patchID][faceI]) > 10*SMALL))
-        {
-           const point x0 = surf.centre()[boundaryCells[faceI]]; // cell interface centre
-           vector n0 = surf.normal()[boundaryCells[faceI]]; // cell interface unit normal
-           n0 /= (mag(n0)+SMALL);
-           cutFace.calcSubFace(faceI, n0, x0);
-           alphafb[patchID][faceI] = mag(cutFace.subFaceArea()) / magSfb[patchID][faceI]; 
-        }
+         //alphafb[patchID][faceI] =  alpha1[boundaryCells[faceI]]; //alphafUpwind.boundaryField()[patchID][faceI];
 
-        // Info << "boundary patch name: " << mesh.boundaryMesh()[patchID].name() <<"; boundary cell alpha: "<< alpha1[boundaryCells[faceI]] << "; " << endl;
-        // Info << "is a surface cell? : " << isASurfaceCell[boundaryCells[faceI]] <<"; alphaf: " << alphafb[patchID][faceI] << endl;
+        //if(isASurfaceCell[boundaryCells[faceI]] && (mag(phib[patchID][faceI]) > 10*SMALL))
+        //{
+           //const point x0 = surf.centre()[boundaryCells[faceI]]; // cell interface centre
+           //vector n0 = surf.normal()[boundaryCells[faceI]]; // cell interface unit normal
+           //n0 /= (mag(n0)+SMALL);
+           //cutFace.calcSubFace(faceI, n0, x0);
+           //alphafb[patchID][faceI] = mag(cutFace.subFaceArea()) / magSfb[patchID][faceI]; 
+        //}
 
-        rhofb[patchID][faceI] = alphafb[patchID][faceI]*rho1.value() + (1 - alphafb[patchID][faceI])*rho2.value();
-        mufb[patchID][faceI] = alphafb[patchID][faceI]*rho1.value()*nu1.value() +(1 - alphafb[patchID][faceI])*rho2.value()*nu2.value();     
-    }
-}
+        //// Info << "boundary patch name: " << mesh.boundaryMesh()[patchID].name() <<"; boundary cell alpha: "<< alpha1[boundaryCells[faceI]] << "; " << endl;
+        //// Info << "is a surface cell? : " << isASurfaceCell[boundaryCells[faceI]] <<"; alphaf: " << alphafb[patchID][faceI] << endl;
+
+        //rhofb[patchID][faceI] = alphafb[patchID][faceI]*rho1.value() + (1 - alphafb[patchID][faceI])*rho2.value();
+        //mufb[patchID][faceI] = alphafb[patchID][faceI]*rho1.value()*nu1.value() +(1 - alphafb[patchID][faceI])*rho2.value()*nu2.value();     
+    //}
+//}

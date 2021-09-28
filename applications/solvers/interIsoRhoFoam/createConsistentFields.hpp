@@ -29,6 +29,9 @@ volScalarField rhoFromAlphaf
     rho
 );
 
+rho.write(); 
+rhoFromAlphaf.write();
+
 cutFaceAdvect cutFace(alpha1.mesh(), alpha1);
 
 //fractional volumetric flux
