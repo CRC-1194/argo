@@ -54,7 +54,34 @@ maxDeltaT       0.01;
 
 // --- Function objects -----------------------------------------------------//
 
-#include "FOsumAlpha";
-#include "FOsumE";
+//#include "FOsumAlpha";
+//#include "FOsumE";
+
+
+libs ("libtwoPhaseValidation.so");
+
+functions
+{
+    volumeConservation
+    {
+        type                fieldErrors;
+        fieldName           alpha.water;
+        alphaDroplet        0.0;
+    }
+
+    evaluation
+    {
+        type                        stationaryDroplet;
+        phaseIndicatorFieldName     alpha.water;
+        alphaValueDispersedPhase    0.0;
+        velocityFieldName           U;
+        pressureFieldName           p;
+        dropletPhaseName            air;
+        radius                      @!radius!@;
+        centre                      (@!x_centre!@ @!y_centre!@ @!z_centre!@);
+        backgroundVelocity          (@!x_velocity!@ @!y_velocity!@ @!z_velocity!@);
+    }
+}
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -22,7 +22,8 @@ values{
     // Parameters from constant/transportProperties
     rho_droplet
     (
-        1 1e02 1e03 1e04 
+        //1 1e02 1e03 1e04 
+          1e06 1e08 // 1e06 is a benchmark for most papers 
     );
 
     nu_droplet ( 0.0 );

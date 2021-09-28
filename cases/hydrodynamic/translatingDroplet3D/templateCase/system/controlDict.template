@@ -23,7 +23,7 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         @!end_time!@;
+endTime         #calc "1.5*@!end_time!@"; // <-- lent 3 diameters moving; original argo 2 diameters-->@!end_time!@;
 
 deltaT          @!delta_t!@;
 
