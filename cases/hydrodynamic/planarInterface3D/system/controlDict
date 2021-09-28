@@ -1,0 +1,80 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     interIsoFoamConsistent;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         0.5;
+
+deltaT          0.025;
+
+writeControl    timeStep;
+
+writeInterval   1;
+
+purgeWrite      50;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+adjustTimeStep  no;
+
+maxCo 0.5; 
+maxAlphaCo 0.5;
+
+maxDeltaT       0.01;
+/*
+libs ("libtwoPhaseValidation.so");
+
+functions
+{
+    volumeConservation 
+    {
+        type                fieldErrors;
+        fieldName           alpha.water;
+        alphaDroplet        0.0;
+    }
+
+    evaluation
+    {
+        type                        stationaryDroplet;
+        phaseIndicatorFieldName     alpha.water;
+        alphaValueDispersedPhase    0.0;
+        velocityFieldName           U;
+        pressureFieldName           p;
+        dropletPhaseName            air;
+        radius                      0.000250001;
+        centre                      (0.0006250001 0.0006250003 0.00050007);
+        backgroundVelocity          (0 0 0.01);
+    }
+}
+*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
