@@ -59,7 +59,8 @@ class pandoraDivNormalCurvature
 protected:
 
     const word fieldName_; 
-    const label nAverages_;
+    const label nPropagate_;
+    const label nAverage_; 
     volVectorField averagedNormals_; 
 
 public:

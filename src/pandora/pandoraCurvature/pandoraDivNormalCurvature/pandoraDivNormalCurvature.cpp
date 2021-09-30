@@ -50,7 +50,8 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
     :
         pandoraCurvature(mesh, dict), 
         fieldName_(curvatureDict_.get<word>("normalField")),
-        nAverages_(curvatureDict_.getOrDefault<label>("nAverages", 3)), 
+        nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 3)), 
+        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 3)), 
         averagedNormals_ 
         (
             IOobject
@@ -85,7 +86,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
                 "SMALL", interfaceNormals.dimensions(), SMALL
             )
         );
-        for (label i = 0; i < nAverages_; ++i)
+        for (label i = 0; i < nPropagate_; ++i)
         {
             averagedNormals_ = fvc::average(averagedNormals_);
 
@@ -102,9 +103,14 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
             }
         }
 
-        // Normalize normal vectors.
-        averagedNormals_ /= mag(averagedNormals_) + 
-            dimensionedScalar("SMALL", averagedNormals_.dimensions(), SMALL); 
+        for (label i = 0; i < nAverage_; ++i)
+        {
+            averagedNormals_ == fvc::average(averagedNormals_);
+            // Normalize normal vectors.
+            averagedNormals_ /= mag(averagedNormals_) + 
+                dimensionedScalar("SMALL", averagedNormals_.dimensions(), SMALL); 
+        }
+
 
         cellCurvature_ = -fvc::div(averagedNormals_);
     }
