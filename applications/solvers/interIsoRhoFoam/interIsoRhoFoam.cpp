@@ -166,6 +166,15 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
+            // FIXME: this is a hotfix. We actually need stabilization for snGrad(alpha)  
+            //        for cells with very small spurious volume fraction values. TM.
+            //        Reproduction: stationaryDroplet3D, in parallel, first time step.
+            forAll(alpha1, cellI)
+            {
+                if (alpha1[cellI] < 1e-08) 
+                    alpha1[cellI] = 0;
+            }
+
             mixture.correct();
 
             alphaface == mag(cutfaceInfo.subFaceArea())*areaDim/mesh.magSf();
