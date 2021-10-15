@@ -18,6 +18,6 @@ FoamFile
 
 surfaceFile	"../templateCase/unitbox.fms";
 
-maxCellSize	#calc "1.0 / @!N_CELLS!@";
+maxCellSize	#calc "1.0 / @!N_CELLS_PER_DIM!@";
 
 // ************************************************************************* //

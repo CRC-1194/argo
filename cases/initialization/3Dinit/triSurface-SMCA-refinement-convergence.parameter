@@ -2,21 +2,33 @@ values
 {
     solver ( surfaceInitVolumeFraction );
 
-    N_CELLS
+    N_CELLS_PER_DIM
     (
         16
     );
 
-    MAX_REFINEMENT_LEVEL
+    PRESCRIBED_REFINEMENT_LEVEL
     (
         0 1 2 3
     );
+
+    MESH_PERTURBATION
+    (
+        0.0 0.25
+    );
+
+    SURFACE
+    (
+        sphere ellipsoid
+    );
+
 
     //-------------------------------------------------------------------------
     //  Fixed parameters
     //-------------------------------------------------------------------------
 
-    TRIANGLE_EDGE_LENGTH (0.002);
+    TRIANGLE_EDGE_LENGTH (0.002);  
+    SURFACE_TYPE (triSurface);     
 
 
     //-------------------------------------------------------------------------

@@ -56,7 +56,7 @@ parser = ArgumentParser(description=app_description)
 parser.add_argument("directory_pattern",
                     help="Pattern matching those directory names which are to be initialized, e.g. myAwesomeStudy_000")
 parser.add_argument("-m", "--meshing-application",
-                    help="Use this application for mesh creation, e.g. blockMesh.\nDefault: blockMesh",
+                    help="Use this application for mesh creation, e.g. blockMesh. Use 'none' to skip meshing.",
                     required=True,
                     dest="mesh_app")
 parser.add_argument("-f", "--field-init-script",
@@ -94,8 +94,11 @@ if __name__ == '__main__':
         case_count = case_count + 1
         print("(%s/%s) Initializing %s ..." % (str(case_count), str(len(case_dirs)), case))
 
-        # Meshing
-        execute_init_step(args.mesh_app, args.job_mode, log_name=args.mesh_app)
+        # Meshing. Can be skipped 
+        if args.mesh_app != "none":
+            execute_init_step(args.mesh_app, args.job_mode, log_name=args.mesh_app)
+        else:
+            print("Warning: skipping mesh generation. Make sure your init script generates a mesh.")
 
         # Field initialization
         if args.init_script:
