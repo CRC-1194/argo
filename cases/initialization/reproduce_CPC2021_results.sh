@@ -33,11 +33,11 @@ cp 3D-vent/vent-refinement.ipynb CPC2021-results/
 cd CPC2021-results
 
 export VOF_INIT_ALGORITHM=SMCA
-jupyter-nbconvert --execute --inplace --to=html triSurface-SMCA-convergence.ipynb
+jupyter-nbconvert --execute --inplace triSurface-SMCA-convergence.ipynb
 jupyter-nbconvert --execute --to=html triSurface-SMCA-convergence.ipynb
 
 export VOF_INIT_ALGORITHM=SMCI
-jupyter-nbconvert --execute --inplace --to=html triSurface-SMCI-convergence.ipynb
+jupyter-nbconvert --execute --inplace triSurface-SMCI-convergence.ipynb
 jupyter-nbconvert --execute --to=html triSurface-SMCI-convergence.ipynb
 
 jupyter-nbconvert --execute --inplace triSurface-SMCA-refinement-convergence.ipynb
