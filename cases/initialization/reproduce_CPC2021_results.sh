@@ -17,7 +17,7 @@ cd ..
 # Move data to a single folder
 if [[ -z "${SMCIA_VOF_INIT_RESULTS}" ]]; then
     mkdir -p CPC2021-results
-    export SMCIA_VOF_INIT_RESULTS=./CPC2021-results
+    export SMCIA_VOF_INIT_RESULTS=.
 fi
 rm -rf CPC2021-results/*
 
