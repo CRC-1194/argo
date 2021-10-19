@@ -82,6 +82,20 @@ build_release:
         ##
         - FOAM_USER_APPBIN/*
 
+
+triSurface_initialization:
+  stage: smoke_tests
+  dependencies:
+    - build_release
+  extends: .prepare_openfoam_and_binaries
+  script:
+    - cd cases/initialization
+    - ./run_triSurface_smoke_tests.sh
+  artifacts:
+    paths:
+      - cases/initialization/triSurface-smoke-test-results/*
+
+
 cpc_2021_data:
   stage: reproduction
   dependencies:
