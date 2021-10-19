@@ -20,7 +20,7 @@ writeGeometry   off;
 invert          off;
 writeAllFields  on;
 checkVolume     on;
-refinementLevel @!MAX_REFINEMENT_LEVEL!@;
+refinementLevel @!PRESCRIBED_REFINEMENT_LEVEL!@;
 relError        @!REL_VOLUME_ERROR!@;
 
 distCalc

@@ -22,7 +22,8 @@ image: "openfoam-v2012_ubuntu-focal:latest"
 
 stages:
   - building
-  - running
+  - smoke_tests
+  - reproduction
     #- visualization    // Not defined yet (TT)
     #- testing          // Not defined yet (TT)
 
@@ -81,46 +82,53 @@ build_release:
         ##
         - FOAM_USER_APPBIN/*
 
-initialization_param_study:
-  stage: running
+
+triSurface_initialization:
+  stage: smoke_tests
+  dependencies:
+    - build_release
+  extends: .prepare_openfoam_and_binaries
+  script:
+    - cd cases/initialization
+    - ./run_triSurface_smoke_tests.sh
+  artifacts:
+    paths:
+      - cases/initialization/triSurface-smoke-test-results/*
+
+
+cpc_2021_data:
+  stage: reproduction
   dependencies:
     - build_release
   only:
     variables:
-      - $REPRODUCE_INIT_PAPER_RESULTS != null
+      - $REPRODUCE_CPC2021 != null
   extends: .prepare_openfoam_and_binaries
   script: 
-   
-    # Run the parameter variation tests 
-    - cd cases/initialization/3Dinit
-    - ./create_and_run_levelset.sh
-    - ./reproduce_publication_results.sh
-
+    - cd cases/initialization
+    - ./reproduce_CPC2021_results.sh
   artifacts:
     paths:
-        - cases/initialization/3Dinit/*.csv 
-        - cases/initialization/3Dinit/*.pdf 
-        - cases/initialization/3Dinit/*.ipynb
-        - cases/initialization/3Dinit/results/*
+        - cases/initialization/CPC2021-results/*
 
-density_ratio_param_study:
-  stage: running
-  dependencies:
-    - build_release
-  extends: .prepare_openfoam_and_binaries
-  script: 
-   
-    # Run the parameter variation tests 
-    - source cases/scripts/bashrc
-    - cd cases/hydrodynamic/translatingDroplet3D
-    - argo-create-parameter-study.py densityRatioInfluence.parameter -v "0,2,4,6"
-    - argo-initilize-parameter-study.py densityRatioInfluence_0000 -m blockMesh -f initFields.sh
-    - argo-run-study.py interIsoRhoFoam -d densityRatioInfluence_0000 -nc 4
-    - jupyter-nbconvert --execute --to=html test-nb.ipynb
-
-  artifacts:
-    paths:
-        - cases/hydrodynamic/translatingDroplet3D/test-nb.html
+          #density_ratio_param_study:
+          #  stage: running
+          #  dependencies:
+          #    - build_release
+          #  extends: .prepare_openfoam_and_binaries
+          #  script: 
+          #   
+          #    # Run the parameter variation tests 
+          #    - source cases/scripts/bashrc
+          #    - cd cases/hydrodynamic/translatingDroplet3D
+          #    - argo-create-parameter-study.py densityRatioInfluence.parameter -v "0,2,4,6"
+          #    - argo-initilize-parameter-study.py densityRatioInfluence_0000 -m blockMesh -f initFields.sh
+          #    - argo-run-study.py interIsoRhoFoam -d densityRatioInfluence_0000 -nc 4
+          #    - jupyter-nbconvert --execute --to=html test-nb.ipynb
+          #
+          #  artifacts:
+          #    paths:
+          #        - cases/hydrodynamic/translatingDroplet3D/test-nb.html
 
 #convert_notebooks:
 #  stage: visualization 

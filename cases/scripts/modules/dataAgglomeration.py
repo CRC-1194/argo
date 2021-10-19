@@ -405,9 +405,6 @@ class data_agglomerator:
         if not file_name:
             file_name = self.parameter_file_name.split('.')[0]
 
-        if 'csv' not in file_name.split('.'):
-            file_name = file_name + '.csv'
-
         return os.path.join(path, file_name)
 
     #--------------------------------------------------------------------------
@@ -431,7 +428,10 @@ class data_agglomerator:
         """
         self.compute_dataframe()
         path_and_name = self.assemble_output_name(file_name, path)
-        dwm.write_dataframe_with_metadata(path_and_name, self.dataframe)
+        #dwm.write_dataframe_with_metadata(path_and_name, self.dataframe)
+        self.dataframe.to_csv(path_and_name + ".csv")
+        self.dataframe.to_json(path_and_name + ".json", orient="table")
+
 
     def show_failed_variations(self):
         """Show a list of all variations present as directories but not containing valid data."""
