@@ -2,14 +2,19 @@ values
 {
     solver ( surfaceInitVolumeFraction );
 
-    N_CELLS
+    SURFACE
     (
-        16 32 64 
+        sphere ellipsoid  
     );
 
-    TRIANGLE_EDGE_LENGTH 
+    REL_VOLUME_ERROR
     (
-        0.05 0.01 0.0025 
+        1.0 1.0e-1 1.0e-2 1.0e-3 1.0e-4 1.0e-5 1.0e-6
+    );
+
+    MESH_PERTURBATION
+    (
+        0.0 0.25
     );
 
 
@@ -17,12 +22,14 @@ values
     //  Fixed parameters
     //-------------------------------------------------------------------------
 
-    MAX_REFINEMENT_LEVEL (-1); // Automatic refinement mode
+    SURFACE_TYPE ( levelSet );
+    N_CELLS_PER_DIM ( 16 );
 
 
     //-------------------------------------------------------------------------
     //  Parameters not used by this study
     //-------------------------------------------------------------------------
 
-    REL_VOLUME_ERROR (-1.0);
+    TRIANGLE_EDGE_LENGTH (0.05);
+    PRESCRIBED_REFINEMENT_LEVEL ( 0 );
 }
