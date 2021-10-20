@@ -48,7 +48,7 @@ values
 
     PRESCRIBED_REFINEMENT_LEVEL (9);  
 
-    TRIANGLE_EDGE_LENGTH (0.005);
+    TRIANGLE_EDGE_LENGTH (0.005 0.0025);
 
     //-------------------------------------------------------------------------
     //  Parameters not used by this study

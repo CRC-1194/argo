@@ -46,7 +46,7 @@ values
 
     SURFACE_TYPE (levelSet);
 
-    PRESCRIBED_REFINEMENT_LEVEL (9);  
+    PRESCRIBED_REFINEMENT_LEVEL (8 9 10);  
 
     //-------------------------------------------------------------------------
     //  Parameters not used by this study
