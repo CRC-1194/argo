@@ -111,6 +111,20 @@ cpc_2021_data:
     paths:
         - cases/initialization/CPC2021-results/*
 
+cpc_2021_visualize:
+  stage: reproduction
+  dependencies:
+    - cpc_2021_data 
+  only:
+    variables:
+      - $REPRODUCE_CPC2021 != null
+  script: 
+    - cd cases/initialization
+    - ./visualize_CPC2021_results.sh
+  artifacts:
+    paths:
+        - cases/initialization/CPC2021-results/*
+
           #density_ratio_param_study:
           #  stage: running
           #  dependencies:
