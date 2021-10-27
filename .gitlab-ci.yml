@@ -24,7 +24,7 @@ stages:
   - building
   - smoke_tests
   - reproduction
-    #- visualization    // Not defined yet (TT)
+  - visualization    
     #- testing          // Not defined yet (TT)
 
 build_debug:
@@ -112,7 +112,7 @@ cpc_2021_data:
         - cases/initialization/CPC2021-results/*
 
 cpc_2021_visualize:
-  stage: reproduction
+  stage: visualization 
   dependencies:
     - cpc_2021_data 
   only:
