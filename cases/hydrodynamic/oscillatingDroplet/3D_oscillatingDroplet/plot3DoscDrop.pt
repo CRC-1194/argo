@@ -1,0 +1,68 @@
+#Script to plot film height at center of domain for different resolutions
+
+reset
+
+
+#--------------------------------------------------------------------------------------------
+
+set terminal pngcairo size 1080,680 enhanced font 'Verdana,10'
+
+
+
+
+#STYLE
+set style line 1 lc rgb '#ff8c69' pt 1 ps 1 lt 1 lw 2 # --- salmon
+set style line 2 lc rgb '#5e9c36' pt 6 ps 1 lt 1 lw 2 # --- green
+set style line 3 lc rgb '#1520A6' pt 6 ps 1 lt 1 lw 2 # --- azureblue
+set style line 4 lc rgb '#ff00ff' pt 6 ps 1 lt 1 lw 2 # --- fuchsia
+
+
+
+set style line 11 lc rgb '#808080' lt 1
+set border 3 back ls 11
+set tics nomirror
+
+set style line 12 lc rgb '#808080' lt 0 lw 1
+set grid back ls 12
+
+#--------------------------------------------------------------------------------------------
+
+D=0.001
+sigma = 0.07275
+rhol = 1000.
+rhog = 1.
+r0 = D/2.
+dyn_viscl=1e-06*rhol
+dyn_viscg=1.48e-05*rhog
+n = 2.
+omegan = sqrt( n*(n+1)*(n-1)*(n+2)*sigma/( ((n+1)*rhol+n*rhog)*r0**3 )  )
+pi= 3.141
+epsilon=0.05*r0
+b=dyn_viscl/dyn_viscg
+
+
+
+#-------------------------------------------------------------------------------------
+set output 'OscillatingDrop3D.png'
+
+
+set xlabel "Time [s]"
+set ylabel "amplitude deflection [m]"
+
+
+set title "Deflection radius for oscillating drolet 3D"
+
+set grid
+
+set key left top
+
+set xrange [0:0.02]
+
+
+plot epsilon*exp(-b*x)*cos(omegan*x) title "analy" with lines  ls 4,\
+"res505050/postProcessing/interfaceHeight1/0/height.dat" u 1:($2/2-r0) title "res 50" with lines  ls 1,\
+"res100100100/postProcessing/interfaceHeight1/0/height.dat" u 1:($2/2-r0) title "res 100" with lines ls 2#,\
+#"res200200200/postProcessing/interfaceHeight1/0/height.dat" u 1:($2/2-r0) title "res 200" with lines ls 3
+
+
+reset

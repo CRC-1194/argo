@@ -1,0 +1,15 @@
+values
+{
+
+    RESOLUTION
+    (
+        50 100 200
+    );
+
+    DELTA_T
+    (
+        1e-5
+    );
+
+    solver ( interFoam interIsoFoam );
+}
