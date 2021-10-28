@@ -69,7 +69,7 @@ Description
 #include "dynamicRefineFvMesh.H"
 #include "reconstructionSchemes.H"
 #include "upwind.H"
-
+#include "limitMassFlux.hpp"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -123,8 +123,11 @@ int main(int argc, char *argv[])
 
         // TODO: double-check, discussion points
         // - check what oldTime() does here really
-        rhoPhi.oldTime() == rhoPhi; 
+        //rhoPhi.oldTime() == rhoPhi; 
+        //tAlpha.oldTime() == alpha1;
         // #include "computeRhof.H"
+
+        #include "alphaEqn.H"
 
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
@@ -178,8 +181,9 @@ int main(int argc, char *argv[])
             }
 
 
-            #include "alphaControls.H"
-            #include "alphaEqnSubCycle.H"
+            //#include "alphaControls.H"
+            //#include "alphaEqnSubCycle.H"
+            // Jun ,testen bitte
 
             // Equation 21 in Overleaf for Euler integration, for n
             // What do we want: 
@@ -192,6 +196,7 @@ int main(int argc, char *argv[])
 //             rhoPhi = (rho1 - rho2)*advector.alphaPhi() + rho2*phi;
             #include "computeRhof.H"
             rhoPhi == rhof * phi;
+            // TODO: Mixture update? 
 
             // in Momentum equation, convective term:
             // rho_f^{n+1} F_f^m v_f^{n+1} - implict Euler 
@@ -213,6 +218,10 @@ int main(int argc, char *argv[])
                //rho.correctBoundaryConditions();
             }
 
+            tAlpha == (rho-rho2)/(rho1-rho2); //temporary alpha field used to bound rhoFromAlphaf
+//            #include "alphaSuSp.H"
+//            limiter.Boundingprocess(Sp,Su,alphaf);
+//            rho == tAlpha*(rho1-rho2) + rho2;
             // If rhoPhi is computed and upated in alphaEqnSubcycle.H
             // there is no need to calculate it explicitly, so 
             // TODO: Remove this 
@@ -241,6 +250,9 @@ int main(int argc, char *argv[])
 
             // mixture.correct() corrects the laminar viscosity and sigma*K
             mixture.correct();
+            // ?? Check mixture.correct() 
+            //rhof == alphaf*rho1 + (1 - alphaf)*rho2;
+            //muf == alphaf*rho1*nu1 + (1 - alphaf)*rho2*nu2;
 
 
             if (pimple.frozenFlow())
@@ -266,6 +278,8 @@ int main(int argc, char *argv[])
         rhoFromAlphaf == rho;
         // Reset the density using cell-centered volume fractions.
         rho == alpha1*rho1 + (1.0 - alpha1)*rho2;
+        Info << "max difference between rho und rhoFromAlphaf: " << max(mag(rho - rhoFromAlphaf)) <<endl;
+     //   Info << ((rho1 - rho2)*alpha1+rho2 - rhoFromAlphaf).value() <<endl;
         runTime.write();
 
         runTime.printExecutionTime(Info);

@@ -48,3 +48,19 @@ surfaceScalarField alphaPhi
     mesh,
     dimensionedScalar(dimVol/dimTime, Zero)
 );
+
+//temporary alpha 
+volScalarField tAlpha
+(
+    IOobject
+    (
+        "tAlpha",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ), 
+    alpha1
+);
+
+limitMassFlux limiter(tAlpha, phi);

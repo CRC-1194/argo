@@ -1,4 +1,5 @@
-rhof == fvc::interpolate(rho);
+// rhof == fvc::interpolate(rho);
+rhof == upwind<scalar>(phi.mesh(), phi).interpolate(rho);
 
 // Correct faces which are part of an interface cell (0 < alpha < 1)
 const auto& faceOwner = mesh.owner();
@@ -7,7 +8,10 @@ const auto& faceNeighbour = mesh.neighbour();
 alphaf == upwind<scalar>(phi.mesh(), phi).interpolate(alpha1);
 
 //Jun: reference to reconstructionSchemes
-const reconstructionSchemes& surf = advector.surf(); 
+
+// const reconstructionSchemes& surf = advector.surf();-->
+reconstructionSchemes& surf = advector.surf(); 
+surf.reconstruct(); 
 
 const boolList& isASurfaceCell = surf.interfaceCell();
 const surfaceScalarField& magSf = mesh.magSf();

@@ -66,7 +66,7 @@ surfaceScalarField rhoPhi
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
-        IOobject::NO_WRITE
+        IOobject::AUTO_WRITE // NO_WRITE
     ),
     fvc::interpolate(rho)*phi
 );
@@ -133,3 +133,4 @@ mesh.setFluxRequired(alpha1.name());
 #include "createFvOptions.H"
 
 isoAdvection advector(alpha1, phi, U);
+
