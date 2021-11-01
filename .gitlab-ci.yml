@@ -89,6 +89,8 @@ triSurface_initialization:
     - build_release
   extends: .prepare_openfoam_and_binaries
   script:
+    - apt-get install -y python3-pip
+    - python -m pip install pandas
     - cd cases/initialization
     - ./run_triSurface_smoke_tests.sh
   artifacts:
