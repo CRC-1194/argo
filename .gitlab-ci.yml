@@ -91,6 +91,8 @@ triSurface_initialization:
   script:
     - cd cases/initialization
     - ./run_triSurface_smoke_tests.sh
+    - git clone https://gitlab.com/dglaeser/simtest.git
+    - cd simtest && python3 -m pip install .
   artifacts:
     paths:
       - cases/initialization/triSurface-smoke-test-results/*
