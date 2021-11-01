@@ -1,0 +1,60 @@
+values
+{
+    solver ( surfaceInitVolumeFraction );
+
+    //-------------------------------------------------------------------------
+    //   
+    // Jones, B. W. S., Malan, A. G., & Ilangakoon, N. A. (2019). The
+    // initialisation of volume fractions for unstructured grids using implicit
+    // surface definitions. Computers and Fluids, 179, 194–205.
+    // https://doi.org/10.1016/j.compfluid.2018.10.021
+    //
+    // Table 3
+    // 
+    //-------------------------------------------------------------------------
+
+    // 1 / (No. Node)
+    DELTA_X  
+    (
+        // No node = 45 
+        0.5
+        // No node = 81 
+        0.37
+        // No node = 140 
+        0.29
+        
+        // Optional finer resolutions than those reported in 
+        // https://doi.org/10.1016/j.compfluid.2018.10.021 
+
+        // No node = 462
+        //0.15 
+        // No node = 3422 
+        //0.07 
+        // No node = 20792 
+        //0.035
+    );
+
+    //-------------------------------------------------------------------------
+    //  Fixed parameters
+    //-------------------------------------------------------------------------
+
+
+    SURFACE
+    (
+        sphere
+    );
+
+    SURFACE_TYPE (triSurface);
+
+    PRESCRIBED_REFINEMENT_LEVEL (9);  
+
+    TRIANGLE_EDGE_LENGTH (0.005 0.0025);
+
+    //-------------------------------------------------------------------------
+    //  Parameters not used by this study
+    //-------------------------------------------------------------------------
+
+    REL_VOLUME_ERROR (-1.0);
+    N_CELLS_PER_DIM (-1.0);
+    MESH_PERTURBATION (-1.0);
+}

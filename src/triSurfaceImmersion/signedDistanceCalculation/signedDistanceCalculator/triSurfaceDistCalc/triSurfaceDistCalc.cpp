@@ -77,7 +77,7 @@ void triSurfaceDistCalc::computeVertexNormals()
             vertexNormals_[v_id] += alpha * tri_normals[fid];
         }
 
-        vertexNormals_[v_id] /= mag(vertexNormals_[v_id]);
+        vertexNormals_[v_id] /= mag(vertexNormals_[v_id]) + SMALL;
     }
 }
 

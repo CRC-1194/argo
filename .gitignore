@@ -94,3 +94,4 @@ Data_*
 *.pdf
 .vscode/
 uniform/
+*_00*_*/

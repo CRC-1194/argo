@@ -24,7 +24,7 @@ stages:
   - building
   - smoke_tests
   - reproduction
-    #- visualization    // Not defined yet (TT)
+  - visualization    
     #- testing          // Not defined yet (TT)
 
 build_debug:
@@ -107,6 +107,20 @@ cpc_2021_data:
   script: 
     - cd cases/initialization
     - ./reproduce_CPC2021_results.sh
+  artifacts:
+    paths:
+        - cases/initialization/CPC2021-results/*
+
+cpc_2021_visualize:
+  stage: visualization 
+  dependencies:
+    - cpc_2021_data 
+  only:
+    variables:
+      - $REPRODUCE_CPC2021 != null
+  script: 
+    - cd cases/initialization
+    - ./visualize_CPC2021_results.sh
   artifacts:
     paths:
         - cases/initialization/CPC2021-results/*
