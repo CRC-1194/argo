@@ -25,13 +25,9 @@ relError        @!REL_VOLUME_ERROR!@;
 
 distCalc
 {
-    surfaceType     levelSet;
-    surface         sphere;
-    center          (0.5 0.5 0.5);
-    radius          0.15;
-    orientation     inward;
-    narrowBandWidth 1.0;
-    bulkValue       0.0;
+    surfaceType triSurface;
+    surfaceFile @!SURFACE!@.vtk;
+    narrowBandWidth 4.0;
 }
 
 // ************************************************************************* //

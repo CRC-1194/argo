@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from argparse import ArgumentParser
 
@@ -7,7 +7,7 @@ import dataAgglomeration as da
 def main():
 
     #---- Command line arguments ----------------------------------------------
-    parser = ArgumentParser(description="Agglomerate the data of a parameter study from its corresponding directories into a single, multiindexed pandas dataframe saved as a CSV file.")
+    parser = ArgumentParser(description="Agglomerate the data of a parameter study from its corresponding directories into a single, multiindexed pandas dataframe saved as both a CSV and a JSON file.")
 
     parser.add_argument("path_to_file")
     parser.add_argument("-p", "--parameter-file",
