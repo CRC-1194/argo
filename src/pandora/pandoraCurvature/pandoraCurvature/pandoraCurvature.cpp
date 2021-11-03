@@ -96,17 +96,10 @@ pandoraCurvature::pandoraCurvature
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
-const volScalarField& pandoraCurvature::cellCurvature() const 
+volScalarField& pandoraCurvature::cellCurvature() 
 {
     return cellCurvature_;
 }
-
-volScalarField& pandoraCurvature::cellCurvature()
-{
-    return cellCurvature_;
-}
-
-// * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //
 
 // ************************************************************************* //
 

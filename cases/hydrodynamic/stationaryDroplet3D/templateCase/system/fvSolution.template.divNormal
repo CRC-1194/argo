@@ -85,19 +85,21 @@ pandora
     curvature
     {
         type divNormal;
-        nPropagate 0;  
-        nAverage   3; 
+        nPropagate @!N_PROPAGATIONS!@;  
+        nAverage   @!N_AVERAGES!@; 
         normalField "recon::normal"; 
     }
     curvatureExtension
     {
-        type averageExtension;
-        nExtensionIterations 3; 
+        type noExtension;
+        //type averageExtension;
+        //nExtensionIterations @!N_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        type tangentialAverage;
-        nAveragingIterations @!N_CURVATURE_REGULARISATIONS!@; 
+        type noRegularisation;
+        //type tangentialAverage;
+        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
     }
 }
 

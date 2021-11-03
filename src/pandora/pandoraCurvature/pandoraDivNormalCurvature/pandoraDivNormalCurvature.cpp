@@ -71,6 +71,8 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
 
 volScalarField& pandoraDivNormalCurvature::cellCurvature()
 {
+    Info << "pandoraDivNormalCurvature::cellCurvature() " << endl;
+
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (meshDb.found(fieldName_))
     {
@@ -111,6 +113,12 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
                 dimensionedScalar("SMALL", averagedNormals_.dimensions(), SMALL); 
         }
 
+        // TODO: Debugging, remove.
+        const Time& runTime = cellCurvature_.time();
+        if (runTime.writeTime())
+        {
+            averagedNormals_.write();
+        }
 
         cellCurvature_ = -fvc::div(averagedNormals_);
     }
@@ -121,6 +129,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
             << "Field " << fieldName_ << " not in mesh registry." 
             << abort(FatalError);
     }
+
 
     return cellCurvature_;
 }

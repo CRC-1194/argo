@@ -97,10 +97,7 @@ public:
     virtual ~pandoraCurvature() = default;
 
     // Member Functions
-    
     virtual volScalarField& cellCurvature(); 
-
-    virtual const volScalarField& cellCurvature() const; 
 
     const fvMesh& mesh() const
     {
