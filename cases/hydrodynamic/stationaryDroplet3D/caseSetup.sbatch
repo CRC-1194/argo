@@ -1,6 +1,5 @@
 #!/bin/bash
-#SBATCH -p test30m
-#SBATCH -A special00005 
+#SBATCH -A special00004 
 #SBATCH -J locInit 
 #SBATCH -n 1 
 #SBATCH --mem-per-cpu=2000 

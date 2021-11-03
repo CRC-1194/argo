@@ -73,8 +73,8 @@ solvers
 PIMPLE
 {
     momentumPredictor no;
-    nOuterCorrectors 2;
-    nCorrectors     3;
+    nOuterCorrectors @!N_OUTER!@;
+    nCorrectors     @!N_INNER!@;
     nNonOrthogonalCorrectors 0;
     // pRefCell        0;
     // pRefValue       0;
@@ -91,13 +91,15 @@ pandora
     }
     curvatureExtension
     {
-        type averageExtension;
-        nExtensionIterations @!N_EXTENSIONS!@; 
+        type noExtension;
+        //type averageExtension;
+        //nExtensionIterations @!N_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        type tangentialAverage;
-        nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
+        type noRegularisation;
+        //type tangentialAverage;
+        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
     }
 }
 

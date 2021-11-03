@@ -9,12 +9,12 @@ values
 
     N_PROPAGATIONS
     (
-        3 
+        0 
     );
 
     N_AVERAGES
     (
-        3 
+        0 
     );
 
     N_EXTENSIONS
@@ -29,7 +29,12 @@ values
 
     N_OUTER 
     (
-        1 
+        4 
+    );
+
+    N_INNER
+    (
+        1
     );
 
     REL_VOLUME_ERROR (1e-5);
