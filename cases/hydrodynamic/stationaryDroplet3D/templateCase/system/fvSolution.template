@@ -59,6 +59,14 @@ solvers
         tolerance       1e-06;
         relTol          0;
     }
+
+    UFinal
+    {
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-06;
+        relTol          0;
+    }
 }
 
 
@@ -76,23 +84,20 @@ pandora
 {
     curvature
     {
-        type smoothedMarker;
-        markerField alpha.water;
-        markerFieldTolerance 1e-02; 
-        nMarkerAverages @!N_MARKER_AVERAGES!@; 
-        nNormalAverages @!N_NORMAL_AVERAGES!@; 
+        type divNormal;
+        nPropagate @!N_PROPAGATIONS!@;  
+        nAverage   @!N_AVERAGES!@; 
+        normalField "recon::normal"; 
     }
     curvatureExtension
     {
-        //type noExtension;
         type averageExtension;
-        nExtensionIterations @!N_CURVATURE_EXTENSIONS!@; 
+        nExtensionIterations @!N_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        //type noRegularisation;
         type tangentialAverage;
-        nAveragingIterations @!N_CURVATURE_REGULARISATIONS!@; 
+        nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
     }
 }
 

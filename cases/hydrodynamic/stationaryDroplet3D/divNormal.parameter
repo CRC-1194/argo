@@ -1,0 +1,36 @@
+values
+{
+    solver (interIsoPandoraFoam);
+
+    N_CELLS
+    (
+        32 64 128 
+    );
+
+    N_PROPAGATIONS
+    (
+        3 
+    );
+
+    N_AVERAGES
+    (
+        3 
+    );
+
+    N_EXTENSIONS
+    (
+        0
+    );
+
+    N_TANGENTIAL_AVERAGES 
+    (
+        0 
+    ); 
+
+    N_OUTER 
+    (
+        1 
+    );
+
+    REL_VOLUME_ERROR (1e-5);
+}
