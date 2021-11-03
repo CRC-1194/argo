@@ -29,9 +29,9 @@ endTime         0.1;
 
 writeControl    timeStep;
 
-writeInterval   1;
+writeInterval   200;
 
-deltaT          1e-05;
+deltaT          1e-04;
 
 purgeWrite      0;
 
@@ -56,6 +56,10 @@ maxAlphaCo      0.5;
 
 maxDeltaT       1e6;
 
+OptimisationSwitches
+{
+    fileHandler collated;
+}
 
 functions 
 {
