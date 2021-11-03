@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
     #include "initContinuityErrs.H"
     #include "createDyMControls.H"
     #include "createFields.hpp"
+
     #include "initCorrectPhi.H"
     #include "createUfIfPresent.H"
 
@@ -168,8 +169,19 @@ int main(int argc, char *argv[])
                 }
             }
 
+            runTime.cpuTimeIncrement();
             #include "alphaControls.hpp"
             #include "alphaEqnSubCycle.hpp"
+
+            forAll(alpha1, cellI)
+            {
+                if (alpha1[cellI] < 1e-08)
+                {
+                    alpha1[cellI] = 0;
+                }
+            }
+            Info << "alphaEqn solution time : " 
+                << runTime.cpuTimeIncrement() << endl;
 
             mixture.correct();
 
@@ -178,13 +190,20 @@ int main(int argc, char *argv[])
                 continue;
             }
 
+            runTime.cpuTimeIncrement(); 
             #include "UEqn.hpp"
+            Info << "Ueqn time : " 
+                << runTime.cpuTimeIncrement() << endl;
 
+            runTime.cpuTimeIncrement(); 
             // --- Pressure corrector loop
             while (pimple.correct())
             {
                 #include "pEqn.hpp"
             }
+
+            Info << "pEqn time : " 
+                << runTime.cpuTimeIncrement() << endl;
 
             if (pimple.turbCorr())
             {
@@ -192,7 +211,10 @@ int main(int argc, char *argv[])
             }
         }
 
+        runTime.cpuTimeIncrement(); 
         runTime.write();
+        Info << "Write time : " 
+            << runTime.cpuTimeIncrement() << endl;
 
         runTime.printExecutionTime(Info);
     }
