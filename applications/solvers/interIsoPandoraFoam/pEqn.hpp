@@ -28,8 +28,9 @@
     surfaceScalarField phig
     (
         (
-             //mixture.surfaceTensionForce()
-            pandoraModel.surfaceTensionForce(alpha1)
+            //mixture.surfaceTensionForce()
+            //pandoraModel.surfaceTensionForce(alpha1)
+            fSigma
           - ghf*fvc::snGrad(rho)
         )*rAUf*mesh.magSf()
     );

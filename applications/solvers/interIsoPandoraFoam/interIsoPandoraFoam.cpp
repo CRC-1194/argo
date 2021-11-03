@@ -173,6 +173,9 @@ int main(int argc, char *argv[])
             #include "alphaControls.hpp"
             #include "alphaEqnSubCycle.hpp"
 
+
+            // Bound the volume fractions to prevent very high
+            // snGrad(alpha) values volume fraction wisps. TM.
             forAll(alpha1, cellI)
             {
                 if (alpha1[cellI] < 1e-08)
@@ -180,6 +183,12 @@ int main(int argc, char *argv[])
                     alpha1[cellI] = 0;
                 }
             }
+
+            // Compute the surface tension force after solving for
+            // volume fractions. 
+            // TODO: Reconstruct the interface in the new time step.
+            fSigma = pandoraModel.surfaceTensionForce(alpha1);
+
             Info << "alphaEqn solution time : " 
                 << runTime.cpuTimeIncrement() << endl;
 

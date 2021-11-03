@@ -126,3 +126,5 @@ mesh.setFluxRequired(alpha1.name());
 #include "createFvOptions.H"
 
 isoAdvection advector(alpha1, phi, U);
+
+surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
