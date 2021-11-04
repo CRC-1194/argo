@@ -112,7 +112,7 @@ dimensioned<Type> hydrodynamicFunctionObject::dispersedPhaseVolumeAverage(const 
     const auto& mesh = markerField.mesh();
     const auto& V = mesh.V();
 
-    dimensioned<Type> average{"zero", dimless, Type::zero};
+    dimensioned<Type> average{"zero", quantityField.dimensions() , Type::zero}; // dimless, Type::zero};
 
     if (alphaValueDispersedPhase_ == 1.0)
     {

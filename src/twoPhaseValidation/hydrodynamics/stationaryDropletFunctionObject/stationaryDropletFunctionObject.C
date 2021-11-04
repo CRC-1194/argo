@@ -247,6 +247,47 @@ void stationaryDropletFunctionObject::computeFrontVolume()
     }
 }
 
+void stationaryDropletFunctionObject::computeMassAndKineticEnergy()
+{
+    dimensionedScalar sumAlpha{};
+    dimensionedScalar sumKinE{};
+
+    // NOTE: only computes the energy of the droplet phase
+    auto U = hydrodynamicFunctionObject::getCurrentField<vector, fvPatchField, volMesh>(velocityFieldName_);
+    auto markerField = hydrodynamicFunctionObject::getCurrentField<scalar, fvPatchField, volMesh>(markerFieldName_);
+//    const auto& cellVolume = U.mesh().V();
+
+    // Assumption: the droplet phase has a higher density than the ambient phase
+/*    const auto& transportProperties = getTransportProperties();
+    dimensionedScalar rho0 = transportProperties.subDict("air").get<dimensionedScalar>("rho");
+    dimensionedScalar rho1 = transportProperties.subDict("water").get<dimensionedScalar>("rho");
+
+    auto rhoDroplet = (rho0 > rho1) ? rho0 : rho1;
+
+    if (alphaValueDispersedPhase_ == 1.0)
+    {
+        kineticEnergyDroplet = 0.5*rhoDroplet.value()*sum(markerField*magSqr(U)*cellVolume);
+    }
+    else if (alphaValueDispersedPhase_ == 0.0)
+    {
+        kineticEnergyDroplet = 0.5*rhoDroplet.value()*sum((1.0 - markerField)*magSqr(U)*cellVolume);
+    }
+    else
+    {
+        FatalErrorIn("oscillatingDropletFunctionObject::computeKineticEnergy()")
+            << "Value " << alphaValueDispersedPhase_ << " is invalid. "
+            << "Choose either 1.0 or 0.0" << endl;
+    }
+*/
+    const auto& rhoField = hydrodynamicFunctionObject::getCurrentField<scalar, fvPatchField, volMesh>("rho");
+    const volScalarField& KinE = magSqr(rhoField*U);
+    sumAlpha = gSum(markerField);
+    sumKinE = gSum(KinE);
+
+    scalarMetrics_[sumAlpha_][timeIndex()] = sumAlpha.value();
+    scalarMetrics_[sumKinE_][timeIndex()] = sumKinE.value();
+}
+
 void stationaryDropletFunctionObject::evaluateMetrics()
 {
     saveConstants();
@@ -254,6 +295,7 @@ void stationaryDropletFunctionObject::evaluateMetrics()
     computePressureErrors();
     computeCapillaryNumber();
     computeFrontVolume();
+    computeMassAndKineticEnergy();
 }
 
 bool stationaryDropletFunctionObject::is3Dcase(const fvMesh& mesh)
@@ -304,6 +346,8 @@ stationaryDropletFunctionObject::stationaryDropletFunctionObject
     capillaryNumberDroplet_{"capillary number (droplet)"},
     frontVolumeError_{"front volume"},
     maxUCellID_{"Max mag(U) cell ID"},
+    sumAlpha_{"sumAlpha"},
+    sumKinE_{"sumKinE"},
     initialFrontVolume_{0.0}
 {
     addMetric<scalar>(meshSpacing_);
@@ -319,6 +363,8 @@ stationaryDropletFunctionObject::stationaryDropletFunctionObject
     addMetric<scalar>(capillaryNumberDroplet_);
     addMetric<scalar>(frontVolumeError_);
     addMetric<scalar>(maxUCellID_);
+    addMetric<scalar>(sumAlpha_);
+    addMetric<scalar>(sumKinE_);
 }
 
 

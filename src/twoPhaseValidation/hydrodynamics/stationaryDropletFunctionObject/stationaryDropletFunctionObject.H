@@ -98,6 +98,9 @@ class stationaryDropletFunctionObject
     std::string frontVolumeError_;
     std::string maxUCellID_;
 
+    std::string sumAlpha_;
+    std::string sumKinE_;
+
     scalar initialFrontVolume_;
 
     // Private Member Functions
@@ -110,6 +113,7 @@ class stationaryDropletFunctionObject
     virtual void computePressureErrors();
     virtual void computeCapillaryNumber();
     virtual void computeFrontVolume();
+    virtual void computeMassAndKineticEnergy();
     virtual void evaluateMetrics();
 
     bool is3Dcase(const fvMesh& mesh);
