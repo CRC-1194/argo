@@ -93,11 +93,13 @@ triSurface_initialization:
     - cd cases/initialization
     - ./run_triSurface_smoke_tests.sh
     - git clone https://gitlab.com/dglaeser/simtest.git
-    - cd simtest && pip3 install . && cd ..
+    - cd simtest && python -m pip install . && cd ..
+    - rm -rf simtest
     - |
-      python3 -m simtest \
-              -d triSurface-smoke-test-results \
-              -r triSurface-smoke-test-references
+      python -m simtest \
+             --results-directory triSurface-smoke-test-results \
+             --reference-directory triSurface-smoke-test-references \
+             --config "{\"ignore-fields\": [\"CPU_TIME_MICROSECONDS\", \"VOLUME_FROM_SURFACE_INTEGRAL\", \"VOLUME_ERROR_FROM_SURFACE_INTEGRAL\"], \"defaults\": {\"fuzzy-tolerance\": 1e-8}}"
   artifacts:
     paths:
       - cases/initialization/triSurface-smoke-test-results/*
