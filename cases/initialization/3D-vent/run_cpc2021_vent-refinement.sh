@@ -8,7 +8,7 @@ cd ..
 touch default.parameter
 
 argo-create-parameter-study.py vent-refinement.parameter -p CPC2021 -t 3D-vent $1
-argo-initilize-parameter-study.py CPC2021-vent-refinement_0000 -m none -f prepareCase.sh
+argo-initialize-parameter-study.py CPC2021-vent-refinement_0000 -m none -f prepareCase.sh
 argo-run-study.py surfaceInitVolumeFraction --solver-args="-algorithm SMCA" -d CPC2021-vent-refinement_0000
 argo-agglomerate-study-data.py CPC2021-vent-refinement_00000_3D-vent/vof-init-results-SMCA.csv \
     -p vent-refinement.parameter -f CPC2021-vent-refinement-SMCA
