@@ -17,10 +17,11 @@ FoamFile
 fieldName       alpha.water;
 algorithm       SMCA;
 writeGeometry   off;
-invert          on;
+invert          off;
 writeAllFields  on;
 checkVolume     on;
-refinementLevel @!MAX_REFINEMENT_LEVEL!@;
+refinementLevel @!PRESCRIBED_REFINEMENT_LEVEL!@;
+relError        @!REL_VOLUME_ERROR!@;
 
 distCalc
 {
@@ -28,6 +29,7 @@ distCalc
     surface         ellipsoid;
     center          (0.5 0.5 0.5);
     axes            (0.4 0.3 0.2);
+    orientation     inward;
     narrowBandWidth 1.0;
     bulkValue       0.0;
 }

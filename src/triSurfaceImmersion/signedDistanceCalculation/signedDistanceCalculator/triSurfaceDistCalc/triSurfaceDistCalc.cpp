@@ -77,7 +77,7 @@ void triSurfaceDistCalc::computeVertexNormals()
             vertexNormals_[v_id] += alpha * tri_normals[fid];
         }
 
-        vertexNormals_[v_id] /= mag(vertexNormals_[v_id]);
+        vertexNormals_[v_id] /= mag(vertexNormals_[v_id]) + SMALL;
     }
 }
 
@@ -105,7 +105,7 @@ triSurfaceDistCalc::triSurfaceDistCalc(
     const dictionary& configDict, const fvMesh& mesh)
     : signedDistanceCalculator{configDict, mesh}, searchDistCalc_{mesh,
                                                       this->narrowBandWidth()},
-      surface_{configDict.get<fileName>("surfaceFile")},
+      surface_{mesh.time().path() + "/" + configDict.get<fileName>("surfaceFile")},
       surfaceSearch_{surface_}, vertexNormals_{
                                     surface_.nPoints(), vector{0, 0, 0}}
 {

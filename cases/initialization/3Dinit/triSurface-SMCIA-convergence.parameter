@@ -1,0 +1,40 @@
+values
+{
+    solver ( surfaceInitVolumeFraction );
+
+    N_CELLS_PER_DIM
+    (
+        16 32 64 128 
+    );
+
+    TRIANGLE_EDGE_LENGTH 
+    (
+        0.05 0.02 0.01 0.005 
+    );
+
+    MESH_PERTURBATION
+    (
+        0.0 0.25
+    );
+
+    SURFACE
+    (
+        sphere ellipsoid
+    );
+
+
+    //-------------------------------------------------------------------------
+    //  Fixed parameters
+    //-------------------------------------------------------------------------
+
+    PRESCRIBED_REFINEMENT_LEVEL (-1); // Automatic refinement mode
+    SURFACE_TYPE (triSurface); // Use triangulated surface as input interface
+
+
+    //-------------------------------------------------------------------------
+    //  Parameters not used by this study
+    //-------------------------------------------------------------------------
+
+    REL_VOLUME_ERROR (-1.0);
+    DELTA_X (-1.0);
+}

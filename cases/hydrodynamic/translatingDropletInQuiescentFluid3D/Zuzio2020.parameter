@@ -1,0 +1,54 @@
+// Values in this parameter file are adapted from
+//
+//      Davide Zuzio, Annagrazia Orazzo, Jean-Luc Estivalezes, Isabelle Lagrange 
+//      "A new efficient momentum preserving Level-Set/VOF method for high
+//       density and momentum ratio incompressible two-phase flows"
+//      Journal of Computational Physics, 2020
+
+values
+{
+    solver (interIsoFoam);
+
+
+    // Parameters from constant/transportProperties
+    rho_droplet ( 1e6 );
+    nu_droplet  ( 0.0 );
+
+    rho_ambient ( 1.0 );
+    nu_ambient  ( 0.0 );
+
+    surface_tension_coefficient ( 0.0 );
+
+
+    // Droplet velocity
+    z_velocity ( 10 );
+    x_velocity ( 10 );
+    y_velocity ( 10 );
+    
+
+    // Parameters from system/blockMeshDict
+    resolution 
+    (   
+        16 32 64 
+    ); 
+
+
+    // Parameters from system/controlDict
+    end_time ( 0.1 );
+
+    // deltaT:
+    // NOTE: I have not found a value for this parameter in the publication (TT).
+    // The value used here guarantees CFL < 1 for the finest mesh resolution (TT).
+    delta_t ( 1e-3 );
+
+    // Domain and interface geometry
+    x_centre ( 0.300007 );
+    y_centre ( 0.300007 );
+    z_centre ( 0.300007 );
+
+    radius ( 0.15 );
+
+
+    // Only required for cfMesh setup. Placeholder for now (TT)
+    surface_file ( placeholder.stl );
+}

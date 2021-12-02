@@ -19,7 +19,7 @@ FoamFile
 
 application     interIsoPandoraFoam;
 
-startFrom       latestTime;
+startFrom       startTime;
 
 startTime       0.0;
 

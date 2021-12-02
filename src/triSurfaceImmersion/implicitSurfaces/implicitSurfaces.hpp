@@ -38,6 +38,7 @@ Description
 #include "autoPtr.H"
 #include "dictionary.H"
 #include "runTimeSelectionTables.H"
+#include "quaternion.H"
 #include "typeInfo.H"
 #include "vector.H"
 
@@ -49,7 +50,15 @@ namespace Foam::TriSurfaceImmersion
 
 class implicitSurface
 {
+protected:
+
+    //- Return surface orientation according to "outward"/"inward"
+    //  "outward": 1.0 (keep original orientation)
+    //  "inward": -1.0 (flip orientation)
+    static scalar orientation(const word& keyword);
+
 public:
+
     // Static Data Members
     TypeName("implicitSurface");
 
@@ -143,6 +152,9 @@ class sphere : public implicitSurface
     //- Sphere radius
     scalar radius_;
 
+    //- Sphere normal orientation
+    scalar orientation_;
+
 public:
 
     // Static Data Members
@@ -151,7 +163,7 @@ public:
 
     // Constructors
     //- Construct from centre and radius
-    sphere(vector center, scalar radius);
+    sphere(vector center, scalar radius, scalar orientation=1.0);
 
     //- Construct from ITstream
     explicit sphere(ITstream& is);
@@ -177,6 +189,70 @@ public:
 };
 
 
+class cylinder : public implicitSurface
+{
+    //- Cylinder centre axis
+    vector axis_;
+    
+    //- Cylinder ref point on centre axis
+    vector pointOnAxis_;
+
+    //- Cylinder radius
+    scalar radius_;
+
+    //- Cylinder height (only for volume calculation)
+    scalar height_;
+
+    //- Cylinder normal orientation
+    scalar orientation_;
+
+    //- Quaternion for rotating coordinate system
+    quaternion rotation_;
+
+    //- Transform to cylinder axis aligned coordinate system
+    void initializeRotation();
+    vector transformToCylinderKOS(const vector& x) const;
+
+public:
+
+    // Static Data Members
+    TypeName("cylinder");
+
+
+    // Constructors
+    //- Construct from centre and radius
+    cylinder(vector axis, vector pointOnAxis, scalar radius, scalar height, scalar orientation=1.0);
+
+    //- Construct from ITstream
+    explicit cylinder(ITstream& is);
+
+    //- Construct from dictionary
+    explicit cylinder(const dictionary& configDict);
+
+    
+    // Member functions
+    scalar value(const vector& x) const override;
+
+    scalar operator()(const vector& x) const override;
+
+    vector grad(const vector& x) const override;
+
+    scalar volume() const override;
+
+    //- Return cylinder's centre axis 
+    vector axis() const;
+
+    //- Return cylinder's reference point on centre axis
+    vector pointOnAxis() const;
+
+    //- Return cylinder's radius
+    scalar radius() const;
+
+    //- Return cylinder's height
+    scalar height() const;
+};
+
+
 class ellipsoid : public implicitSurface
 {
     //- Ellipsoid centre
@@ -188,6 +264,9 @@ class ellipsoid : public implicitSurface
     //- Ellipsoid semi axes squared. Used for Computation.
     vector axesSqr_;
 
+    //- Ellipsoid normal orientation
+    scalar orientation_;
+
     //- Compute the squared semi axes
     void setAxesSqr(const vector& axes);
 
@@ -196,10 +275,9 @@ public:
     // Static Data members
     TypeName("ellipsoid");
 
-
     // Constructors
     //- Construct from centre and vector of semi axes
-    ellipsoid(vector center, vector axes);
+    ellipsoid(vector center, vector axes, scalar orientation=1.0);
 
     //- Construct from ITstream
     explicit ellipsoid(ITstream& is);
@@ -236,6 +314,9 @@ class sinc : public implicitSurface
     //- Frequency
     scalar omega_;
 
+    //- Surface orientation
+    scalar orientation_;
+
 public:
 
     // Static Data members
@@ -244,7 +325,7 @@ public:
 
     // Constructors
     //- Construct from orign, amplitude and frequency
-    sinc(vector origin, scalar amplitude, scalar omega);
+    sinc(vector origin, scalar amplitude, scalar omega, scalar orientation=1.0);
 
     //- Construct from ITstream
     explicit sinc(ITstream& is);

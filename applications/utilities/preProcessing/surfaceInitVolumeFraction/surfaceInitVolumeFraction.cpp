@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     auto& distDict = initDict.subDictOrAdd("distCalc");
     setOptionByPrecedence<word>(distDict, args, "surfaceType", "triSurface");
     setOptionByPrecedence<fileName>(
-        distDict, args, "surfaceFile", args.path() + "/surface.stl");
+        distDict, args, "surfaceFile", "surface.stl");
     // TODO (TT): the parameters below should be fixed in this application.
     // Altering them may break volume fraction calculation.
     setOptionByPrecedence<scalar>(distDict, args, "narrowBandWidth", 4.0);
@@ -117,6 +117,7 @@ int main(int argc, char* argv[])
     auto algName =
         setOptionByPrecedence<word>(initDict, args, "algorithm", "SMCI");
     setOptionByPrecedence<label>(initDict, args, "refinementLevel", -1);
+    setOptionByPrecedence<scalar>(initDict, args, "relError", -1.0);
     setOptionByPrecedence<Switch>(initDict, args, "writeGeometry", false);
     auto invertVolumeFraction =
         setOptionByPrecedence<Switch>(initDict, args, "invert", false);
@@ -173,8 +174,7 @@ int main(int argc, char* argv[])
                       << nl;
 
             std::ofstream errorFile;
-            // TODO (TT): make file name algorithm dependent
-            errorFile.open("vof-init-results-" + algName + ".csv");
+            errorFile.open(runTime.path() +"/vof-init-results-" + algName + ".csv");
             errorFile << "N_CELLS,"
                       << "N_TRIANGLES,"
                       << "VOLUME_FROM_VOLUME_FRACTION,"

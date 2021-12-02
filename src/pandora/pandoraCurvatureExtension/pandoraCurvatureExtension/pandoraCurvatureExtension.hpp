@@ -92,7 +92,7 @@ public:
     virtual ~pandoraCurvatureExtension() = default;
 
     // Member Functions
-    virtual void extend(volScalarField& curvature, const boolList& isInterfaceCell) = 0;
+    virtual void extend(volScalarField& curvature, const volScalarField& isInterfaceCell) = 0;
     const dictionary& extensionDict() const
     {
         return extensionDict_;

@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
         initDict, args, "fieldName", "signedDistance");
     setOptionByPrecedence<word>(initDict, args, "surfaceType", "triSurface");
     setOptionByPrecedence<fileName>(
-        initDict, args, "surfaceFile", args.path() + "/surface.stl");
+        initDict, args, "surfaceFile", "/surface.stl");
     setOptionByPrecedence<scalar>(initDict, args, "narrowBandWidth", -1.0);
     setOptionByPrecedence(initDict, args, "bulkValue", 0.0);
     auto propagateInsideOutside = setOptionByPrecedence<Switch>(

@@ -41,6 +41,7 @@ SourceFiles
 #define surfaceMeshCellApproximation_H
 
 #include <vector>
+#include <volFieldsFwd.H>
 
 #include "AdaptiveTetCellRefinement.hpp"
 #include "signedDistanceCalculator.hpp"
@@ -68,8 +69,11 @@ private:
     //- Pointer to the signed distance calculator holding interface information
     autoPtr<signedDistanceCalculator> sigDistCalcPtr_;
 
-    //- Set of interface ceel IDs
+    //- Set of interface cell IDs
     std::vector<label> interfaceCellIDs_;
+
+    //- Relative global volume error threshold to determine refinement level
+    scalar relVolumeErrorThreshold_;
 
     //- Maximum refinement level allowed for tetrahedral refinement
     label maxAllowedRefinementLevel_;
@@ -83,6 +87,14 @@ private:
 
     //- Number of tetrahedra a cell is decomposed into
     label nTets(label cellID) const;
+
+    //- Compute volume fractions for interface cells.
+    //  Returns the maximum refinement level used.
+    label interfaceCellVolumeFraction(volScalarField& alpha,
+            bool writeDecomposition);
+
+    //- Compute the target refinement level
+    void determineRefinementLevel(volScalarField& alpha);
 
 
 public:

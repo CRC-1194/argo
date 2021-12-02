@@ -1,14 +1,16 @@
 #!/usr/bin/env python3 
 
 from optparse import OptionParser
+import os
 import sys
+import time
 from subprocess import call
 
 usage = """A wrapper for pyFoamRunParameterVariation.py that generates the
 directory structure for a parameter study. 
 
-Meshes are not generated and preprocessing is not done. 
-Used to prepare for execution on a cluster.
+Used to prepare for execution on a cluster. Performs meshing and field
+initialization.
 
 Usage: ./create-study.py -c templateCase -p paramFile -s studyName"""
 
@@ -26,6 +28,14 @@ parser.add_option("-s", "--study-name", dest="studyname",
                   help="Name of the parameter study.", 
                   metavar="STUDYNAME")
 
+parser.add_option("-j", "--job-mode", action="store_true", dest="use_slurm",
+                  help="Submit meshing and initialization to SLURM.",
+                  metavar="SLURM")
+
+parser.add_option("-n", "--no-init", action="store_true", dest="no_init",
+                  help="Only create cases, no initialization of mesh and fields.",
+                  metavar="SLURM")
+
 (options, args) = parser.parse_args()
 
 if ((options.casedir == None) or  
@@ -40,3 +50,26 @@ call(["pyFoamRunParameterVariation.py", "--no-execute-solver", "--no-server-proc
       "--no-mesh-create", "--no-case-setup", "--cloned-case-prefix=%s" % options.studyname, 
       "--every-variant-one-case-execution",
       "--create-database", options.casedir, options.paramfile])
+
+# Mesh each case and set initial fields
+if not options.no_init:
+    parameter_dirs = [parameter_dir for parameter_dir in os.listdir(os.curdir) \
+                      if os.path.isdir(parameter_dir) \
+                      and options.studyname in parameter_dir]
+    parameter_dirs.sort()
+
+    for parameter_dir in parameter_dirs: 
+        pwd = os.getcwd()
+        os.chdir(parameter_dir)
+
+        print(parameter_dir)
+
+        if (options.use_slurm):
+            call(["sbatch", "../caseSetup.sbatch"])
+            time.sleep(2)
+        else: 
+            call("blockMesh")
+            call("setAlphaField")
+            call(["decomposePar", "-force"])
+
+        os.chdir(pwd)

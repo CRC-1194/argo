@@ -1,0 +1,34 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      vofInitDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+fieldName       alpha.water;
+algorithm       SMCA;
+relError        @!REL_VOLUME_ERROR!@;
+
+distCalc
+{
+    surfaceType     levelSet;
+    surface         cylinder;
+    axis            (0 0 1);
+    pointOnAxis     (0.002 0.002 0.0);
+    radius          0.0005;
+    height          1e-3;
+    orientation     inward;
+    narrowBandWidth 1.0;
+    bulkValue       0.0;
+}
+
+// ************************************************************************* //

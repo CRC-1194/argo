@@ -27,8 +27,11 @@ License
 
 #include "implicitSurfaces.hpp"
 
+#include "Ostream.H"
 #include "addToRunTimeSelectionTable.H"
+#include "error.H"
 #include "mathematicalConstants.H"
+#include <quaternion.H>
 
 namespace Foam::TriSurfaceImmersion
 {
@@ -81,6 +84,30 @@ autoPtr<implicitSurface> implicitSurface::New(const dictionary& configDict)
     return autoPtr<implicitSurface>(cstrIter()(configDict));
 }
 
+
+scalar implicitSurface::orientation(const word& keyword)
+{
+    if (keyword == "outward")
+    {
+        return 1.0;
+    }
+    else if (keyword == "inward")
+    {
+        return -1.0;
+    }
+    else
+    {
+        FatalErrorIn("Foam::TriSurfaceImmersion::implicitSurface::"
+                             "orientation(const word& keyword)")
+            << "Unknown keyword " << keyword << nl << nl
+            << "Valid keyword are 'outward' (no change in orientation) "
+            << "and 'inward' (flip orientation)"
+            << exit(FatalError);
+
+        // Disable compiler warning, statement never reached (TT)
+        return 0.0;
+    }
+}
 
 // Only makes sense for closed surfaces, but needs to be supported by the
 // interface class (TT)
@@ -165,7 +192,8 @@ addToRunTimeSelectionTable(implicitSurface, sphere, Dictionary);
 
 // * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-sphere::sphere(vector center, scalar radius) : center_{center}, radius_{radius}
+sphere::sphere(vector center, scalar radius, scalar orientation)
+    : center_{center}, radius_{radius}, orientation_{orientation}
 {
 }
 
@@ -174,6 +202,7 @@ sphere::sphere(ITstream& is)
 {
     is >> center_;
     is >> radius_;
+    is >> orientation_;
 }
 
 
@@ -181,6 +210,8 @@ sphere::sphere(const dictionary& configDict)
     : center_{configDict.get<vector>("center")}, radius_{configDict.get<scalar>(
                                                      "radius")}
 {
+    auto keyword = configDict.getOrDefault<word>("orientation", "outward");
+    orientation_ = orientation(keyword);
 }
 
 
@@ -188,7 +219,7 @@ sphere::sphere(const dictionary& configDict)
 
 scalar sphere::value(const vector& x) const
 {
-    return magSqr(x - center_) - radius_ * radius_;
+    return orientation_*(magSqr(x - center_) - radius_*radius_);
 }
 
 
@@ -200,7 +231,7 @@ scalar sphere::operator()(const vector& x) const
 
 vector sphere::grad(const vector& x) const
 {
-    return 2.0 * (x - center_);
+    return orientation_*2.0*(x - center_);
 }
 
 
@@ -222,6 +253,131 @@ scalar sphere::radius() const
 }
 
 
+// * * * * * * * * * * * * Class cylinder * * * * * * * * * * * //
+
+// * * * * * * * * * * * * * * Static Members * * * * * * * * * * * * * //
+
+defineTypeNameAndDebug(cylinder, false);
+addToRunTimeSelectionTable(implicitSurface, cylinder, ITstream);
+addToRunTimeSelectionTable(implicitSurface, cylinder, Dictionary);
+
+
+// * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+cylinder::cylinder(vector axis, vector pointOnAxis, scalar radius, scalar height, scalar orientation)
+    : axis_{axis}, pointOnAxis_{pointOnAxis},radius_{radius}, height_{height}, orientation_{orientation}
+{
+    initializeRotation();
+}
+
+
+cylinder::cylinder(ITstream& is)
+{
+    is >> axis_;
+    is >> pointOnAxis_;
+    is >> radius_;
+    is >> height_;
+    is >> orientation_;
+
+    initializeRotation();
+}
+
+
+cylinder::cylinder(const dictionary& configDict)
+    : axis_{configDict.get<vector>("axis")},
+      pointOnAxis_{configDict.get<vector>("pointOnAxis")},
+      radius_{configDict.get<scalar>("radius")},
+      height_{configDict.get<scalar>("height")}
+{
+    auto keyword = configDict.getOrDefault<word>("orientation", "outward");
+    orientation_ = orientation(keyword);
+    axis_ /= mag(axis_);
+    initializeRotation();
+}
+
+
+// * * * * * * * * * * * * * Member Functions * * * * * * * * * * * * * //
+void cylinder::initializeRotation()
+{
+    // In the cylinder aligned coordinate system the z-axis aligns with
+    // the cylinder centre axis
+    auto rotationAxis = axis_ ^ vector{0,0,1};
+
+    // Catch case when the cylinder axis is parallel to the z-direction
+    if (mag(rotationAxis) > SMALL)
+    {
+        rotationAxis /= mag(rotationAxis);
+        auto rotationAngle = Foam::acos(vector{0,0,1} & axis_);
+        rotation_ = quaternion{rotationAxis, rotationAngle};
+    }
+    else
+    {
+        rotation_ = quaternion{vector{0,0,1}, 0.0};
+    }
+}
+
+
+vector cylinder::transformToCylinderKOS(const vector& x) const
+{
+    // The cylinder with infinite extension in z-direction is essentially
+    // a 2D problem. Thus, the z-components of the transformed x is
+    // disregarded.
+    auto localX = rotation_.transform(x - pointOnAxis_);
+    localX.z() = 0.0;
+    return localX;
+}
+
+
+scalar cylinder::value(const vector& x) const
+{
+    auto localX = transformToCylinderKOS(x);
+    return orientation_*(magSqr(localX) - radius_*radius_);
+}
+
+
+scalar cylinder::operator()(const vector& x) const
+{
+    return value(x);
+}
+
+
+vector cylinder::grad(const vector& x) const
+{
+    auto localX = transformToCylinderKOS(x);
+    return rotation_.invTransform(orientation_*2.0*localX);
+}
+
+
+scalar cylinder::volume() const
+{
+    return Foam::constant::mathematical::pi * pow(radius_, 2.0) * height_;
+}
+
+
+vector cylinder::axis() const
+{
+    return axis_;
+}
+
+
+vector cylinder::pointOnAxis() const
+{
+    return pointOnAxis_;
+}
+
+
+scalar cylinder::radius() const
+{
+    return radius_;
+}
+
+
+scalar cylinder::height() const
+{
+    return height_;
+}
+
+
 // * * * * * * * * * * * * Class ellipsoid * * * * * * * * * * * //
 
 // * * * * * * * * * * * * * * Static Members * * * * * * * * * * * * * //
@@ -233,7 +389,8 @@ addToRunTimeSelectionTable(implicitSurface, ellipsoid, Dictionary);
 
 // * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-ellipsoid::ellipsoid(vector center, vector axes) : center_{center}, axes_{axes}
+ellipsoid::ellipsoid(vector center, vector axes, scalar orientation)
+    : center_{center}, axes_{axes}, orientation_{orientation}
 {
     setAxesSqr(axes);
 }
@@ -243,6 +400,7 @@ ellipsoid::ellipsoid(ITstream& is)
 {
     is >> center_;
     is >> axes_;
+    is >> orientation_;
     setAxesSqr(axes_);
 }
 
@@ -251,6 +409,8 @@ ellipsoid::ellipsoid(const dictionary& configDict)
     : center_{configDict.get<vector>("center")}, axes_{configDict.get<vector>(
                                                      "axes")}
 {
+    auto keyword = configDict.getOrDefault<word>("orientation", "outward");
+    orientation_ = orientation(keyword);
     setAxesSqr(axes_);
 }
 
@@ -267,9 +427,9 @@ void ellipsoid::setAxesSqr(const vector& axes)
 
 scalar ellipsoid::value(const vector& x) const
 {
-    return Foam::sqr(x[0] - center_[0]) / axesSqr_[0] +
+    return orientation_*(Foam::sqr(x[0] - center_[0]) / axesSqr_[0] +
         Foam::sqr(x[1] - center_[1]) / axesSqr_[1] +
-        Foam::sqr(x[2] - center_[2]) / axesSqr_[2] - 1;
+        Foam::sqr(x[2] - center_[2]) / axesSqr_[2] - 1);
 }
 
 
@@ -281,7 +441,7 @@ scalar ellipsoid::operator()(const vector& x) const
 
 vector ellipsoid::grad(const vector& x) const
 {
-    return 2 *
+    return orientation_*2*
         vector((x[0] - center_[0]) / axesSqr_[0],
             (x[1] - center_[1]) / axesSqr_[1],
             (x[2] - center_[2]) / axesSqr_[2]);
@@ -317,8 +477,9 @@ addToRunTimeSelectionTable(implicitSurface, sinc, Dictionary);
 
 // * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-sinc::sinc(vector origin, scalar amplitude, scalar omega)
-    : origin_{origin}, amplitude_{amplitude}, omega_{omega}
+sinc::sinc(vector origin, scalar amplitude, scalar omega, scalar orientation)
+    : origin_{origin}, amplitude_{amplitude}, omega_{omega},
+      orientation_{orientation}
 {
 }
 
@@ -328,6 +489,7 @@ sinc::sinc(ITstream& is)
     is >> origin_;
     is >> amplitude_;
     is >> omega_;
+    is >> orientation_;
 }
 
 
@@ -336,6 +498,8 @@ sinc::sinc(const dictionary& configDict)
       amplitude_{configDict.get<scalar>("amplitude")},
       omega_{configDict.get<scalar>("omega")}
 {
+    auto keyword = configDict.getOrDefault<word>("orientation", "outward");
+    orientation_ = orientation(keyword);
 }
 
 
@@ -351,7 +515,8 @@ scalar sinc::value(const vector& x) const
         return amplitude_;
     }
 
-    return x[2] - origin_[2] - amplitude_ * sin(omega_ * r) / (omega_ * r);
+    return orientation_*
+        (x[2] - origin_[2] - amplitude_ * sin(omega_ * r) / (omega_ * r));
 }
 
 
@@ -370,7 +535,7 @@ vector sinc::grad(const vector& x) const
     const scalar& x0 = x[0];
     const scalar& x1 = x[1];
 
-    return vector // Expression calculated in sympy.
+    return orientation_*vector // Expression calculated in sympy.
         (A * (O0 - x0) *
                 (omega_ * pow(pow(O0 - x0, 2) + pow(O1 - x1, 2), 3.0 / 2.0) *
                         cos(omega_ * sqrt(pow(O0 - x0, 2) + pow(O1 - x1, 2))) -

@@ -90,6 +90,8 @@ VTK/
 log*
 Data_*
 *.csv
+*.json
 *.pdf
 .vscode/
 uniform/
+*_00*_*/

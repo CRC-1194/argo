@@ -31,6 +31,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "dictionary.H"
 #include "fvc.H"
+#include "processorFvPatchField.H"
 
 namespace Foam {
 
@@ -59,7 +60,7 @@ pandoraCurvatureAverageExtension::pandoraCurvatureAverageExtension(const diction
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const boolList& isInterfaceCell)
+void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const volScalarField& isInterfaceCell)
 {
     const auto& mesh = curvature.mesh();
     const auto& owner = mesh.owner();
@@ -73,7 +74,7 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
 
     forAll(curvature, cid)
     {
-        if (!isInterfaceCell[cid])
+        if (isInterfaceCell[cid] != 1.0)
         {
             curvature[cid] = tagValue_; 
         }
@@ -103,6 +104,39 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
             }
         }
 
+        auto& meshBoundaries = curvature.boundaryFieldRef();
+
+        for (auto& mBoundary : meshBoundaries)
+        {
+            if (isType<processorFvPatch>(mBoundary.patch()))
+            {
+                // Ensure processor neighbour fields are up-to-date
+                mBoundary.initEvaluate();
+                mBoundary.evaluate();
+
+                const auto& pPatch = mBoundary.patch();
+                const auto& faceToCell = pPatch.faceCells();
+                auto neighbourValuesTmp = mBoundary.patchNeighbourField();
+                const auto& neighbourValues = neighbourValuesTmp.cref();
+
+                forAll(mBoundary, I)
+                {
+                    if (curvature[faceToCell[I]] == tagValue_ && neighbourValues[I] == tagValue_)
+                    {
+                        mBoundary[I] = tagValue_;
+                    }
+                    else if (curvature[faceToCell[I]] != tagValue_ && neighbourValues[I] == tagValue_)
+                    {
+                        mBoundary[I] = curvature[faceToCell[I]];
+                    }
+                    else if (curvature[faceToCell[I]] == tagValue_ && neighbourValues[I] != tagValue_)
+                    {
+                        mBoundary[I] = neighbourValues[I];
+                    }
+                }
+            }
+        }
+
         // Compute surface sums and face count for cells
         faceCount = 0; 
         surfaceSum = 0.0;
@@ -115,6 +149,25 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
                 surfaceSum[owner[fid]] += faceCurvature[fid];
                 faceCount[neighbour[fid]] += 1;
                 surfaceSum[neighbour[fid]] += faceCurvature[fid];
+            }
+        }
+
+        // TODO: iterate processor boundaries and repeat steps above
+        for (const auto& mBoundary : meshBoundaries)
+        {
+            if (isType<processorFvPatch>(mBoundary.patch()))
+            {
+                const auto& pPatch = mBoundary.patch();
+                const auto& faceToCell = pPatch.faceCells();
+
+                forAll(mBoundary, I)
+                {
+                    if (mBoundary[I] != tagValue_)
+                    {
+                        faceCount[faceToCell[I]] += 1;
+                        surfaceSum[faceToCell[I]] += mBoundary[I];
+                    }
+                }
             }
         }
 
@@ -133,6 +186,21 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const b
         if (curvature[cid] == tagValue_)
         {
             curvature[cid] = 0.0;
+        }
+    }
+
+    auto& meshBoundaries = curvature.boundaryFieldRef();
+    for (auto& mBoundary : meshBoundaries)
+    {
+        if (isType<processorFvPatch>(mBoundary.patch()))
+        {
+            forAll(mBoundary, I)
+            {
+                if (mBoundary[I] == tagValue_)
+                {
+                    mBoundary[I] = 0.0;
+                }
+            }
         }
     }
 }

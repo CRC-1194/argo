@@ -29,7 +29,7 @@ License
 
 #include "gaussLaplacianScheme.H"
 #include "linear.H"
-#include "skewCorrectedSnGrad.H"
+#include "orthogonalSnGrad.H"
 
 namespace Foam::TriSurfaceImmersion
 {
@@ -55,15 +55,24 @@ tmp<volScalarField> insideOutsidePropagation::propagateInsideOutside(
             tmp<surfaceInterpolationScheme<scalar>>{
                 new linear<scalar>{in_out_field.mesh()}},
             tmp<fv::snGradScheme<scalar>>{
-                new fv::skewCorrectedSnGrad<scalar>(in_out_field.mesh())})
+                new fv::orthogonalSnGrad<scalar>(in_out_field.mesh())})
             .fvmLaplacian(Gamma, in_out_field));
 
-    IStringStream solverInput{"solver PCG; preconditioner DIC; tolerance 0.5; "
-                              "relTol 0; minIter 1; maxIter 1;"};
+    IStringStream solverInput{"solver smoothSolver; smoother GaussSeidel;"
+                              "tolerance 1e-8; relTol 0.1; nSweeps 1;"};
+
     dictionary solverControl{solverInput};
 
-    for (auto iteration = 0; iteration != 3; ++iteration)
+    int iteration = 0; 
+    bool propagate = false;
+    const int maxIterations = 50;
+    do
     {
+        ++iteration;
+
+        Info << "Inside/outside propagation iteration " 
+            << iteration << endl;
+
         propagationEqn.solve(solverControl);
 
         // Reset signed distance in the narrow band
@@ -74,7 +83,12 @@ tmp<volScalarField> insideOutsidePropagation::propagateInsideOutside(
                 in_out_field[idx] = signedDistance[idx];
             }
         }
-    }
+
+        scalar minInOut = Foam::gMin(Foam::mag(in_out_field)());
+
+        propagate = minInOut == 0;
+
+    } while(propagate && (iteration < maxIterations));
 
     return tmp_in_out_field;
 }

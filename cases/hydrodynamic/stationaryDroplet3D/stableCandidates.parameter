@@ -1,0 +1,29 @@
+values
+{
+    solver (interIsoFoam);
+    
+    REC_SCHEME 
+    (
+        plicRDF 
+    );
+
+    N_CELLS
+    (
+        32 64 128 
+    );
+
+    N_CURVATURE_AVERAGES
+    (
+        // Add promising values here after evaluation of 2D study
+    );
+
+    N_CURVATURE_EXTENSIONS
+    (
+        // Add promising values here after evaluation of 2D study
+    );
+
+    N_CURVATURE_REGULARISATIONS
+    (
+        // Add promising values here after evaluation of 2D study
+    ); 
+}

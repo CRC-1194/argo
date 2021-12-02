@@ -1,0 +1,16 @@
+from subprocess import run
+
+def init():
+    run("foamPerturbMesh -alpha @!MESH_PERTURBATION!@", shell=True)
+    run("cp 0/polyMesh/points constant/polyMesh", shell=True)
+
+    surface_type="@!SURFACE_TYPE!@"
+
+    if surface_type == "triSurface":
+        run("gmsh -2 @!SURFACE!@.geo -o @!SURFACE!@.vtk", shell=True)
+        run("mv system/vofInitDict-trisurface system/vofInitDict", shell=True)
+    else:
+        run("mv system/vofInitDict-@!SURFACE!@ system/vofInitDict", shell=True)
+
+if __name__ == '__main__':
+    init()

@@ -29,7 +29,7 @@
     (
         (
              //mixture.surfaceTensionForce()
-            pandoraModel.surfaceTensionForce(alpha1, advector.surf().interfaceCell())
+            pandoraModel.surfaceTensionForce(alpha1)
           - ghf*fvc::snGrad(rho)
         )*rAUf*mesh.magSf()
     );

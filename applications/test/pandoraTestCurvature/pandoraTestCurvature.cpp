@@ -33,6 +33,7 @@ Description
 #include "fvCFD.H"
 #include "isoAdvection.H"
 
+#include "pandora.hpp"
 #include "pandoraCurvature.hpp"
 #include "pandoraCurvatureExtension.hpp"
 #include "pandoraCurvatureRegularisation.hpp"
@@ -72,11 +73,11 @@ errorNorms computeErrorNorms(const volScalarField& field)
     return errors;
 }
 
-void filterCurvatureErrors(volScalarField& errors, const boolList& isInterfaceCell)
+void filterCurvatureErrors(volScalarField& errors, const volScalarField& isInterfaceCell)
 {
     forAll(errors, cid)
     {
-        if (!isInterfaceCell[cid])
+        if (isInterfaceCell[cid] == 0.0)
         {
             errors[cid] = 0.0;
         }
@@ -116,7 +117,7 @@ int main(int argc, char *argv[])
     };
 
     #include "createFields.hpp"
-    //
+    
     // Mark cells whose curvature influences surface tension
     auto surfaceTensionFacesTmp = fvc::snGrad(alpha);
     const auto& surfaceTensionFaces = surfaceTensionFacesTmp.ref();
@@ -134,6 +135,8 @@ int main(int argc, char *argv[])
     curvatureRequired.write();
 
     dictionary pandoraDict{mesh.solutionDict().subDict("pandora")};
+    pandora pandoraObj{mesh};
+    const auto& isInterfaceCell = pandoraObj.isInterfaceCell(alpha);
     autoPtr<pandoraCurvature> curvPtr(pandoraCurvature::New(mesh, pandoraDict));
     autoPtr<pandoraCurvatureRegularisation> regularisationPtr_{
         pandoraCurvatureRegularisation::New(pandoraDict)
@@ -151,23 +154,23 @@ int main(int argc, char *argv[])
     volScalarField& cellCurvature = curvPtr->cellCurvature();
     cellCurvature.write();
     curvatureErrorField = (cellCurvature - exactCurvature)/exactCurvature;
-    filterCurvatureErrors(curvatureErrorField, advector.surf().interfaceCell());
+    filterCurvatureErrors(curvatureErrorField, isInterfaceCell);
     curvatureModelErrors = computeErrorNorms(curvatureErrorField);
     curvatureErrorField.write();
 
     // Regularisation
     cellCurvature.rename("curvature_regularised");
-    regularisationPtr_->regularise(cellCurvature, advector.surf().interfaceCell());
+    regularisationPtr_->regularise(cellCurvature, isInterfaceCell);
     cellCurvature.write();
     curvatureErrorField = (cellCurvature - exactCurvature)/exactCurvature;
-    filterCurvatureErrors(curvatureErrorField, advector.surf().interfaceCell());
+    filterCurvatureErrors(curvatureErrorField, isInterfaceCell);
     curvatureRegularisedErrors = computeErrorNorms(curvatureErrorField);
     curvatureErrorField.rename("curvature_errors_regularised");
     curvatureErrorField.write();
 
     // Extension
     cellCurvature.rename("curvature_extended");
-    extensionPtr_->extend(cellCurvature, advector.surf().interfaceCell());
+    extensionPtr_->extend(cellCurvature, isInterfaceCell);
     cellCurvature.write();
     curvatureErrorField = (cellCurvature - exactCurvature)/exactCurvature*curvatureRequired;
     curvatureExtensionErrors = computeErrorNorms(curvatureErrorField);

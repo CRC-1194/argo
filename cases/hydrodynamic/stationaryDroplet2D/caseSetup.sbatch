@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -p test30m
 #SBATCH -A special00005 
 #SBATCH -J locInit 
 #SBATCH -n 1 
@@ -6,3 +7,4 @@
 #SBATCH -t 00:20:00     
 
 srun blockMesh && setAlphaField && decomposePar -force
+#srun blockMesh && setAlphaField 

@@ -92,7 +92,7 @@ public:
     virtual ~pandoraCurvatureRegularisation() = default;
 
     // Member Functions
-    virtual void regularise(volScalarField& curvature, const boolList& isInterfaceCell) = 0;
+    virtual void regularise(volScalarField& curvature, const volScalarField& isInterfaceCell) = 0;
 
     const dictionary& regularisationDict() const
     {

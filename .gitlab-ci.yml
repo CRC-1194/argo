@@ -1,4 +1,24 @@
-image: "openfoam-v2012_ubuntu-focal:latest"
+image: "openfoam-v2012_ubuntu-focal:2021-10-27-SMCIA-R1"
+
+.prepare_openfoam_and_binaries:
+  before_script:
+    ##
+    ## Configure the OpenFOAM environment
+    ## 
+    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
+
+    ##
+    ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
+    ##
+    - if [ ! -d "$FOAM_USER_APPBIN" ]; then mkdir -p "$FOAM_USER_APPBIN"; fi
+    - cp FOAM_USER_APPBIN/* $FOAM_USER_APPBIN
+
+    ##
+    ## Re-use user-defined OF libraries from the FOAM_USER_LIBBIN artifact
+    ##
+    - if [ ! -d "$FOAM_USER_LIBBIN" ]; then mkdir -p "$FOAM_USER_LIBBIN"; fi
+    - cp FOAM_USER_LIBBIN/* $FOAM_USER_LIBBIN
+
 
 workflow:
   rules:
@@ -9,8 +29,9 @@ workflow:
 
 stages:
   - building
-  - running
-    #- visualization    // Not defined yet (TT)
+  - smoke_tests
+  - reproduction
+  - visualization    
     #- testing          // Not defined yet (TT)
 
 build_debug:
@@ -29,6 +50,7 @@ build_debug:
 
 build_release:
   stage: building
+  needs: []
   script:
 
     ##
@@ -67,40 +89,67 @@ build_release:
         ##
         - FOAM_USER_APPBIN/*
 
-param_study:
-  stage: running
+
+triSurface_initialization:
+  stage: smoke_tests
   dependencies:
     - build_release
-  script: 
-
-    ##
-    ## Configure the OpenFOAM environment
-    ## 
-    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
-
-    ##
-    ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
-    ##
-    - if [ ! -d "$FOAM_USER_APPBIN" ]; then mkdir -p "$FOAM_USER_APPBIN"; fi
-    - cp FOAM_USER_APPBIN/* $FOAM_USER_APPBIN
-
-    ##
-    ## Re-use user-defined OF libraries from the FOAM_USER_LIBBIN artifact
-    ##
-    - if [ ! -d "$FOAM_USER_LIBBIN" ]; then mkdir -p "$FOAM_USER_LIBBIN"; fi
-    - cp FOAM_USER_LIBBIN/* $FOAM_USER_LIBBIN
-   
-    # Run the parameter variation tests 
-    - cd cases/initialization/3Dinit
-    - ./create_and_run_levelset.sh
-    - ./reproduce_publication_results.sh
-
+  extends: .prepare_openfoam_and_binaries
+  script:
+    - cd cases/initialization
+    - ./run_triSurface_smoke_tests.sh
   artifacts:
     paths:
-        - cases/initialization/3Dinit/*.csv 
-        - cases/initialization/3Dinit/*.pdf 
-        - cases/initialization/3Dinit/*.ipynb
-        - cases/initialization/3Dinit/results/*
+      - cases/initialization/triSurface-smoke-test-results/*
+
+
+cpc_2021_data:
+  stage: reproduction
+  dependencies:
+    - build_release
+  only:
+    variables:
+      - $REPRODUCE_CPC2021 != null
+  extends: .prepare_openfoam_and_binaries
+  script: 
+    - cd cases/initialization
+    - ./reproduce_CPC2021_results.sh
+  artifacts:
+    paths:
+        - cases/initialization/CPC2021-results/*
+
+cpc_2021_visualize:
+  stage: visualization 
+  dependencies:
+    - cpc_2021_data 
+  only:
+    variables:
+      - $REPRODUCE_CPC2021 != null
+  script: 
+    - cd cases/initialization
+    - ./visualize_CPC2021_results.sh
+  artifacts:
+    paths:
+        - cases/initialization/CPC2021-results/*
+
+          #density_ratio_param_study:
+          #  stage: running
+          #  dependencies:
+          #    - build_release
+          #  extends: .prepare_openfoam_and_binaries
+          #  script: 
+          #   
+          #    # Run the parameter variation tests 
+          #    - source cases/scripts/bashrc
+          #    - cd cases/hydrodynamic/translatingDroplet3D
+          #    - argo-create-parameter-study.py densityRatioInfluence.parameter -v "0,2,4,6"
+          #    - argo-initilize-parameter-study.py densityRatioInfluence_0000 -m blockMesh -f initFields.sh
+          #    - argo-run-study.py interIsoRhoFoam -d densityRatioInfluence_0000 -nc 4
+          #    - jupyter-nbconvert --execute --to=html test-nb.ipynb
+          #
+          #  artifacts:
+          #    paths:
+          #        - cases/hydrodynamic/translatingDroplet3D/test-nb.html
 
 #convert_notebooks:
 #  stage: visualization 
