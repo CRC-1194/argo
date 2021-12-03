@@ -9,33 +9,21 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    location    "constant";
-    object      transportProperties;
+    class       volScalarField;
+    object      alpha.dispersed;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-phases (water air);
+dimensions      [0 0 0 0 0 0 0];
 
-water
+internalField   uniform 0;
+
+boundaryField
 {
-    transportModel  Newtonian; //at 21.5C
-    nu              0.968e-06;
-    rho             997.882; 
+    sides
+    {
+        type            zeroGradient;
+    }
 }
-
-air
-{
-    transportModel  Newtonian;
-    nu              1.52e-05;
-    rho             1.198;
-}
-
-sigma               0.07275; //at 21.5C
 
 // ************************************************************************* //
-/* Water
-temp[°C]  Dyn. Viscosity [mPa.s] 	Kin. Viscosity [mm²/s]  density[g/cm³]
-21 	       0.9775 	                 0.9795 	             0.998
-22 	       0.9544 	                 0.9565 	             0.9978 
-*/
