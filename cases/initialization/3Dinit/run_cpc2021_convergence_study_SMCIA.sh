@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 argo-create-parameter-study.py triSurface-SMCIA-convergence.parameter -p CPC2021 $1
-argo-initilize-parameter-study.py CPC2021-triSurface-SMCIA-convergence_00 -m blockMesh -f prepareCase.py
+argo-initialize-parameter-study.py CPC2021-triSurface-SMCIA-convergence_00 -m blockMesh -f prepareCase.py
 
 # Run cases using SMCA algorithm and agglomerate data 
 argo-run-study.py surfaceInitVolumeFraction --solver-args="-algorithm SMCA" \

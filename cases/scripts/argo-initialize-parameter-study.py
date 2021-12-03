@@ -25,29 +25,49 @@ def find_case_directories(pattern):
 
     return case_dirs
 
-def submit_slurm_job(command, log_name=""):
-    partition = "test30m"
+def extract_job_id(sbatch_output):
+    # The job id is the last word in the first line of the
+    # output given by the sbatch command
+    first_line = sbtach_output.split('\n')[0]
+    job_id = first_line.rsplit(' ', 1)[1]
+
+    return job_id
+
+
+def submit_slurm_job(command, log_name="", depends_on=None):
     account = "special00005"
     ntasks = "1"
     mem_per_cpu = "5000"
     time_limit = "00:15:00" # Read: hh:mm:ss, h-> hours, m-> minutes, s-> seconds
-    slurm_command = ("srun --partition %s --account %s --ntasks %s --mem-per-cpu %s "
-                     "--time %s "
+    wait_for_job = None
+
+    if depends_on:
+        wait_for_job = "--dependency=afterok:" + depends_on
+    slurm_command = ("srun --account %s --ntasks %s --mem-per-cpu %s "
+                     "--time %s %s "
                      "--job-name=%s --output=log.%s %s >/dev/null 2>&1 &" % 
-                     (partition, account, ntasks, mem_per_cpu,
-                      time_limit,
+                     (account, ntasks, mem_per_cpu,
+                      time_limit, wait_for_job,
                       log_name, log_name, command))
 
-    run(slurm_command, shell=True)
+    sbatch_out = run(slurm_command, shell=True, capture_output=True)
+    job_id = extract_job_id(sbatch_out.stdout)
 
     # Force wait after submitting job to avoid overloading the SLURM manager
     time.sleep(1)
 
-def execute_init_step(command, use_slurm, log_name=""):
+    # Return job id to make initialization job dependent on the meshing job.
+    # That ensures that field initialization is done after mesh creation.
+    return job_id
+
+def execute_init_step(command, use_slurm, log_name="", depends_on=None):
+    job_id = None
     if use_slurm:
-        submit_slurm_job(command, log_name=log_name)
+        job_id = submit_slurm_job(command, log_name=log_name, depends_on=depends_on)
     else:
         run(command, shell=True)
+
+    return job_id
 
 
 #---- Command line arguments ----------------------------------------------
@@ -94,13 +114,15 @@ if __name__ == '__main__':
         case_count = case_count + 1
         print("(%s/%s) Initializing %s ..." % (str(case_count), str(len(case_dirs)), case))
 
-        # Meshing. Can be skipped 
+        # Meshing. Can be skipped. No dependency on a previous job.
+        mesh_job_id = None
         if args.mesh_app != "none":
-            execute_init_step(args.mesh_app, args.job_mode, log_name=args.mesh_app)
+            mesh_job_id = execute_init_step(args.mesh_app, args.job_mode, log_name=args.mesh_app)
         else:
             print("Warning: skipping mesh generation. Make sure your init script generates a mesh.")
 
         # Field initialization
+        field_job_id = None
         if args.init_script:
             # Note: the template replacement process invoked in 'argo-create-parameter-study.py'
             #       removes the She-Bang from the init script. So we need to use the file extension
@@ -112,10 +134,12 @@ if __name__ == '__main__':
                 script_env = "bash"
             else:
                 sys.exit("Error: unsupported script format", args.init_script.rsplit('.')[0], ". Use either .sh for BASH or .py for Python3.")
-            execute_init_step(script_env + " " + args.init_script, args.job_mode, log_name=args.init_script)
+            execute_init_step(script_env + " " + args.init_script, args.job_mode,
+                              log_name=args.init_script, depends_on=mesh_job_id)
 
         # Domain decomposition
         if args.parallel:
-            execute_init_step("decomposePar -force", args.job_mode, log_name="decomposePar")
+            execute_init_step("decomposePar -force", args.job_mode, log_name="decomposePar",
+                                depends_on=field_job_id)
 
         os.chdir(pwd)
