@@ -116,9 +116,9 @@ cpc_2021_data:
   stage: reproduction
   dependencies:
     - build_release
-  only:
-    variables:
-      - $REPRODUCE_CPC2021 != null
+  rules:
+    - if: $REPRODUCE_CPC2021 != null
+    - if: $REPRODUCE_EVERYTHING != null
   extends: .prepare_openfoam_and_binaries
   script: 
     - cd cases/initialization
@@ -132,9 +132,9 @@ cpc_2021_visualize:
   stage: visualization 
   dependencies:
     - cpc_2021_data 
-  only:
-    variables:
-      - $REPRODUCE_CPC2021 != null
+  rules:
+    - if: $REPRODUCE_CPC2021 != null
+    - if: $REPRODUCE_EVERYTHING != null
   script: 
     - cd cases/initialization
     - ./visualize_CPC2021_results.sh
