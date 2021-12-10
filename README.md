@@ -82,6 +82,222 @@ Execute following command to build `argo` and install its libraries and executab
 
 where the flag `-DCMAKE_EXPORT_COMPILE_COMMANDS=on` is optional (it instructs CMake to create a `compile_commands.json` file).
 
+## Tutorial: computation of volume fractions for a brain surface
+This tutorial guides you through the necessary steps to compute volume fractions (and signed distances) for
+a given surface mesh. Prerequisite is that you have a working installation of OpenFOAM and Argo. The result
+is very similar to the initialization test case `cases/initialization/3D-brain`.
+
+### 1. Obtain a suitable surface mesh
+Here we use a surface mesh of a brain that has been obtained from a MRI brain scan which you can download from
+[Thingiverse](https://www.thingiverse.com/thing:1287025) under _Download All Files_. In the archive, you
+can find the file `files/andrewbrain_1.stl` which we'll use as input surface. Before this can be used as input
+for the SMCIA algorithm, two conditions have to be ensured:
+* The triangle normals are oriented consistently, meaning they all point either inside or outside.
+* All triangles have an area greater than zero, meaning that there are no coinciding vertices.
+
+If the conditions above are not fulfilled, SMCIA may behave strangely and/or simply crash.
+Further properties of the surface mesh which are favorable for SMCIA to work correctly are:
+* There are no duplicate triangles.
+* The surface has no holes.
+
+In principle SMCIA should still work correctly in the presence of duplicate triangles, but this has not been
+tested yet. Even with holes in the mesh SMCI should still correctly compute inside/outside information, but
+the absolute distance to the surface will be erroneous.  
+In this tutorial some OpenFOAM tools are used to prepare the surface mesh, but other tools for mesh
+manipulation and clean up, e.g.
+[PyMesh](https://pymesh.readthedocs.io/en/latest/index.html), can be used.
+
+#### 1.1 Check the quality of the surface mesh
+**Before you start**: make sure you have sourced the OpenFOAM environment.  
+
+OpenFOAM provides the `surfaceCheck` utility to assess the quality of a surface mesh. Run this with the
+`-verbose` option for more detailled output:
+```
+surfaceCheck -verbose andrewbrain_1.stl
+```
+The most important pieces of information are:
+* whether the surface has any illegal faces, e.g. `Surface has 21 illegal triangles.`
+* whether the minimum triangle quality is 0, e.g. `Minimum triangle quality is 0`. This means there
+    are collapsed triangles with an area of 0.
+
+If there are no illegal faces nor collapsed triangles, the mesh quality is fine for SMCIA.
+However, for our example mesh, the output shows that the mesh cannot be used as it is.
+
+#### 1.2 Fix the surface mesh
+OpenFOAM offers several tools to manipulate and clean up surface meshes. All commands related to these
+surface operations start with `surface`.  
+As you may have already noticed, `surfaceCheck` has written several `andrewbrain_1_*.obj` files. These are
+different parts of the mesh which are not connected. In the following, `andrewbrain_1_0.obj` is used which
+comprises almost all elements of the original surface and is now a single connected surface.  
+Running 
+```
+surfaceCheck andrewbrain_1_0.obj
+```
+shows that there are still problems with this surface. This can be fixed with `surfaceClean` which - 
+according to its description - does _Clean surface by removing baffles, sliver faces, collapsing small
+edges, etc._. Besides the input and ouput file name, the required arguments are the minimal edge length
+and the minimal triangle quality. Both can be set to quite low values (as long as a normal can be
+computed, a triangle is fine here.):
+```
+surfaceClean andrewbrain_1_0.obj 1e-12 1e-6 clean_surface.obj
+```
+This gives a suitable surface in terms of triangle sizes. The final step of the surface preparation is
+to check the consistent normal orientation.
+
+#### 1.3 Ensure consistent normal orientation
+A visual inspection of surface normals can be done with Paraview and the `Normal Glyphs` filter. In case the
+normals are inconsistent, OpenFOAM's `surfaceOrient` tool can fix the orientation. In addition to the surface
+itself a point located on the outside of the surface is required. `surfaceCheck` also outputs the bounding box
+of the surface which can help to determine an outside point. For the surface at hand, the
+point `(-100 -100 -100)` is located on the outside:
+```
+surfaceOrient clean_surface.obj "(-100 -100 -100)" oriented_surface.obj
+```
+
+### 2. Copy a case from the initialization cases
+As SMCIA builds on OpenFOAM, a valid OpenFOAM case is required to run it. For the sake of simplicity,
+you can simply copy one of the example cases, e.g. `cases/initialization/3D-pores`, as only a few changes
+are required:
+```
+cp -r /path/to/Argo/cases/initialization/3D-pores 3D-brain
+```
+
+### 3. Configure the volume mesh using OpenFOAM's blockMesh
+In Principle, SMCIA works on any mesh that is supported by OpenFOAM. The surface mesh does not even need to be
+completely embedded in the volume mesh. For example, if you want to initialize a droplet sitting on a surface
+that has the shape of a spherical cap, you can use a complete sphere from which only a part in located inside
+the volume mesh.  
+Here, again for simplicity, we use a simple block shaped domain which is meshed with
+[blockMesh](https://www.openfoam.com/documentation/user-guide/4-mesh-generation-and-conversion/4.3-mesh-generation-with-the-blockmesh-utility). We re-use a blockMesh config file from an existing test case:
+```
+cp /path/to/Argo/cases/initialization/3Dinit/templateCase/system/blockMeshDict 3D-brain/system/
+```
+and adapt the vertices of the block. Based on the bounding box of `oriented_surface.obj` 
+```
+Bounding Box : (-71.2844 -94.3172 -78.821) (67.1883 86.5888 56.4499)
+```
+(e.g. given by `surfaceCheck`) we can construct a slightly larger block, e.g.
+_(-80 -100 -82) (70 90 62)_ and change the entry _vertices_ in `3D-brain/system/blockMeshDict`
+accordingly:
+``` 
+vertices        
+(
+    (-80  -100 -82)
+    ( 70  -100 -82)
+    ( 70    90 -82)
+    (-80    90 -82)
+
+    (-80  -100 62)
+    ( 70  -100 62)
+    ( 70    90 62)
+    (-80    90 62)
+);
+```
+The resolution is currently set to 64 in each direchtion (_block_ entry in `blockMeshDict`):
+```
+blocks          
+(
+    hex (0 1 2 3 4 5 6 7) (64 64 64) simpleGrading (1 1 1)
+);
+```
+We change this to 100:
+```
+blocks          
+(
+    hex (0 1 2 3 4 5 6 7) (100 100 100) simpleGrading (1 1 1)
+);
+```
+Change into the case directory `3D-brain` and run `blockMesh` to create the mesh:
+```
+cd 3D-brain/
+blockMesh
+```
+
+### 4. Configure signed distance - / volume fraction calculation
+The application for volume fraction computation is `surfaceInitVolumeFraction`, for signed distance
+calculation `surfaceInitSignedDistances`. Run each with the `-help` option to show the available
+parameters and their purpose. In principle, it is possible to provide all required options on the
+command line. But you can also set the options in configuration files or dictionaries as they are called
+by OpenFOAM. This allows you to have a persistent configuration. Note that an option can be given in the
+configuration file and the command line at the same time. In this case, the command line option has
+precendence.  
+Volume fraction calculation is configured by the file `system/vofInitDict`. Open it in a text editor to see
+the current configuration:
+```
+fieldName       alpha.water;
+algorithm       SMCA;
+writeGeometry   off;
+invert          on;
+writeAllFields  on;
+checkVolume     on;
+refinementLevel 3;
+
+distCalc
+{
+    surfaceType triSurface;
+    surfaceFile CAB_XD_95VC-clean.stl;
+    narrowBandWidth 4.0;
+}
+```
+
+Here, `fieldName` specifies the name of the volume fraction field. This field in form of a file has to be
+present in the `0.org` or `0` directory of the OpenFOAM case. As this was copied from a working case, there
+is no need to change it.  
+
+With `algorithm` you can choose between the geometric intersection (SMCI) or approximation in combination
+with refinement (SMCA). For this tutorial, SMCA is used.  
+
+Leave the option `writeGeometry` turned off. If active, additional geometric information is written out, e.g.
+the decomposition of each interface cell. This is intended for debugging purposes.  
+
+`invert` changes on which side of the interface the volume fractions are set to 1, so the normals of the
+surface mesh can be left unchanged. Here, leave it on as the normals of the surface mesh point to the
+outside, but we want cells on the inside to have volume fractions of 1.  
+
+If `writeAllFields` is active, all auxilliary fields are also written, meaning especially the signed
+distance fields. So use this options if you want both, volume fractions and signed distances.
+In this tutorial, we leave the option `on`.  
+
+The flag `checkVolume` is intended for testing purposes and we can set it to `off`.  
+
+`refinementLevel` is only used by the SMCA algorithm and determines how many levels of refinement are used.
+Increasing the number of refinement levels increases accuracy, but also required computational time. A value
+of `-1` triggers an automatic computation of the refinement level based on the size of the smallest triangle.
+For this tutorial, the value `3` is fine.
+
+`distCalc` is a so-called _sub-dictionary_ which configures the signed distance configuration. Here, only
+`surfaceFile` has to be adapted to `oriented_surface.obj`, the surface mesh we prepared in step 1.3. The other
+parameters can be left untouched.
+
+If you are only interested in signed distance calculation, you can use the options described
+above. The configuration dictionary is `system/signedDistanceInitDict`
+
+
+### 5. Compute signed distances / volume fractions
+Before the volume fractions can be computed, the surface mesh has to be placed in the case folder `3D-brain`.
+So copy the file from step 1.3:
+```
+cp /path/to/oriented_surface.obj /path/to/case/3D-brain/
+```
+Furthermore, a `0` folder is required. You can simply copy the `0.org` folder. Change into the case directory
+and copy it:
+```
+cd /path/to/case/3D-brain
+cp -r 0.org 0
+```
+The case is ready for initilization now:
+```
+surfaceInitVolumeFraction
+```
+As the volume fraction computation has been completely configured through its dictionary (step 4), no
+command line arguments need to passed to `surfaceInitVolumeFraction`.  
+If you want to view the computed fields in ParaView, run
+```
+foamToVTK
+```
+This creates VTK files and writes them into the folder `VTK`.
+
+
 ## How to setup and run example cases
 Currently, there are two groups of test cases in `argo/cases`:
 * `initialization`: cases demonstrating the computation of signed distances and volume fractions from
