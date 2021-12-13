@@ -27,47 +27,73 @@ maxNumProcesses = 1
 nVariants = 1
 solver = ""
 Processes = []
+return_codes = []
+proc_to_variant = {}
 
 def start_new(variantList, n_mpi, solver_args):
     """ Start a new subprocess if there is work to do """
     global nextVariant
     global Processes
+    global proc_to_variant
+    global return_codes
 
     args = shlex.split(solver_args)
 
-    if nextVariant < nVariants:
-        # Make the script wait for the last spawned subprocess.
-        # This makes it more likely that the end time info
-        # will be correct
-        solver_command = [solver] + args + ["-case", variantList[nextVariant]]
-        mpi_prefix = ["mpirun", "-n", str(n_mpi)]
+    solver_command = [solver] + args + ["-case", variantList[nextVariant]]
+    mpi_prefix = ["mpirun", "-n", str(n_mpi)]
 
-        if nextVariant == nVariants-1:
-            if n_mpi > 1:
-                proc = subprocess.Popen(mpi_prefix + solver_command + ["-parallel"]).wait()
-            else:
-                proc = subprocess.Popen(solver_command).wait()
+    with open(variantList[nextVariant] + "/log." + solver, 'w') as logfile:
+        if n_mpi > 1:
+            proc = subprocess.Popen(mpi_prefix + solver_command + ["-parallel"],
+                                    stdout=logfile, stderr=logfile)
         else:
-            if n_mpi > 1:
-                proc = subprocess.Popen(mpi_prefix + solver_command + ["-parallel"])
-            else:
-                proc = subprocess.Popen(solver_command)
+            proc = subprocess.Popen(solver_command, stdout=logfile, stderr=logfile)
 
-        print ("Started to process variant", variantList[nextVariant].rsplit('/',1)[1])
-        nextVariant += 1
-        Processes.append(proc)
+    print ("Started variant", variantList[nextVariant].rsplit('/',1)[1],"; process ID", proc.pid)
+    proc_to_variant[proc.pid] = nextVariant
+
+    nextVariant += 1
+    Processes.append(proc)
 
 def check_running(variantList, n_mpi, solver_args):
    """ Check any running processes and start new ones if there are spare slots."""
    global Processes
    global nextVariant
+   global proc_to_variant
+   global return_codes
 
-   for p in range(len(Processes)-1,0,-1): # Check the processes in reverse order
+   for p in range(len(Processes)-1,-1,-1): # Check the processes in reverse order
       if Processes[p].poll() is not None: # If the process hasn't finished will return None
+         variant = proc_to_variant[Processes[p].pid]
+         return_codes[variant] =  Processes[p].returncode
+         print("Finished variant", variantList[variant].rsplit('/',1)[1])
          del Processes[p] # Remove from list - this is why we needed reverse order
 
-   while (len(Processes) <= maxNumProcesses) and (nextVariant < nVariants): # More to do and some spare slots
+   while (len(Processes) < maxNumProcesses) and (nextVariant < nVariants): # More to do and some spare slots
       start_new(variantList, n_mpi, solver_args)
+
+def report_failed_variants(return_codes, study_directories, solver):
+    if all(rc == 0 for rc in return_codes):
+        print("\nAll variants finished properly.\n")
+        return 0
+
+    failed_variants = [v for v,rc in enumerate(return_codes) if rc != 0]
+
+    recreation_string = "-v"
+    print("\n\nPrinting logs from failed variants:")
+    print("__________________________________________________________________________\n")
+    for fv in failed_variants:
+        subprocess.run("cat " + study_directories[fv] + "/log." + solver, shell=True)
+        print("__________________________________________________________________________\n\n")
+        recreation_string = recreation_string + str(fv) + ","
+    recreation_string = recreation_string.rstrip(",")
+
+    print("Number of failed variants:", len(failed_variants))
+    print("Failed variants:", failed_variants)
+    print("Run 'argo-create-parameter-study.py' with option '", recreation_string,
+            "' to re-create failed variants.")
+
+    return 1
 
 
 def main():
@@ -75,6 +101,7 @@ def main():
     global solver
     global maxNumProcesses
     global nVariants
+    global return_codes
 
     #---- Command line arguments ----------------------------------------------
     parser = ArgumentParser(description=app_description)
@@ -119,6 +146,7 @@ def main():
     # Set the global parameters for parallel run
     solver = args.solver
     nVariants = len(studyDirectories)
+    return_codes = [None]*nVariants
     maxNumProcesses = args.numcases
 
     #--------------------------------------------------------------------------
@@ -153,14 +181,17 @@ def main():
             print("Running with MPI using", args.num_mpi_procs, "mpi processes each.")
         print("Start_time: ",datetime.datetime.now().time())
 
-        # Spawn processes
-        check_running(studyDirectories, args.num_mpi_procs, args.solver_args) # This will start the max processes running
-        while (nextVariant < nVariants): # Some thing still going on.
-            time.sleep(0.1) # You may wish to change the time for this
+        # Spawn new processes as long as there are variants left and
+        # wait until all processes have finished
+        while (nextVariant < nVariants) or len(Processes) > 0:
+            time.sleep(1) # You may wish to change the time for this
             check_running(studyDirectories, args.num_mpi_procs, args.solver_args)
 
         print("End_time: ",datetime.datetime.now().time())
-        print("Done!")
+
+        grc = report_failed_variants(return_codes, studyDirectories, solver)
+        if grc != 0:
+            sys.exit("\n\nError: one or more variants failed to finish properly.\n")
 
 if __name__ == "__main__":
     main()
