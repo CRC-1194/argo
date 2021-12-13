@@ -1,0 +1,32 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      vofInitDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+fieldName       alpha.brain;
+algorithm       SMCA;
+writeGeometry   off;
+invert          on;
+writeAllFields  on;
+checkVolume     on;
+refinementLevel 3;
+
+distCalc
+{
+    surfaceType triSurface;
+    surfaceFile oriented_brain_surface.obj;
+    narrowBandWidth 4.0;
+}
+
+// ************************************************************************* //

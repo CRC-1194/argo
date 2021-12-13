@@ -1,0 +1,39 @@
+#!/bin/sh
+cd ${0%/*} || exit 1                        # Run from this directory
+. $WM_PROJECT_DIR/bin/tools/RunFunctions    # Tutorial run functions
+
+echo ""
+echo "#-----------------------------------------------------------#"
+echo "  The brain surface is originally taken from                 "
+echo "  https://www.thingiverse.com/thing:1287025                  "
+echo "  All credits for the interface go to Andrew Sink.           "
+echo "                                                             "
+echo "  The surface has been modified / cleaned up to work         "
+echo "  properly with the SMCIA algorithm                          "
+echo "#-----------------------------------------------------------#"
+echo ""
+
+# --- Surface cleanup if required ---
+#
+# surfaceCheck -verbose mySurface.stl
+# -> gives information about surface quality, will split the surface 
+#    in several *.obj files: cleanup of duplicate triangles
+#
+# surfaceClean mySurface_0.obj 1e-12 0.001 cleanedup_surface.obj
+# -> remove collapsed triangles (aka those with less than 3 unique points)
+#    and writes the cleanedup surface to 'cleaneduo_surface.obj`
+#
+# Afterwards, also check consistent surface normal orientation. If it is
+# inconsistent, use 'surfaceOrient' to orient normals consistently.
+
+# Preprocessing
+cp -r 0.org 0
+runApplication blockMesh 
+runApplication checkMesh
+
+# Initialization
+runApplication surfaceInitVolumeFraction
+
+# Postprocessing
+runApplication foamToVTK
+#------------------------------------------------------------------------------

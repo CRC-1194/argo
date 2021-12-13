@@ -1,0 +1,7 @@
+The surface "oriented_brain_surface.obj" used in this test case is a cleaned-up
+(removal of duplicate triangles, removal of collapsed triangles) version of surface
+found here:
+
+MRI Brain Scan (https://www.thingiverse.com/thing:1287025) by AndrewSink is licensed under the Creative Commons - Attribution - Share Alike license.
+http://creativecommons.org/licenses/by-sa/3.0/
+
