@@ -19,6 +19,11 @@ solvers
 {
     "alpha.*"
     {
+    <!--(if solver=="interFoam")-->
+        nAlphaCorr      1;
+        nAlphaSubCycles 2;
+        cAlpha          1;
+    <!--(else)-->
         isoFaceTol      1e-08;
         surfCellTol     1e-08;
         nAlphaBounds    3;
@@ -27,6 +32,7 @@ solvers
         cAlpha          1;
         nAlphaSubCycles 1;
         reconstructionScheme plicRDF; 
+    <!--(end)-->
     }
 
     "pcorr.*"
@@ -56,7 +62,7 @@ solvers
     {
         solver          PBiCGStab;
         preconditioner  DILU;
-        tolerance       1e-06;
+        tolerance       1e-08;
         relTol          0;
     }
 }
@@ -65,11 +71,9 @@ solvers
 PIMPLE
 {
     momentumPredictor no;
-    nOuterCorrectors 2;
-    nCorrectors     3;
+    nOuterCorrectors  2;
+    nCorrectors       3;
     nNonOrthogonalCorrectors 0;
-    // pRefCell        0;
-    // pRefValue       0;
 }
 
 pandora

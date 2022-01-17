@@ -17,7 +17,7 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     interIsoFoam;
+application     |-solver-|;
 
 startFrom       startTime;
 
@@ -27,11 +27,11 @@ stopAt          endTime;
 
 endTime         0.1;
 
+deltaT          |-DELTA_T-|;
+
 writeControl    timeStep;
 
 writeInterval   1000;
-
-deltaT          1e-05;
 
 purgeWrite      0;
 
@@ -56,6 +56,7 @@ maxAlphaCo      0.5;
 
 maxDeltaT       1e6;
 
+//libs ("libtwoPhaseValidation.so");
 
 functions 
 {
@@ -77,6 +78,19 @@ functions
         vofFieldName        alpha.water;
         curvatureFieldName  cellCurvature;
         exactCurvature      2000.0;
+    }
+    */
+    /* Requires debugging of 'libtwoPhaseValidation.so'
+    evaluation
+    {
+        type                        stationaryDroplet;
+        phaseIndicatorFieldName     alpha.dispersed;
+        alphaValueDispersedPhase    1.0;
+        velocityFieldName           U;
+        pressureFieldName           p;
+        dropletPhaseName            continuous;
+        radius                      0.001;
+        centre                      (0.005 0.005 0.0);
     }
     */
 }

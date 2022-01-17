@@ -9,29 +9,32 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volScalarField;
-    object      alpha.water;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 0 0 0 0 0 0];
+phases          (dispersed continuous);
 
-internalField   uniform 0;
+<!--(if FLUID_PAIRING=="water-air")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              1e-06;
+        rho             998.2;
+    }
 
-boundaryField
-{
-    rim
+    continuous
     {
-        type    zeroGradient;
+        transportModel  Newtonian;
+        nu              1.5e-05;
+        rho             1.2;
     }
-    front
-    {
-        type    empty;
-    }
-    back
-    {
-        type    empty;
-    }
-}
+
+    sigma           0.07275;
+<!--(elif FLUID_PAIRING=="something-different")-->
+<!--(end)-->
+
 
 // ************************************************************************* //

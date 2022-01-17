@@ -9,16 +9,29 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       dictionary;
-    location    "system";
-    object      setAlphaFieldDict;
+    class       volScalarField;
+    object      alpha.dispersed;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-field           alpha.dispersed;
-type            cylinder;
-radius          0.001;
-direction       (0 0 1);
-origin          (0.005 0.005 0.0);
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    rim
+    {
+        type    zeroGradient;
+    }
+    front
+    {
+        type    empty;
+    }
+    back
+    {
+        type    empty;
+    }
+}
 
 // ************************************************************************* //
