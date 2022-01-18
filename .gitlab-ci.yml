@@ -127,6 +127,22 @@ cpc_2021_data:
     paths:
         - cases/initialization/CPC2021-results/*
 
+cpc_2021_compare_to_data_publication:
+  stage: reproduction
+  needs:
+    - job: cpc_2021_data
+      artifacts: true
+  script:
+    - wget https://zenodo.org/record/5603255/files/argo-2021-10-27-SMCIA-R1-data.zip?download=1 -O ref_data.zip
+    - unzip ref_data.zip
+    - git clone https://gitlab.com/dglaeser/simtest.git
+    - cd simtest && python -m pip install . && cd ..
+    - |
+      python -m simtest \
+             --results-directory cases/initialization/CPC2021-results \
+             --reference-directory ref_data/cases/initialization/CPC2021-results \
+             --config "{\"ignore-fields\": [\"CPU_TIME_MICROSECONDS\", \"VOLUME_FROM_SURFACE_INTEGRAL\", \"VOLUME_ERROR_FROM_SURFACE_INTEGRAL\"], \"defaults\": {\"fuzzy-tolerance\": 1e-8}}"
+
 
 cpc_2021_visualize:
   stage: visualization 
