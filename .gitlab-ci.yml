@@ -134,7 +134,7 @@ cpc_2021_compare_to_data_publication:
       artifacts: true
   script:
     - wget https://zenodo.org/record/5603255/files/argo-2021-10-27-SMCIA-R1-data.zip?download=1 -O ref_data.zip
-    - unzip ref_data.zip
+    - unzip -d ref_data ref_data.zip
     - git clone https://gitlab.com/dglaeser/simtest.git
     - cd simtest && python -m pip install . && cd ..
     - |
