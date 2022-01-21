@@ -15,27 +15,22 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-phases (water air);
+phases (dispersed continuous);
 
-water
-{
-    transportModel  Newtonian; //at 21.5C
-    nu 0.0;         //nu              0.968e-06;
-    rho             997.882; 
-}
-
-air
+dispersed
 {
     transportModel  Newtonian;
-    nu 0.0;         //nu              1.52e-05;
-    rho             1.198;
+    nu              1.0e-6;
+    rho             1000.0; 
 }
 
-sigma               0.07275; //at 21.5C
+continuous
+{
+    transportModel  Newtonian;
+    nu              1.48e-5;
+    rho             1.0;
+}
+
+sigma               0.07275;
 
 // ************************************************************************* //
-/* Water
-temp[°C]  Dyn. Viscosity [mPa.s] 	Kin. Viscosity [mm²/s]  density[g/cm³]
-21 	       0.9775 	                 0.9795 	             0.998
-22 	       0.9544 	                 0.9565 	             0.9978 
-*/

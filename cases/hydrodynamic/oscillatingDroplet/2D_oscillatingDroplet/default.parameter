@@ -1,3 +1,29 @@
-RESOLUTION  RESOLUTION_not_set;
-DELTA_T     DELTA_T_not_set;
-solver      solver_not_set;
+// Default values for parameters.
+// Some of the specified values do not work and will cause
+// errors for methods that do use them.
+// This is intended. The purpose of this file is that
+// a parameter file only needs to specify those
+// parameters that are actually used/varied in a study.
+//
+// In addition, some parameters that are identical for all studies,
+// but required as parameters for other reasons, are given here.
+
+// Parameters identical for all studies
+DOMAIN_LENGTH               0.005;
+SCALE_CAPILLARY_DELTA_T     1.0;
+
+
+// Parameters set to invalid feault values
+// General parameters
+FLUID_PAIRING   none;
+RESOLUTION      none;
+//DELTA_T         none;
+
+// SMCI/A initialization parameters
+REL_VOLUME_ERROR    none;
+
+// Pandora parameters
+N_MARKER_AVERAGES           none;
+N_NORMAL_AVERAGES           none;
+N_CURVATURE_EXTENSIONS      none;
+N_CURVATURE_REGULARISATIONS none;

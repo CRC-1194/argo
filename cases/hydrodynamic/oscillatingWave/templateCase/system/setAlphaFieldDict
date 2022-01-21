@@ -15,7 +15,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-field       alpha.water;
+field       alpha.dispersed;
 type        sin;
 direction   (1 0 0);
 up          (0 0 1);

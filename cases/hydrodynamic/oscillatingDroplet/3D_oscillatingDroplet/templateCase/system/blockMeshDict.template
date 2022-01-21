@@ -17,11 +17,11 @@ FoamFile
 scale   1;
 
 x1 -0.0025;
-x2 0.0025;
+x2 #calc "$x1 + |-DOMAIN_LENGTH-|";
 y1 -0.0025;
-y2 0.0025;
+y2 #calc "$y1 + |-DOMAIN_LENGTH-|";
 z1 -0.0025;
-z2 0.0025;
+z2 #calc "$z1 + |-DOMAIN_LENGTH-|";
 nx |-RESOLUTION-|;
 ny |-RESOLUTION-|;
 nz |-RESOLUTION-|;

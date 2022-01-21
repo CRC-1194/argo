@@ -16,14 +16,14 @@ FoamFile
 
 scale   1;
 
-L   0.0026;
+L   |-DOMAIN_LENGTH-|;
 nx  |-RESOLUTION-|;
 
 y1  -.00004;
 y2  .00004;
 ny  1;
 
-H   0.0026;
+H   |-DOMAIN_LENGTH-|;
 nz  |-RESOLUTION-|;
 
 vertices
