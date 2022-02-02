@@ -32,7 +32,10 @@ License
 #include "triSurfaceSearch.H"
 #include "triSurfaceTools.H"
 
+#include "IntersectionCriteria.hpp"
 #include "insideOutsidePropagation.hpp"
+
+#include <algorithm>
 
 namespace Foam::TriSurfaceImmersion
 {
@@ -89,13 +92,171 @@ void triSurfaceDistCalc::computeSignedDistances()
         searchDistCalc_.cellSqrSearchDist(),
         this->outOfNarrowBandValue());
 
+    findIntersectedCells();
+
     cellSignedDist_ =
         insideOutsidePropagation::propagateInsideOutside(cellSignedDist0_);
+
+    //findSpuriousSignSwitches();
+    fixSpuriousSigns();
 
     pointSignedDist_.primitiveFieldRef() = signedDistance(pointNearestTriangle_,
         this->mesh().points(),
         searchDistCalc_.pointSqrSearchDist(),
         this->outOfNarrowBandValue());
+}
+
+// TODO: copied here from SMCA volume fraction calculation for testing. If it works,
+// refactor! (TT)
+void triSurfaceDistCalc::findIntersectedCells()
+{
+    const auto& centres = this->mesh().C();
+    const auto& points = this->mesh().points();
+    const auto& meshCellPoints = this->mesh().cellPoints();
+
+    forAll(cellNearestTriangle_, cellI)
+    {
+        auto distSqr = pow(cellSignedDist0_[cellI], 2.0);
+
+        if
+        (
+            cellNearestTriangle_[cellI].hit()
+            &&
+            considerIntersected(centres[cellI], distSqr, meshCellPoints[cellI],
+                points, std::vector<scalar>{}, boundingBallCriterion{})
+        )
+        {
+            isInterfaceCell_[cellI] = true;
+        }
+        else
+        {
+            isInterfaceCell_[cellI] = false;
+        }
+    }
+}
+
+std::vector<label> triSurfaceDistCalc::findSpuriousSignSwitches()
+{
+    std::vector<label> signSwitchFaces{};
+
+    const auto& o = this->mesh().owner();
+    const auto& n = this->mesh().neighbour();
+
+    forAll(n, fid)
+    {
+        auto flag = !isInterfaceCell_[o[fid]] && !isInterfaceCell_[n[fid]];
+        if (flag && (cellSignedDist_[o[fid]]*cellSignedDist_[n[fid]] < 0.0))
+        {
+            signSwitchFaces.push_back(fid);
+        }
+    }
+
+    Info<< "There are " << signSwitchFaces.size() << " spurious cells with sign switches."
+        << endl;  
+
+    return signSwitchFaces;
+}
+
+
+void triSurfaceDistCalc::fixSpuriousSigns()
+{
+    auto switchFaces = findSpuriousSignSwitches();
+    const label maxFixIterations = 100;
+    label count = 0;
+
+    const auto& owner = this->mesh().owner();
+    const auto& neighbour = this->mesh().neighbour();
+    const auto& cellToVertices = this->mesh().cellPoints();
+    const auto& vertexToCells = this->mesh().pointCells();
+    const auto& V = this->mesh().V();
+
+    while ((!switchFaces.empty()) && (count != maxFixIterations))
+    {
+        for (auto fid : switchFaces)
+        {
+            auto oid = owner[fid];
+            auto nid = neighbour[fid];
+
+            std::vector<label> ownerCells{};
+            std::vector<label> neighbourCells{};
+
+            for (auto vid : cellToVertices[oid])
+            {
+                for (auto cid : vertexToCells[vid])
+                {
+                    ownerCells.push_back(cid);
+                }
+            }
+
+            for (auto vid : cellToVertices[nid])
+            {
+                for (auto cid : vertexToCells[vid])
+                {
+                    neighbourCells.push_back(cid);
+                }
+            }
+
+            // Remove duplicates from cell ID lists
+            std::sort(ownerCells.begin(), ownerCells.end());
+            std::sort(neighbourCells.begin(), neighbourCells.end());
+
+            auto last = std::unique(ownerCells.begin(), ownerCells.end());
+            ownerCells.erase(last, ownerCells.end());
+            last = std::unique(neighbourCells.begin(), neighbourCells.end());
+            neighbourCells.erase(last, neighbourCells.end());
+
+            // Create volume weighted vote on the sign to choose
+            scalar ownerSignWeight = 0.0;
+            scalar neighbourSignWeight = 0.0;
+
+            for (auto cid : ownerCells)
+            {
+                if (isInterfaceCell_[cid])
+                {
+                    continue;
+                }
+                ownerSignWeight += V[cid]*sign(cellSignedDist_[cid])*pos(cellSignedDist_[oid]
+                                        *cellSignedDist_[cid]);
+            }
+
+            for (auto cid : neighbourCells)
+            {
+                if (isInterfaceCell_[cid])
+                {
+                    continue;
+                }
+                neighbourSignWeight += V[cid]*sign(cellSignedDist_[cid])*pos(cellSignedDist_[nid]
+                                        *cellSignedDist_[cid]);
+            }
+
+
+            // Case 1: switch sign for the face neighbour
+            if (mag(ownerSignWeight) > mag(neighbourSignWeight))
+            {
+                cellSignedDist_[nid] *= -1.0;
+                cellSignedDist0_[nid] *= -1.0; 
+            }
+            // Case 2: switch sign for the face owner
+            else if (mag(ownerSignWeight) < mag(neighbourSignWeight))
+            {
+                cellSignedDist_[oid] *= -1.0; 
+                cellSignedDist0_[oid] *= -1.0;
+            }
+        }
+
+        switchFaces = findSpuriousSignSwitches();
+        ++count;
+    }
+
+    // Debugging
+    switchFaces = findSpuriousSignSwitches();
+    spuriousCells_ = 0.0;
+
+    for (auto fid : switchFaces)
+    {
+        spuriousCells_[owner[fid]] = 1.0;
+        spuriousCells_[neighbour[fid]] = 1.0;
+    }
 }
 
 
@@ -107,7 +268,16 @@ triSurfaceDistCalc::triSurfaceDistCalc(
                                                       this->narrowBandWidth()},
       surface_{mesh.time().path() + "/" + configDict.get<fileName>("surfaceFile")},
       surfaceSearch_{surface_}, vertexNormals_{
-                                    surface_.nPoints(), vector{0, 0, 0}}
+                                    surface_.nPoints(), vector{0, 0, 0}},
+      isInterfaceCell_(mesh.nCells()),
+      spuriousCells_{IOobject("spuriousCells",
+                          mesh.time().timeName(),
+                          mesh,
+                          IOobject::NO_READ,
+                          IOobject::NO_WRITE),
+          mesh,
+          dimensionedScalar("spuriousCells", dimless, 0),
+          "zeroGradient"}
 {
     computeVertexNormals();
     computeSignedDistances();
@@ -265,6 +435,7 @@ void triSurfaceDistCalc::writeFields() const
 {
     this->signedDistanceCalculator::writeFields();
     searchDistCalc_.writeFields();
+    spuriousCells_.write();
 }
 
 

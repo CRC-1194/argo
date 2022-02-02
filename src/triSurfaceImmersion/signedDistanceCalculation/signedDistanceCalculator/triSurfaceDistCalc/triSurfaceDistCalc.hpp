@@ -59,6 +59,8 @@ SourceFiles
 
 #include "searchDistanceCalculator.hpp"
 
+#include <vector>
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -84,6 +86,12 @@ class triSurfaceDistCalc : public signedDistanceCalculator
     //- Vertex normals computed as angle weighted average of adjacent triangles
     vectorField vertexNormals_;
 
+    //- Flag indicating whether a cell might be intersected by the interface
+    std::vector<bool> isInterfaceCell_;
+
+    //- For debugging: write field indicating all cells sharing a face with spurious
+    //  sign switches
+    volScalarField spuriousCells_;
 
     // Private Member Functions
     //- Compute normals at vertices from triangle normals
@@ -91,6 +99,17 @@ class triSurfaceDistCalc : public signedDistanceCalculator
 
     //- Compute signed distances at cell centres and cell corners
     void computeSignedDistances();
+    
+    //- Find all cells that may be intersected by the interface using
+    //  bounding balls.
+    void findIntersectedCells();
+
+    //- Plausibility check: find neighbouring, non-interface cells which
+    //  have a different sign.
+    std::vector<label> findSpuriousSignSwitches();
+
+    //- Heuristic approach to fix spurious signs by majority vote
+    void fixSpuriousSigns();
 
 public:
 
