@@ -9,12 +9,12 @@ values
 
     N_PROPAGATIONS
     (
-        0 
+        3 
     );
 
     N_AVERAGES
     (
-        0 
+        3 
     );
 
     N_EXTENSIONS

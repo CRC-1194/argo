@@ -113,6 +113,15 @@ int main(int argc, char *argv[])
         #include "alphaCourantNo.H"
         #include "setDeltaT.H"
 
+        // In the first time step
+        //if (runTime.timeIndex() == 0)
+        //{
+            //// Solve the Young-Laplace equation
+            //// for a better estimate fo the 
+            //// initial pressure.
+            //#include "YoungLaplaceEqn.H"
+        //}
+
         ++runTime;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;

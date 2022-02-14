@@ -56,10 +56,13 @@ maxAlphaCo      0.5;
 
 maxDeltaT       1e6;
 
-OptimisationSwitches
-{
-    fileHandler collated;
-}
+// Debugging: 
+// - must be turned off for visualizing p_rgh at 0
+//   after the solution of the YoungLaplaceEqn
+//OptimisationSwitches
+//{
+//    fileHandler collated;
+//}
 
 functions 
 {
