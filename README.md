@@ -12,7 +12,7 @@ The "argo" project is an [OpenFOAM](https://develop.openfoam.com/Development/ope
 
 ## Publications 
 
-[1] [Tolle, T., Gründing, D., Bothe, D., & Marić, T. (2021). Computing volume fractions and signed distances from arbitrary surfaces on unstructured meshes. arXiv preprint arXiv:2101.08511.](https://arxiv.org/abs/2101.08511)
+[1] Tolle, T., Gründing, D., Bothe, D., & Marić, T. (2021). triSurfaceImmersion: Computing volume fractions and signed distances from triangulated surfaces immersed in unstructured meshes [https://doi.org/10.1016/j.cpc.2021.108249](https://doi.org/10.1016/j.cpc.2021.108249) [arxiv](https://arxiv.org/abs/2101.08511)
 
 [2] [Hartmann, M., Fricke, M., Weimar, L., Gründing, D., Marić, T., Bothe, D., & Hardt, S. (2021). Breakup Dynamics of Capillary Bridges on Hydrophobic Stripes. International Journal of Multiphase Flow, 103582.](https://doi.org/10.1016/j.ijmultiphaseflow.2021.103582)
 
