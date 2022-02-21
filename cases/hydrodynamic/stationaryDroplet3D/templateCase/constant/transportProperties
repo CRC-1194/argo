@@ -15,23 +15,23 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-phases          (water air);
+phases          (dispersed continuous);
 
-water
+dispersed
 {
     transportModel  Newtonian;
     nu              1e-06;
     rho             1000;
 }
 
-air
+continuous
 {
     transportModel  Newtonian;
     nu              1.48e-05;
     rho             1;
 }
 
-sigma           0.072;
+sigma           0.07275;
 
 
 // ************************************************************************* //

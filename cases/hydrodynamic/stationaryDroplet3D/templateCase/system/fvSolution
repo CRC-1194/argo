@@ -77,7 +77,7 @@ pandora
     curvature
     {
         type smoothedMarker;
-        markerField alpha.water;
+        markerField alpha.dispersed;
         markerFieldTolerance 1e-02; 
         nMarkerAverages 4; 
         nNormalAverages 8; 

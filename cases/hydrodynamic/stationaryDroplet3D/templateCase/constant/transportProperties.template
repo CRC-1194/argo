@@ -1,0 +1,74 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases          (dispersed continuous);
+
+<!--(if FLUID_PAIRING=="water-air")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              1.0e-06;
+        rho             1000.0;
+    }
+
+    continuous
+    {
+        transportModel  Newtonian;
+        nu              1.48e-05;
+        rho             1.0;
+    }
+
+    sigma               72.75e-3;
+
+<!--(elif FLUID_PAIRING=="oil_novec7500-water")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              0.77e-6;
+        rho             1614.0;
+    }
+
+    continuous 
+    {
+        transportModel  Newtonian;
+        nu              1.0e-06;
+        rho             1000.0;
+    }
+
+    sigma               49.5e-3;
+
+<!--(elif FLUID_PAIRING=="gearoil-air")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              270.5e-6;
+        rho             888.0;
+    }
+
+    continuous
+    {
+        transportModel  Newtonian;
+        nu              1.48e-05;
+        rho             1.0;
+    }
+
+    sigma               30.0e-3;
+
+<!--(end)-->
+
+
+// ************************************************************************* //

@@ -17,7 +17,7 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     interIsoPandoraFoam;
+application     |-solver-|;
 
 startFrom       startTime;
 
@@ -27,11 +27,11 @@ stopAt          endTime;
 
 endTime         0.1;
 
+deltaT          |-DELTA_T-|;
+
 writeControl    timeStep;
 
-writeInterval   1;
-
-deltaT          1e-05;
+writeInterval   1000;
 
 purgeWrite      0;
 
@@ -56,27 +56,43 @@ maxAlphaCo      0.5;
 
 maxDeltaT       1e6;
 
+//libs ("libtwoPhaseValidation.so");
 
 functions 
 {
     minMaxU 
     {
         type        fieldMinMax;
-        libs        ("libfieldFunctionObjects.so");
+        libs        (fieldFunctionObjects);
         writeToFile yes;
         log         yes;
         location    yes;
         mode        magnitude;
         fields      (U);
     }
+    /* only works for solvers providing the field 'cellCurvature'
     curvatureEval
     {
         type                curvatureEvaluation;
         libs                ("libpandora");
         vofFieldName        alpha.dispersed;
         curvatureFieldName  cellCurvature;
-        exactCurvature      4000.0;
+        exactCurvature      2000.0;
     }
+    */
+    /* Requires debugging of 'libtwoPhaseValidation.so'
+    evaluation
+    {
+        type                        stationaryDroplet;
+        phaseIndicatorFieldName     alpha.dispersed;
+        alphaValueDispersedPhase    1.0;
+        velocityFieldName           U;
+        pressureFieldName           p;
+        dropletPhaseName            continuous;
+        radius                      0.001;
+        centre                      (0.005 0.005 0.005);
+    }
+    */
 }
 
 // ************************************************************************* //
