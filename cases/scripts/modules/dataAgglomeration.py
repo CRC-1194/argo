@@ -230,14 +230,12 @@ class multiindex_assembler:
 
         # Read the parameters and their corresponding set of values
         for parameter in variation_data["values"]:
-            # Do not keep the solver. The study has not necessarily been executed
-            #   with the one mentioned in the parameter file (TT)
-            if parameter == "solver":
-                continue
 
+            # NOTE: the parameter _solver_ is always present. However, 
+            # there is no guarantee that the results have been produced
+            # with the mentioned solver
             values = variation_data["values"][parameter]
-            # Keep all parameter values even if they are constant (TT)
-            #if len(values) > 1:
+
             # Type check for values: PyFoam may read some of the parameter values,
             # e.g. logical switches (on/off), as non-hashable types which will
             # cause an error later when creating the dataframe.
@@ -434,6 +432,11 @@ class data_agglomerator:
     def show_failed_variations(self):
         """Show a list of all variations present as directories but not containing valid data."""
         failed_variations = self.data_collector.failed_variations()
+
+        # Only print if there failed variants
+        if len(failed_variations) == 0:
+            return
+
         print("Variants without valid data:")
         print("----------------------------")
         print("#Variation | Reason")
