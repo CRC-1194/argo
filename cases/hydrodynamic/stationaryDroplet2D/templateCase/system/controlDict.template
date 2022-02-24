@@ -56,8 +56,6 @@ maxAlphaCo      0.5;
 
 maxDeltaT       1e6;
 
-//libs ("libtwoPhaseValidation.so");
-
 functions 
 {
     minMaxU 
@@ -66,7 +64,7 @@ functions
         libs        (fieldFunctionObjects);
         writeToFile yes;
         log         yes;
-        location    yes;
+        location    no;
         mode        magnitude;
         fields      (U);
     }
@@ -78,19 +76,6 @@ functions
         vofFieldName        alpha.water;
         curvatureFieldName  cellCurvature;
         exactCurvature      2000.0;
-    }
-    */
-    /* Requires debugging of 'libtwoPhaseValidation.so'
-    evaluation
-    {
-        type                        stationaryDroplet;
-        phaseIndicatorFieldName     alpha.dispersed;
-        alphaValueDispersedPhase    1.0;
-        velocityFieldName           U;
-        pressureFieldName           p;
-        dropletPhaseName            continuous;
-        radius                      0.001;
-        centre                      (0.005 0.005 0.0);
     }
     */
 }
