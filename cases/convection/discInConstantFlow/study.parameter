@@ -3,7 +3,7 @@ values
 
 
 	DELTA_T ( 1e-5 );
-	RESOLUTION_X ( 64 128 256 );
+	RESOLUTION_X ( 90 180 360 );
 	solver ( interFoam interIsoFoam );
 
 }

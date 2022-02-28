@@ -17,14 +17,14 @@ FoamFile
 scale   1;
 
 L   3;
-nx  |-RESOLUTION_X-|;//200
+nx  |-RESOLUTION_X-|;
 
 y1  -.0125;
 y2  .0125;
 ny  1;
 
 H   2;
-nz  #calc "|-RESOLUTION_X-|*3.0/5.0"; //120
+nz  #calc "|-RESOLUTION_X-|*2.0/3.0";
 
 vertices
 (
