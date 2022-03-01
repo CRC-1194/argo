@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH -J jetCrossFlow
+# #SBATCH -o jetCrossFlow.out.%j
+# #SBATCH -e jetCrossFlow.err.%j
+#SBATCH -n 24
+#SBATCH -c 1
+#SBATCH --mem-per-cpu=20000
+#SBATCH -t 23:00:00
+#SBATCH -A special00004
+# #SBATCH --mail-user=jliu.fb16@gmail.com
+# #SBATCH --mail-type=all
+
+#preparePar
+#mpirun -n 24 cartesianMesh -parallel
+#cartesianMesh
+#mpirun -n 24 topoSet -parallel
+#mpirun -n 24 createPatch -overwrite -parallel
+#reconstructParMesh -constant -fullMatch
+#decomposePar -force
+
+# decomposePar -case /work/groups/da_mma_b/jun/argo/cases/hydrodynamic/jetCrossFlow -fileHandler collated
+mpirun -np 24 interIsoFoam -parallel -case /work/groups/da_mma_b/jun/argo/cases/hydrodynamic/jetCrossFlow # -fileHandler collated
+#touch jetCrossFlow.foam
