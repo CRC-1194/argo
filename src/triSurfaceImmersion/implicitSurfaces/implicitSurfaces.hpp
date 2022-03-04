@@ -62,15 +62,23 @@ public:
     // Static Data Members
     TypeName("implicitSurface");
 
-    declareRunTimeSelectionTable(
-        autoPtr, implicitSurface, ITstream, (ITstream & is), (is));
+    declareRunTimeSelectionTable
+    (
+        autoPtr, 
+        implicitSurface, 
+        ITstream, 
+        (ITstream & is), 
+        (is)
+    );
 
-    declareRunTimeSelectionTable(autoPtr,
+    declareRunTimeSelectionTable
+    (
+        autoPtr,
         implicitSurface,
         Dictionary,
         (const dictionary& configDict),
-        (configDict));
-
+        (configDict)
+    );
 
     // Constructors
     //- Default constructor

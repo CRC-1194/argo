@@ -72,18 +72,20 @@ autoPtr<signedDistanceCalculator> signedDistanceCalculator::New(
 {
     const word name = configDict.get<word>("surfaceType");
 
-    DictionaryConstructorTable::iterator cstrIter =
-        DictionaryConstructorTablePtr_->find(name);
+    auto* ctorPtr = DictionaryConstructorTable(name);
 
-    if (cstrIter == DictionaryConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
-        FatalErrorIn("signedDistanceCalculator::New(const word& name)")
-            << "Unknown signedDistanceCalculator type " << name << nl << nl
-            << "Valid signedDistanceCalculators are : " << endl
-            << DictionaryConstructorTablePtr_->sortedToc() << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            configDict,
+            "signedDistanceCalculator",
+            name,
+            *DictionaryConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    return autoPtr<signedDistanceCalculator>(cstrIter()(configDict, mesh));
+    return autoPtr<signedDistanceCalculator>(ctorPtr(configDict,mesh));
 }
 
 
