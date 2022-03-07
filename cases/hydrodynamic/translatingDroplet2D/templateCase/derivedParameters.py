@@ -38,13 +38,18 @@ def computeDeltaT(values):
     # Coefficient to scale the capillary time step size
     sf = values["SCALE_CAPILLARY_DELTA_T"]
 
+    # For translating droplet: compute deltat for the prescribed translation velocity
+    cfl = values["TARGET_CFL"]
+    vref = values["TRANSLATION_VELOCITY"]
+    cfl_delta_t = cfl*h/vref
+
     # The computation follows eq. (18) in Popinet 2009 and
     # eq. in (43) Denner & van Wachem 2015, respectively.
     capillary_delta_t = 1e15
     if sigma > 0.0:
         capillary_delta_t = sf*math.sqrt((rho_droplet + rho_ambient)*math.pow(h,3.0)/(2.0*math.pi*sigma))
 
-    return capillary_delta_t
+    return min(capillary_delta_t, cfl_delta_t)
 
 DELTA_T = computeDeltaT(locals())
 

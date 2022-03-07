@@ -12,6 +12,7 @@
 DOMAIN_LENGTH               0.01;
 SCALE_CAPILLARY_DELTA_T     1.0;
 TRANSLATION_VELOCITY        1.0;
+TARGET_CFL                  0.2;
 
 
 // Parameters set to invalid feault values

@@ -14,7 +14,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fieldName       alpha.water;
+fieldName       alpha.dispersed;
 algorithm       SMCA;
 relError        |-REL_VOLUME_ERROR-|;
 

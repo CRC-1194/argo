@@ -68,7 +68,7 @@ functions
         field           U;
 
         // Optional entries (runtime modifiable)
-        offset                  (-1 0 0 );
+        refValue                (1 0 0 );
         interpolationScheme     cell;
     
         // Optional (inherited) entries
