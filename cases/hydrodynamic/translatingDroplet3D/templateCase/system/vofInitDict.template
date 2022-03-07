@@ -1,39 +1,32 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2.2.x                                 |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
     format      ascii;
-    class       pointScalarField;
-    location    "0";
-    object      pointSignedDistance;
+    class       dictionary;
+    object      vofInitDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 1 0 0 0 0 0];
+fieldName       alpha.dispersed;
+algorithm       SMCA;
+relError        |-REL_VOLUME_ERROR-|;
 
-internalField   uniform 1e+15;  
-
-boundaryField
+distCalc
 {
-    inlet
-    {
-        type            zeroGradient;
-    }
-    outlet
-    {
-        type            zeroGradient;
-    }
-    mantle
-    {
-        type            zeroGradient;
-    }
+    surfaceType     levelSet;
+    surface         sphere;
+    center          (0.002 0.005 0.005);
+    radius          0.001;
+    orientation     inward;
+    narrowBandWidth 1.0;
+    bulkValue       0.0;
 }
-
 
 // ************************************************************************* //

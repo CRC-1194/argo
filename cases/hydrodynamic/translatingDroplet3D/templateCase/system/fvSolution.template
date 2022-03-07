@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2.3.0                                 |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -19,114 +19,83 @@ solvers
 {
     "alpha.*"
     {
-        // This required bei InterIsoRhoFoam, but not by InterIsoFoam, why? (TT)
-        nAlphaCorr      2;
-
-        isoFaceTol      1e-8;
-        surfCellTol     1e-8;
+    <!--(if solver=="interFoam")-->
+        nAlphaCorr      1;
+        nAlphaSubCycles 2;
+        cAlpha          1;
+    <!--(else)-->
+        isoFaceTol      1e-08;
+        surfCellTol     1e-08;
         nAlphaBounds    3;
         snapTol         0;
         clip            false;
         cAlpha          1;
         nAlphaSubCycles 1;
-        reconstructionScheme plicRDF;        
+        reconstructionScheme plicRDF; 
+    <!--(end)-->
     }
 
-    pcorr
+    "pcorr.*"
     {
         solver          PCG;
         preconditioner  DIC;
-        tolerance       1e-12;
+        tolerance       1e-10;
         relTol          0;
-    }
-
-    pcorrFinal
-    {
-        $pcorr;
     }
 
     p_rgh
     {
-        solver          PCG;
-        preconditioner  DIC;
-        tolerance       1e-12;
-        relTol          0.0;
-        minIter         10;
+        solver          GAMG;
+        smoother        DICGaussSeidel;
+        tolerance       1e-09;
+        relTol          0.05;
     }
 
     p_rghFinal
     {
         $p_rgh;
+        tolerance       1e-09;
+        relTol          0;
     }
 
     U
     {
-        solver          PBiCG;
+        solver          PBiCGStab;
         preconditioner  DILU;
-        tolerance       1e-12;
-        relTol          0.0;
-        minIter         3;
-    }
-
-    UFinal
-    {
-        $U; 
-    }
-
-    rho 
-    {
-        solver diagonal;
-    }
-
-    rhoFinal
-    {
-        $rho;
+        tolerance       1e-08;
+        relTol          0;
     }
 }
 
-// lentSC
+
 PIMPLE
 {
-    momentumPredictor   no;
-    nOuterCorrectors    @!n_outer_correctors!@;
-    nCorrectors         @!n_correctors!@;
+    momentumPredictor no;
+    nOuterCorrectors  2;
+    nCorrectors       3;
     nNonOrthogonalCorrectors 0;
-
-    // TODO (TT): re-enable once LENT is ported into Argo
-    /*
-    residualControl
-    {
-        p_rgh
-        {
-                tolerance  1e-12;
-                relTol     0;
-                resType    absolute;
-                norm       Linf;
-        }
-
-        U
-        {
-                tolerance  1e-12;
-                relTol     0;
-                resType    absolute;
-                norm       Linf;
-        }
-     }
-
-     // lentSC specific parameters
-     phiChangeTolerance     @!phi_change_tolerance!@;
-     absPhiChangeTolerance  @!abs_phi_change_tolerance!@;
-     */
 }
 
-relaxationFactors
+pandora
 {
-    fields
+    curvature
     {
+        type smoothedMarker;
+        markerField alpha.water;
+        nMarkerAverages @!N_MARKER_AVERAGES!@; 
+        nNormalAverages @!N_NORMAL_AVERAGES!@; 
     }
-    equations
+    curvatureExtension
     {
-        ".*" 1;
+        //type noExtension;
+        type averageExtension;
+        nExtensionIterations @!N_CURVATURE_EXTENSIONS!@; 
+    }
+    curvatureRegularisation
+    {
+        //type noRegularisation;
+        type tangentialAverage;
+        nAveragingIterations @!N_CURVATURE_REGULARISATIONS!@; 
     }
 }
 

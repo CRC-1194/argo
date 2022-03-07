@@ -11,25 +11,18 @@ FoamFile
     format      ascii;
     class       volScalarField;
     location    "0";
-    object      signedDistance;
+    object      alpha.dispersed;
 }
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 1 0 0 0 0 0];
+dimensions      [0 0 0 0 0 0 0];
 
-internalField   uniform 1e+15;  
+internalField   uniform 1;  
 
 boundaryField
 {
-    mantle
-    {
-        type            zeroGradient;
-    }
-    outlet
-    {
-        type            zeroGradient;
-    }
-    inlet
+    "(inlet|outlet|mantle)"
     {
         type            zeroGradient;
     }

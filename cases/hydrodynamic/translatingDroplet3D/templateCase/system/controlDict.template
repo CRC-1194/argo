@@ -1,41 +1,43 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
-|  \\    /   O peration     | Version:  1.6-ext                               |
-|   \\  /    A nd           | Web:      www.extend-project.de                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
+
 FoamFile
 {
-    version     2.0;
-    format      ascii;
-    class       dictionary;
-    location    "system";
-    object      controlDict;
+    version         2.0;
+    format          ascii;
+    class           dictionary;
+    location        "system";
+    object          controlDict;
 }
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     lentFoam;
+application     |-solver-|;
 
 startFrom       startTime;
 
-startTime       0;
+startTime       0.0;
 
 stopAt          endTime;
 
-endTime         @!end_time!@;
+endTime         0.015;
 
-deltaT          @!delta_t!@;
+deltaT          |-DELTA_T-|;
 
-writeControl    runTime;
+writeControl    timeStep;
 
-writeInterval   @!write_interval!@;
+writeInterval   20;
 
-purgeWrite      2;
+purgeWrite      0;
 
-writeFormat     binary;
+writeFormat     ascii;
 
-writePrecision  6;
+writePrecision  14;
 
 writeCompression off;
 
@@ -43,38 +45,59 @@ timeFormat      general;
 
 timePrecision   6;
 
+graphFormat     raw;
+
 runTimeModifiable yes;
 
 adjustTimeStep  no;
 
-maxCo 0.5; 
-maxAlphaCo 0.5;
+maxCo           1e6;
+maxAlphaCo      0.5;
 
-maxDeltaT       0.01;
+maxDeltaT       1e6;
 
-libs ("libtwoPhaseValidation.so");
-
-functions
+functions 
 {
-    volumeConservation 
-    {
-        type                fieldErrors;
-        fieldName           alpha.water;
-        alphaDroplet        0.0;
-    }
+    velocityErrorField
+    {    
+        // Mandatory entries (unmodifiable)
+        type            reference;
+        libs            (fieldFunctionObjects);
 
-    evaluation
-    {
-        type                        stationaryDroplet;
-        phaseIndicatorFieldName     alpha.water;
-        alphaValueDispersedPhase    0.0;
-        velocityFieldName           U;
-        pressureFieldName           p;
-        dropletPhaseName            air;
-        radius                      @!radius!@;
-        centre                      (@!x_centre!@ @!y_centre!@ @!z_centre!@);
-        backgroundVelocity          (0 0 @!z_velocity!@);
+        // Mandatory (inherited) entries (runtime modifiable)
+        field           U;
+
+        // Optional entries (runtime modifiable)
+        refValue                (1 0 0 );
+        interpolationScheme     cell;
+    
+        // Optional (inherited) entries
+        result          UError;
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    timeStep;
+        writeInterval   20;
     }
+    minMaxU 
+    {
+        type        fieldMinMax;
+        libs        (fieldFunctionObjects);
+        writeToFile yes;
+        log         yes;
+        location    no;
+        mode        magnitude;
+        fields      (UError);
+    }
+    /* only works for solvers providing the field 'cellCurvature'
+    curvatureEval
+    {
+        type                curvatureEvaluation;
+        libs                ("libpandora");
+        vofFieldName        alpha.water;
+        curvatureFieldName  cellCurvature;
+        exactCurvature      2000.0;
+    }
+    */
 }
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// ************************************************************************* //

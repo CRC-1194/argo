@@ -14,30 +14,20 @@ FoamFile
     object      U;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-zVelocity @!z_velocity!@;
-
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (0 0 $zVelocity);
+internalField   uniform (|-TRANSLATION_VELOCITY-| 0 0);
 
-// NOTE: the boundary conditions differ from those given in Popinet2009.
-// In that publication, symmetry and periodic boundary conditions
-// are used.
 boundaryField
 {
-    mantle
+    "(inlet|mantle)"
     {
         type            fixedValue;
-        value           uniform (0 0 $zVelocity);
+        value           uniform (|-TRANSLATION_VELOCITY-| 0 0);
     }
     outlet
     {
         type            zeroGradient;
-    }
-    inlet
-    {
-        type            fixedValue;
-        value           uniform (0 0 $zVelocity);
     }
 }
 

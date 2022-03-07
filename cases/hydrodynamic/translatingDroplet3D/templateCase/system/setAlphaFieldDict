@@ -15,21 +15,9 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// TODO (TT): talk with Jun why the division by 400 and calclulation of
-// centre position. It is already defined in the parameter file. Disable for now.
-/*
-Radius  @!radius!@;
-x_center #calc "$Radius * 2 / 400";
-y_center #calc "$Radius * 2 / 400";
-z_center #calc "$Radius * 2.5 / 400";
-*/
-
-field           alpha.water;
-invertAlpha     true;
+field           alpha.dispersed;
 type            sphere;
-radius          @!radius!@;
-origin          (@!x_centre!@ @!y_centre!@ @!z_centre!@);
-//radius          #calc "$Radius / 400";
-//origin          ($x_center $y_center $z_center);
+radius          0.001;
+origin          (0.002 0.005 0.005);
 
 // ************************************************************************* //
