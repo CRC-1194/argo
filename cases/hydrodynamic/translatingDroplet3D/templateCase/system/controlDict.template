@@ -76,9 +76,10 @@ functions
         executeControl  timeStep;
         executeInterval 1;
         writeControl    timeStep;
-        writeInterval   20;
+        writeInterval   $writeInterval;
     }
-    minMaxU 
+
+    minMaxUError 
     {
         type        fieldMinMax;
         libs        (fieldFunctionObjects);
@@ -88,6 +89,71 @@ functions
         mode        magnitude;
         fields      (UError);
     }
+
+    // Auxilliary field for function object to operate on
+    magUError
+    {
+        // Mandatory entries (unmodifiable)
+        type            mag;
+        libs            (fieldFunctionObjects);
+
+        // Mandatory (inherited) entries (runtime modifiable)
+        field           UError;
+
+        // Optional (inherited) entries
+        result          magUError;
+        writeControl    timeStep;
+        writeInterval   $writeInterval;
+    }
+
+    l1normUError
+    {
+        type            volFieldValue;
+        libs            (fieldFunctionObjects);
+
+        writeControl    timeStep;
+        writeInterval   1;
+        writeFields     false;
+        log             true;
+
+        operation       average;
+        postOperation   none;
+
+        fields          (magUError);
+    }
+
+    // Auxilliary field for function object to operate on
+    magSqrUError
+    {
+        // Mandatory entries (unmodifiable)
+        type            magSqr;
+        libs            (fieldFunctionObjects);
+
+        // Mandatory (inherited) entries (runtime modifiable)
+        field           UError;
+
+        // Optional (inherited) entries
+        result          magSqrUError;
+        writeControl    timeStep;
+        writeInterval   $writeInterval;
+    }
+
+    l2normUError
+    {
+        type            volFieldValue;
+        libs            (fieldFunctionObjects);
+
+        writeControl    timeStep;
+        writeInterval   1;
+        writeFields     false;
+        log             true;
+
+        operation       average;
+        postOperation   sqrt;
+
+        fields          (magSqrUError);
+    }
+
     /* only works for solvers providing the field 'cellCurvature'
     curvatureEval
     {

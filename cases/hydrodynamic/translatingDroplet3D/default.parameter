@@ -15,7 +15,7 @@ TRANSLATION_VELOCITY        1.0;
 TARGET_CFL                  0.2;
 
 
-// Parameters set to invalid feault values
+// Parameters set to invalid default values
 // General parameters
 FLUID_PAIRING   none;
 RESOLUTION      none;

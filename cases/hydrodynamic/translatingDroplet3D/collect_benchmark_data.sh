@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 
-# Remove everything except the header from the data files.
-# Remove the first whitespace so the header is read correctly by pandas
+# Fuse data from different function objects into a single csv file for
+# further agglomeration
 for DIR in benchmark-inter*/;
 do
-    cd $DIR/postProcessing/minMaxU/0
-    tail -n +2 fieldMinMax.dat > fieldMinMax_fixed_header.dat
-    sed -i 's/ //' fieldMinMax_fixed_header.dat
-    cd ../../../../
+    cd $DIR/postProcessing
+    python -c "import pandas as pd; \
+        dfmax = pd.read_csv('minMaxUError/0/fieldMinMax.dat', delim_whitespace=True, \
+                            comment='#', header=None, names=['time', 'min_UError', 'max_UError']); \
+        dfl1 = pd.read_csv('l1normUError/0/volFieldValue.dat', delim_whitespace=True, comment='#', header=None); \
+        dfl2 = pd.read_csv('l2normUError/0/volFieldValue.dat', delim_whitespace=True, comment='#', header=None); \
+        dfmax['l1norm_UError'] = dfl1[1]; \
+        dfmax['l2norm_UError'] = dfl2[1]; \
+        dfmax.to_csv('velocity_data.csv', index=False)"
+    cd ../../
 done
 
 # Need to collect data for interFoam and interIsoFoam separately due to different case base names.
-argo-agglomerate-study-data.py benchmark-interFoam-benchmarkpaper_00000_templateCase/postProcessing/minMaxU/0/fieldMinMax_fixed_header.dat -p benchmarkpaper.parameter -f translating_droplet_3D_interFoam
-argo-agglomerate-study-data.py benchmark-interIsoFoam-benchmarkpaper_00009_templateCase/postProcessing/minMaxU/0/fieldMinMax_fixed_header.dat -p benchmarkpaper.parameter -f translating_droplet_3D_interIsoFoam
+argo-agglomerate-study-data.py benchmark-interFoam-benchmarkpaper_00000_templateCase/postProcessing/velocity_data.csv -p benchmarkpaper.parameter -f translating_droplet_3D_interFoam
+argo-agglomerate-study-data.py benchmark-interIsoFoam-benchmarkpaper_00009_templateCase/postProcessing/velocity_data.csv -p benchmarkpaper.parameter -f translating_droplet_3D_interIsoFoam
