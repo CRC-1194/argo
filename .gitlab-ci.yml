@@ -1,11 +1,11 @@
-image: "openfoam-v2012_ubuntu-focal:2021-10-27-SMCIA-R1"
+image: "registry.gitlab.com/leia-methods/argo/openfoam-v2112_ubuntu-focal:2021-10-27-SMCIA-R1"
 
 .prepare_openfoam_and_binaries:
   before_script:
     ##
     ## Configure the OpenFOAM environment
     ## 
-    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
+    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
 
     ##
     ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
@@ -34,7 +34,7 @@ build_debug:
     ##
     ## Configure the OpenFOAM environment
     ##
-    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
+    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
 
     ##
     ## Build and install
@@ -49,7 +49,7 @@ build_release:
     ##
     ## Configure the OpenFOAM environment
     ##
-    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
+    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
 
     ##
     ## Build and install
@@ -153,7 +153,7 @@ cpc_2021_visualize:
 #    ##
 #    ## Configure the OpenFOAM environment
 #    ##
-#    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
+#    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
 #
 #    ##
 #    ## Process secondary data from applications in jupyter notebooks 

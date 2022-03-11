@@ -63,12 +63,9 @@ Foam::fieldError<GeomField>::New(
     scalar errorTolerance
 )
 {
-    // Get the RTS Table via the global object.
-    typename ScalarConstructorTable::iterator cstrIter =
-        ScalarConstructorTablePtr_->find(name);
+    auto* ctorPtr = ScalarConstructorTable(name);
 
-    // If the constructor pointer is not found in the table.
-    if (cstrIter == ScalarConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
         FatalErrorIn (
             "fieldError::New(const word&, const scalar)"
@@ -79,8 +76,7 @@ Foam::fieldError<GeomField>::New(
             << exit(FatalError);
     }
 
-    return autoPtr< fieldError<GeomField> > (cstrIter()(errorTolerance));
-
+    return Foam::autoPtr<Foam::fieldError<GeomField>>(ctorPtr(errorTolerance));
 }
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //

@@ -55,19 +55,20 @@ autoPtr<volumeFractionCalculator> volumeFractionCalculator::New(
     const dictionary& configDict, const fvMesh& mesh)
 {
     const word name = configDict.get<word>("algorithm");
+    auto* ctorPtr = DictionaryConstructorTable(name);
 
-    DictionaryConstructorTable::iterator cstrIter =
-        DictionaryConstructorTablePtr_->find(name);
-
-    if (cstrIter == DictionaryConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
-        FatalErrorIn("volumeFractionCalculator::New(const word& name)")
-            << "Unknown volumeFractionCalculator type " << name << nl << nl
-            << "Valid volumeFractionCalculators are : " << endl
-            << DictionaryConstructorTablePtr_->sortedToc() << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            configDict,
+            "volumeFractionCalculator",
+            name,
+            *DictionaryConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    return autoPtr<volumeFractionCalculator>(cstrIter()(configDict, mesh));
+    return autoPtr<volumeFractionCalculator>(ctorPtr(configDict, mesh));
 }
 
 

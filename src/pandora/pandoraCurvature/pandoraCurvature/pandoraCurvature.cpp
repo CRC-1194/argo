@@ -50,24 +50,20 @@ autoPtr<pandoraCurvature> pandoraCurvature::New
 {
     const word name = dict.subDict("curvature").get<word>("type"); 
 
-    // Find the constructor pointer for the model in the constructor table.
-    DictionaryConstructorTable::iterator cstrIter =
-        DictionaryConstructorTablePtr_->find(name);
+    auto* ctorPtr = DictionaryConstructorTable(name);
 
-    // If the constructor pointer is not found in the table.
-    if (cstrIter == DictionaryConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
-        FatalErrorIn(
-            "Foam::pandoraCurvature::New(const word&, const Dictionary&)" 
-        )   << "Unknown curvature model type "
-            << name << nl << nl
-            << "Valid curvature models are : " << endl
-            << DictionaryConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            dict,
+            "pandoraCurvature",
+            name,
+            *DictionaryConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    // Construct the model and return the autoPtr to the object. 
-    return autoPtr<pandoraCurvature> (cstrIter()(mesh, dict));
+    return autoPtr<pandoraCurvature>(ctorPtr(mesh, dict));
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
