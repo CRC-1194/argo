@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# Clean-up current working directory
+./Allclean
+
+# Loop over phycical parameters cases (C2 is default)
+for CASE in C1 C2
+do
+  # Prepare all running directories for mesh sensitivity study
+  for size in 160 # 640 320 160 80 40 20
+  do
+    # Set sizes
+    xsize=$size
+    zsize=1
+    ysize=`expr $xsize \* 2`
+
+    # Set constant time step corresponding to a roughly constant CFL (#0.03)
+    deltat=`echo 0.002 | awk '{print $1*20.0/'"$size"'}'`
+
+    # Copy to running directory
+    for application in interIsoFoam interFoam interFlow
+    do
+      RESULTS="${CASE}RESULTS_${application}/"`printf "%3.3d" ${xsize}`"x"`printf "%3.3d" ${ysize}`"x"`printf "%3.3d" ${zsize}`
+      if [ ! -d $RESULTS ]; then
+        mkdir -p $RESULTS
+        cp -ra 0.orig system constant Allrun Allclean $RESULTS
+
+        # Replace by values for this case
+        sed -i "s/^application.*$/application     ${application};/" $RESULTS/system/controlDict
+        sed -i "s/^deltaT.*$/deltaT          $deltat;/"             $RESULTS/system/controlDict
+        sed -i "/^nx/ s/nx.*[0-9]*;/nx $size;/1"                    $RESULTS/system/blockMeshDict
+
+        # Physical parameters cases (C2 is default)
+        if [ $CASE = "C1" ]; then
+          mv -f $RESULTS/constant/transportProperties.C1 $RESULTS/constant/transportProperties
+        else
+          rm -f $RESULTS/constant/transportProperties.C1
+        fi
+
+        # Special things for PLIC-RDF
+        if [ $application = "interFlow" ]; then
+          mv -f $RESULTS/system/fvSolution.interFlow $RESULTS/system/fvSolution
+        else
+          rm -f $RESULTS/system/fvSolution.interFlow
+        fi
+
+      else
+        echo "Directory $RESULTS already exists !! Not overwritten !!"
+      fi
+    done
+  done
+done
+

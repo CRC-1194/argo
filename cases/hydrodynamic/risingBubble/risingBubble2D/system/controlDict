@@ -1,0 +1,86 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+resolution 128; //64;
+x          1;
+CFL_num    0.5;
+
+application     interIsoFoam;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         3.0; // t = T*sqrt(h/g)
+
+deltaT          #calc"0.002/8"; // maximal velocity v_max=g*t, deltaT = h / v_max * CFL = L_x/(N*v_max)*CFL 
+
+writeControl    adjustable;
+
+writeInterval   0.05;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  12;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+adjustTimeStep  yes;
+
+maxCo           0.075;
+
+maxAlphaCo      0.075;
+
+maxDeltaT       1;
+
+
+#include "FOQuantities";
+functions
+{
+    surfaces
+    {
+        type            surfaces;
+        libs            (geometricVoF sampling);
+        writeControl    writeTime;
+
+        surfaceFormat   vtp;
+        fields          (p U);
+
+        interpolationScheme cell;
+
+        surfaces
+        {
+            freeSurf
+            {
+                type            interface;
+                interpolate     false;
+            }
+        }
+    }
+}
+
+// ************************************************************************* //
