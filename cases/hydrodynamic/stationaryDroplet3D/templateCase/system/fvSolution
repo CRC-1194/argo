@@ -93,7 +93,7 @@ pandora
         type divNormal;
         nPropagate 0; 
         nAverage 3; 
-        normalField "recon::normal"; 
+        normalField "interfaceNormal.water"; 
         
         //type divGrad;
         //fieldName RDF; 

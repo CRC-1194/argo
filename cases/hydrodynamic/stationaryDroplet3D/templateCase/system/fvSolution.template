@@ -87,7 +87,7 @@ pandora
         type divNormal;
         nPropagate @!N_PROPAGATIONS!@;  
         nAverage   @!N_AVERAGES!@; 
-        normalField "recon::normal"; 
+        normalField "interfaceNormal.water"; 
     }
     curvatureExtension
     {
