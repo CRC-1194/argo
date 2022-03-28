@@ -83,6 +83,13 @@ int main(int argc, char *argv[])
         "The solver is derived from interFoam"
     );
 
+    argList::addBoolOption
+    (
+	"YoungLaplace",
+	"Solve Young-Laplace Equation in the first time step.",
+	false 
+    );
+
     // TODO (TT): including this file raises compilation errors I do not know how to fix 
     // yet. Left out for now as it is not required to make the solver functional
     //#include "postProcess.H"
@@ -114,13 +121,16 @@ int main(int argc, char *argv[])
         #include "setDeltaT.H"
 
         // In the first time step
-        //if (runTime.timeIndex() == 0)
-        //{
-            //// Solve the Young-Laplace equation
-            //// for a better estimate fo the 
-            //// initial pressure.
-            //#include "YoungLaplaceEqn.H"
-        //}
+	bool YoungLaplace = args.found("YoungLaplace");
+        if (YoungLaplace)
+        {
+          // Solve the Young-Laplace equation
+          // for a better estimate fo the 
+          // initial pressure.
+	  Info << "Solving Young-Laplace equation to recover "
+	      << "the pressure jump in the first time step." << endl;
+          #include "YoungLaplaceEqn.H"
+        }
 
         ++runTime;
 
@@ -182,21 +192,15 @@ int main(int argc, char *argv[])
             #include "alphaControls.hpp"
             #include "alphaEqnSubCycle.hpp"
 
-
-            // Bound the volume fractions to prevent very high
-            // snGrad(alpha) values volume fraction wisps. TM.
-            forAll(alpha1, cellI)
-            {
-                if (alpha1[cellI] < 1e-08)
-                {
-                    alpha1[cellI] = 0;
-                }
-            }
-
             // Compute the surface tension force after solving for
             // volume fractions. 
-            // TODO: Reconstruct the interface in the new time step.
+            // Reconstruct the interface in the new time step.
+	    // FIXME: next time-step the reconstruction will be repeated, this 
+	    //        will cause communication overhead and needs fixing. TM.
+	    advector.surf().reconstruct();
+
             fSigma = pandoraModel.surfaceTensionForce(alpha1);
+	    fSigmaCell = fvc::reconstruct(fSigma * mesh.magSf());
 
             Info << "alphaEqn solution time : " 
                 << runTime.cpuTimeIncrement() << endl;

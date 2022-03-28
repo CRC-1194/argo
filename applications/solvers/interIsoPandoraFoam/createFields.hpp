@@ -128,3 +128,15 @@ mesh.setFluxRequired(alpha1.name());
 isoAdvection advector(alpha1, phi, U);
 
 surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
+volVectorField fSigmaCell
+(
+    IOobject
+    (
+	"fSigmaCell", 
+	runTime.timeName(),
+	mesh,
+	IOobject::NO_READ, 
+	IOobject::AUTO_WRITE
+    ),
+    fvc::reconstruct(fSigma * mesh.magSf())
+);
