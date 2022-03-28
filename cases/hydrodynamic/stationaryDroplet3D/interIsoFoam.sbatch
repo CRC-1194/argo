@@ -1,9 +1,8 @@
-#!/bin/bash
-#SBATCH -p test24
-#SBATCH -A special00005 
-#SBATCH -J interIsoFoam  
-#SBATCH -n 8 
-#SBATCH --mem-per-cpu=2000 
-#SBATCH -t 20:00:00     
-
-srun interIsoFoam  -parallel 
+#!/usr/bin/bash
+#SBATCH --account special00005
+#SBATCH --ntasks 8
+#SBATCH --mem-per-cpu 1500
+#SBATCH --time 24:00:00
+#SBATCH --job-name interIsoFoam-stationaryDroplet3D
+#SBATCH --mail-type=NONE
+srun interIsoFoam -parallel

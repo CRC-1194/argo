@@ -81,7 +81,7 @@ pandora
     curvature
     {
         type smoothedMarker;
-        markerField alpha.water;
+        markerField alpha.dispersed;
         nMarkerAverages @!N_MARKER_AVERAGES!@; 
         nNormalAverages @!N_NORMAL_AVERAGES!@; 
     }

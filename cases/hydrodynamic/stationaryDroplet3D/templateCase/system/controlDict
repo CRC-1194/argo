@@ -80,7 +80,7 @@ functions
     {
         type                curvatureEvaluation;
         libs                ("libpandora");
-        vofFieldName        alpha.water;
+        vofFieldName        alpha.dispersed;
         curvatureFieldName  cellCurvature;
         exactCurvature      4000.0;
     }

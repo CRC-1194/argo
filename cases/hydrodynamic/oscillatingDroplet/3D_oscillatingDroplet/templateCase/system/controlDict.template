@@ -71,7 +71,7 @@ functions
         locations       ((0.0 0.0 0.0));
 
         // Optional entries (runtime modifiable)
-        alpha           alpha.water;
+        alpha           alpha.dispersed;
         liquid          true;
         direction       (1 0 0);
         interpolationScheme    cellPoint;

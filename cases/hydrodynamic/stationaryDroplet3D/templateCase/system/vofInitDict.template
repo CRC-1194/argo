@@ -14,7 +14,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-fieldName       alpha.water;
+fieldName       alpha.dispersed;
 algorithm       SMCA;
 relError        @!REL_VOLUME_ERROR!@;
 
@@ -22,8 +22,8 @@ distCalc
 {
     surfaceType     levelSet;
     surface         sphere;
-    center          (0.0021 0.0023 0.0024);
-    radius          0.0005;
+    center          (0.005 0.005 0.005);
+    radius          0.001;
     orientation     inward;
     narrowBandWidth 1.0;
     bulkValue       0.0;

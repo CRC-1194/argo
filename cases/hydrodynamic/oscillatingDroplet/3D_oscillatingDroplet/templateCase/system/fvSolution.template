@@ -17,7 +17,7 @@ FoamFile
 
 solvers
 {
-    alpha.water
+    alpha.dispersed
     {
     <!--(if solver=="interFoam")-->
         nAlphaCorr      1;

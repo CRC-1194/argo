@@ -1,41 +1,31 @@
-// Parameters from controlDict
-write_interval   0.01; // 0.0004;
+// Default values for parameters.
+// Some of the specified values do not work and will cause
+// errors for methods that do use them.
+// This is intended. The purpose of this file is that
+// a parameter file only needs to specify those
+// parameters that are actually used/varied in a study.
+//
+// In addition, some parameters that are identical for all studies,
+// but required as parameters for other reasons, are given here.
+
+// Parameters identical for all studies
+DOMAIN_LENGTH               0.01;
+SCALE_CAPILLARY_DELTA_T     1.0;
+TRANSLATION_VELOCITY        1.0;
+TARGET_CFL                  0.2;
 
 
-// Parameters from lentSolution
-smoothing_interval  0;
+// Parameters set to invalid default values
+// General parameters
+FLUID_PAIRING   none;
+RESOLUTION      none;
+//DELTA_T         none;
 
-temporal_integration Euler;
+// SMCI/A initialization parameters
+REL_VOLUME_ERROR    none;
 
-cell_to_vertex  cellPoint;
-
-curvature_model compactDivGrad;
-
-front_to_mesh_transfer  triangleInCell;
-
-n_alpha_smoothing   0;
-
-
-// Parameters from fvSolution
-//n_outer_correctors  25;
-n_outer_correctors  2;
-
-n_correctors    3;
-
-phi_change_tolerance        1.0e-7;
-abs_phi_change_tolerance    1.0e-16;
-
-
-// Base resolution for hex refinement
-n_base  8;
-
-// Set deltaT to the specified fraction of the maximum allows time step size
-// according to the capillary wave stability criterion
-
-// original value
-// scale_delta_t   0.5;
-// cfl_factor 0.2;
-
-// new value_jun
-scale_delta_t   10000000; // 2; //1;
-cfl_factor 0.2;
+// Pandora parameters
+N_MARKER_AVERAGES           none;
+N_NORMAL_AVERAGES           none;
+N_CURVATURE_EXTENSIONS      none;
+N_CURVATURE_REGULARISATIONS none;

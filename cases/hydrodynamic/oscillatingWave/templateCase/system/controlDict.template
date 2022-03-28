@@ -70,7 +70,7 @@ functions    // sub-dictionary name under the system/controlDict file
         locations       ((0.0013 0 0));
 
         // Optional entries (runtime modifiable)
-        alpha           alpha.water;
+        alpha           alpha.dispersed;
         liquid          true;
         direction       (0 0 1);
         interpolationScheme    cellPoint;

@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2.3.0                                 |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -15,31 +15,60 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-phases (water air);
+phases          (dispersed continuous);
 
-// Defining the properties as variables first allows it to
-// express a property of one phase in terms of the other
-// through the parameter file
-nu_droplet  @!nu_droplet!@;
-nu_ambient  @!nu_ambient!@;
-rho_droplet @!rho_droplet!@;
-rho_ambient @!rho_ambient!@;
+<!--(if FLUID_PAIRING=="water-air")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              1.0e-06;
+        rho             1000.0;
+    }
 
-air
-{
-    transportModel  Newtonian;
-    nu              nu [ 0 2 -1 0 0 0 0 ] $nu_droplet;
-    rho             rho [ 1 -3 0 0 0 0 0 ] $rho_droplet;
-}
+    continuous
+    {
+        transportModel  Newtonian;
+        nu              1.48e-05;
+        rho             1.0;
+    }
 
-water
-{
-    transportModel  Newtonian;
-    nu              nu [ 0 2 -1 0 0 0 0 ] $nu_ambient;
-    rho             rho [ 1 -3 0 0 0 0 0 ] $rho_ambient;
-}
+    sigma               72.75e-3;
 
-sigma           sigma [ 1 0 -2 0 0 0 0 ] @!surface_tension_coefficient!@;
+<!--(elif FLUID_PAIRING=="oil_novec7500-water")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              0.77e-6;
+        rho             1614.0;
+    }
+
+    continuous 
+    {
+        transportModel  Newtonian;
+        nu              1.0e-06;
+        rho             1000.0;
+    }
+
+    sigma               49.5e-3;
+
+<!--(elif FLUID_PAIRING=="gearoil-air")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              270.5e-6;
+        rho             888.0;
+    }
+
+    continuous
+    {
+        transportModel  Newtonian;
+        nu              1.48e-05;
+        rho             1.0;
+    }
+
+    sigma               30.0e-3;
+
+<!--(end)-->
 
 
 // ************************************************************************* //

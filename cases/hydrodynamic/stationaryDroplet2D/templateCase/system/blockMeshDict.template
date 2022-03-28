@@ -14,10 +14,8 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-scale   0.01;
-
-L   1;
-H   1;
+L   |-DOMAIN_LENGTH-|;
+H   |-DOMAIN_LENGTH-|;
 
 vertices
 (

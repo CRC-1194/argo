@@ -13,28 +13,24 @@ FoamFile
     object      blockMeshDict; }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-radius  @!radius!@;
-
-w #calc "$radius * 5";
-h #calc "$radius * 8";
-
-convertToMeters 1.00;
+L   #calc "2.0*|-DOMAIN_LENGTH-|";
+H   |-DOMAIN_LENGTH-|;
 
 vertices
 (
-    (0    0    0)
-    ($w   0    0)
-    ($w   $w   0)
-    (0    $w   0)
-    (0    0    $h)
-    ($w   0    $h)
-    ($w   $w   $h)
-    (0    $w   $h)
+    (0  0  0)
+    ($L 0  0)
+    ($L $H 0)
+    (0  $H 0)
+    (0  0  $H)
+    ($L 0  $H)
+    ($L $H $H)
+    (0  $H $H)
 );
 
 blocks
 (
-    hex (0 1 2 3 4 5 6 7) (@!resolution!@ @!resolution!@ #calc "int(1.2*@!resolution!@)") simpleGrading (1 1 1)
+    hex (0 1 2 3 4 5 6 7) (#calc "int(2*|-RESOLUTION-|)" |-RESOLUTION-| |-RESOLUTION-|) simpleGrading (1 1 1)
 );
 
 edges
@@ -48,7 +44,7 @@ boundary
         type    patch;
         faces
         (
-            (3 2 1 0)
+            (0 4 7 3)
         );
     }
 
@@ -57,7 +53,7 @@ boundary
         type    patch;
         faces
         (
-            (4 5 6 7)
+            (2 6 5 1)
         );
     }
 
@@ -66,10 +62,10 @@ boundary
         type    patch;
         faces
         (
-            (0 4 7 3)
-            (2 6 5 1)
+            (3 2 1 0)
             (0 1 5 4)
             (7 6 2 3)
+            (4 5 6 7)
         );
     }
 );

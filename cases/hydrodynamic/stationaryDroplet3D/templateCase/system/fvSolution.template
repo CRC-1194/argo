@@ -90,7 +90,7 @@ pandora
         normalField "interfaceNormal.water"; 
     }
     curvatureExtension
-    {
+	    {
         type noExtension;
         //type averageExtension;
         //nExtensionIterations @!N_EXTENSIONS!@; 

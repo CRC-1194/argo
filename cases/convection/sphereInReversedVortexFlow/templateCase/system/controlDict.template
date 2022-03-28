@@ -75,6 +75,89 @@ functions
         refDir          (1 0 0);
         axis            (0 1 0);
     }
+
+    advectionErrors
+    {
+        type coded;
+        libs (utilityFunctionObjects);
+
+        // Name of on-the-fly generated functionObject
+        name advectionErrors;
+
+        codeInclude
+        #{
+            #include <sstream>
+            #include <cmath>
+        #};
+
+        codeEnd
+        #{
+            const auto& runTime = mesh().time();
+
+            std::stringstream startstr, endstr; 
+            startstr << runTime.startTime().value();
+            endstr << runTime.endTime().value();
+
+            volScalarField alphaBegin
+            (
+                IOobject
+                (
+                    "alpha.water", 
+                    startstr.str(), 
+                    runTime, 
+                    IOobject::MUST_READ, 
+                    IOobject::NO_WRITE
+
+                ),
+                mesh()
+            );
+
+
+            volScalarField alphaEnd 
+            (
+                IOobject
+                (
+                    "alpha.water", 
+                    endstr.str(), 
+                    runTime, 
+                    IOobject::MUST_READ, 
+                    IOobject::NO_WRITE
+
+                ),
+                mesh()
+            );
+
+            scalar L1_SHAPE_ERROR = Foam::gSum(
+                mesh().V() * Foam::mag(alphaEnd - alphaBegin)
+            );
+
+            scalar VOLUME_ERROR = Foam::mag(
+                Foam::gSum(mesh().V() * Foam::mag(alphaEnd)) - 
+                Foam::gSum(mesh().V() * Foam::mag(alphaBegin)) 
+            );
+
+            dimensionedScalar zero("0", alphaEnd.dimensions(), 0.);
+            scalar overshoot = Foam::max(
+                alphaEnd - dimensionedScalar("1", alphaEnd.dimensions(), 1.)
+            ).value(); 
+            scalar undershoot = Foam::max(Foam::max(-alphaEnd).value(), 0.);
+            scalar BOUNDEDNESS_ERROR = Foam::max(
+                 Foam::max(overshoot, 0.),  
+                 Foam::max(undershoot, 0.)  
+            );
+
+            OFstream errorFile("advectionErrors.csv"); 
+            errorFile << "T_END,N_CELLS,N_CELLS_PER_AXIS,L1_SHAPE_ERROR,"
+                << "VOLUME_ERROR,BOUNDEDNESS_ERROR\n";
+            errorFile << runTime.endTime().value() << "," 
+                << mesh().nCells() << ","
+                << Foam::sqrt(double(mesh().nCells())) << "," 
+                << L1_SHAPE_ERROR << "," 
+                << VOLUME_ERROR << "," 
+                << BOUNDEDNESS_ERROR << "\n"; 
+
+        #};
+    }
 }
 
 
