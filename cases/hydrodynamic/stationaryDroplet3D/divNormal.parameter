@@ -2,7 +2,12 @@ values
 {
     solver (interIsoPandoraFoam);
 
-    N_CELLS
+    FLUID_PAIRING
+    (
+        water-air	
+    );
+
+    RESOLUTION 
     (
         32 64 128 
     );
