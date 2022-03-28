@@ -71,8 +71,6 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
 
 volScalarField& pandoraDivNormalCurvature::cellCurvature()
 {
-    Info << "pandoraDivNormalCurvature::cellCurvature() " << endl;
-
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (meshDb.found(fieldName_))
     {
@@ -88,9 +86,14 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
                 "SMALL", interfaceNormals.dimensions(), SMALL
             )
         );
+
+	// Propagate PLIC normals into the bulk.
         for (label i = 0; i < nPropagate_; ++i)
         {
             averagedNormals_ = fvc::average(averagedNormals_);
+
+	    averagedNormals_ /= mag(averagedNormals_) + 
+		    dimensionedScalar("SMALL", averagedNormals_.dimensions(), SMALL);
 
             // Re-set the smoothed normal vectors in interface cells. 
             forAll(interfaceNormals, cellI)
@@ -105,6 +108,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
             }
         }
 
+	// Smooth the PLIC normals.
         for (label i = 0; i < nAverage_; ++i)
         {
             averagedNormals_ == fvc::average(averagedNormals_);
@@ -114,13 +118,16 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
         }
 
         // TODO: Debugging, remove.
-        const Time& runTime = cellCurvature_.time();
-        if (runTime.writeTime())
-        {
-            averagedNormals_.write();
-        }
+        // const Time& runTime = cellCurvature_.time();
+        // if (runTime.writeTime())
+        // {
+        //     averagedNormals_.write();
+        // }
 
         cellCurvature_ = -fvc::div(averagedNormals_);
+
+	// TODO: Debugging, remove 
+        //cellCurvature_ = dimensionedScalar("cellCurvature", pow(dimLength,-1), 4000); 
     }
     else
     {
