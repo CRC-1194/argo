@@ -16,15 +16,15 @@ FoamFile
 
 fieldName       alpha.water;
 algorithm       SMCA;
-relError        @!REL_VOLUME_ERROR!@;
+relError        |-REL_VOLUME_ERROR-|;
 
 distCalc
 {
     surfaceType     levelSet;
     surface         cylinder;
     axis            (0 0 1);
-    pointOnAxis     (0.002 0.002 0.0);
-    radius          0.0005;
+    pointOnAxis     (0.005 0.005 0.0);
+    radius          0.001;
     height          1e-3;
     orientation     inward;
     narrowBandWidth 1.0;

@@ -1,0 +1,79 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     |-solver-|;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         0.02;
+
+deltaT          |-DELTA_T-|;
+
+writeControl    adjustable;
+
+writeInterval   0.001;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+adjustTimeStep  no;
+
+maxCo           0.5;
+
+maxAlphaCo      0.5;
+
+maxDeltaT       1;
+
+
+functions    // sub-dictionary name under the system/controlDict file
+{
+    interfaceHeight1
+    {
+        // Mandatory entries (unmodifiable)
+        type            interfaceHeight;
+        libs            (fieldFunctionObjects);
+
+        // Mandatory entries (runtime modifiable)
+        locations       ((0.0 0.0 0.0));
+
+        // Optional entries (runtime modifiable)
+        alpha           alpha.dispersed;
+        liquid          true;
+        direction       (1 0 0);
+        interpolationScheme    cellPoint;
+
+        // Optional (inherited) entries
+        // See 'functionObject' and 'writeFile' in OpenFOAM's Extended Code Guide.
+        writePrecision  8;
+    }   
+}
+// ************************************************************************* //

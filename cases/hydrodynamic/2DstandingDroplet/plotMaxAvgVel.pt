@@ -1,0 +1,67 @@
+#Script to plot film height at center of domain for different resolutions
+
+reset
+
+
+#--------------------------------------------------------------------------------------------
+set terminal pngcairo size 1080,680 enhanced font 'Verdana,10'
+
+
+
+
+#STYLE
+set style line 1 lc rgb '#ff8c69' pt 1 ps 1 lt 1 lw 2 # --- salmon
+set style line 2 lc rgb '#5e9c36' pt 6 ps 1 lt 1 lw 2 # --- green
+set style line 3 lc rgb '#1520A6' pt 6 ps 1 lt 1 lw 2 # --- azureblue
+set style line 4 lc rgb '#ff00ff' pt 6 ps 1 lt 1 lw 2 # --- fuchsia
+
+
+
+set style line 11 lc rgb '#808080' lt 1
+set border 3 back ls 11
+set tics nomirror
+
+set style line 12 lc rgb '#808080' lt 0 lw 1
+set grid back ls 12
+
+#-----------------------------------------------------------------------------------------------------------------------------
+
+set output '2DstandingDrop_maxVel.png'
+
+set xlabel "Time [s]"
+set ylabel "U_{max} [m/s]"
+
+
+set title "Max Velocity for 2D standing droplet"
+
+set grid
+
+set key left top
+
+
+plot "<(sed 's/[()]//g' Resolution256/postProcessing/maxVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)) title "res 256" with lines  ls 1,\
+"<(sed 's/[()]//g' Resolution128/postProcessing/maxVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)) title "res 128" with lines ls 2,\
+"<(sed 's/[()]//g' Resolution64/postProcessing/maxVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)) title "res 64" with lines ls 3,\
+"<(sed 's/[()]//g' Resolution32/postProcessing/maxVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)) title "res 32" with lines ls 4
+
+#-----------------------------------------------------------------------------------------------------------------------------
+
+set output '2DstandingDrop_sumVel.png'
+
+set xlabel "Time [s]"
+set ylabel "U_{avg} [m/s]"
+
+
+set title "Max Velocity for 2D standing droplet"
+
+set grid
+
+set key left top
+
+
+plot "<(sed 's/[()]//g' Resolution256/postProcessing/sumMagVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)/65536) title "res 256" with lines ls 1,\
+"<(sed 's/[()]//g' Resolution128/postProcessing/sumMagVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)/16384) title "res 128" with lines  ls 2,\
+"<(sed 's/[()]//g' Resolution64/postProcessing/sumMagVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)/4096) title "res 64" with lines ls 3,\
+"<(sed 's/[()]//g' Resolution32/postProcessing/sumMagVel/0/volFieldValue.dat)" u 1:(sqrt($2*$2+$3*$3+$4*$4)/1024) title "res 32" with lines ls 4
+
+

@@ -12,7 +12,20 @@ app_description = """ Initialize all test cases that match a given pattern.
         1. Create a mesh using the prescribed meshing application.\n
         2. Initialize required fields.\n
         3. Optional: perform domain decomposition for parallel simulation.\n
+    In each test case a script named 'argo-initialize-case.sh' is created\n
+    that contains all requested steps.
 """
+
+
+slurm_job_config = (
+    "#SBATCH --account special00005\n"
+    "#SBATCH --ntasks 1\n"
+    "#SBATCH --mem-per-cpu 4000\n"
+    "#SBATCH --time 00:15:00\n"
+    "#SBATCH --job-name argo-case-init\n"
+    "#SBATCH --output=log.argo-initialze-case\n"
+    )
+
 
 def find_case_directories(pattern):
     """
@@ -20,34 +33,55 @@ def find_case_directories(pattern):
     """
     case_dirs = [case_dir for case_dir in os.listdir(os.curdir) if os.path.isdir(case_dir) and \
                   case_dir.startswith(pattern)] 
-
     case_dirs.sort()
 
     return case_dirs
 
-def submit_slurm_job(command, log_name=""):
-    partition = "test30m"
-    account = "special00005"
-    ntasks = "1"
-    mem_per_cpu = "5000"
-    time_limit = "00:15:00" # Read: hh:mm:ss, h-> hours, m-> minutes, s-> seconds
-    slurm_command = ("srun --partition %s --account %s --ntasks %s --mem-per-cpu %s "
-                     "--time %s "
-                     "--job-name=%s --output=log.%s %s >/dev/null 2>&1 &" % 
-                     (partition, account, ntasks, mem_per_cpu,
-                      time_limit,
-                      log_name, log_name, command))
 
-    run(slurm_command, shell=True)
+def meshing_command(mesher):
+    return mesher + "\n"
 
-    # Force wait after submitting job to avoid overloading the SLURM manager
-    time.sleep(1)
 
-def execute_init_step(command, use_slurm, log_name=""):
-    if use_slurm:
-        submit_slurm_job(command, log_name=log_name)
+def field_init_command(field_init_script):
+    """
+    Assemble command for field initialization based on file extension.
+    """
+    if args.init_script.endswith('.py'):
+        return "python3 " + field_init_script + "\n"
+    elif args.init_script.endswith('.sh'):
+        return "bash " + field_init_script + "\n"
     else:
-        run(command, shell=True)
+        sys.exit("Error: unsupported script format", field_init_script.rsplit('.')[0], ". Use either .sh for BASH or .py for Python3.")
+  
+
+def decompose_command():
+    return "decomposePar -force\n"
+
+
+def create_init_script(mesher, field_init_script, parallel=False):
+    """
+    Combine all requested initilization steps into a single script.
+
+    The three initialization steps are:
+    - meshing
+    - setting fields
+    - domain decomposition
+    where each step can be omitted.
+    """
+    script_name = "argo-initialze-case.sh"
+
+    script = "#!/usr/bin/bash\n" + slurm_job_config
+    if mesher != "none":
+        script = script + meshing_command(mesher)
+    if field_init_script:
+        script = script + field_init_command(field_init_script)
+    if parallel:
+        script = script + decompose_command()
+
+    with open(script_name, "w") as script_file:
+        script_file.write(script)
+
+    return script_name
 
 
 #---- Command line arguments ----------------------------------------------
@@ -80,9 +114,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args(sys.argv[1:])
 
+    if args.mesh_app == "none":
+        print("Warning: skipping mesh generation. Make sure your init script generates a mesh.")
     if not args.init_script:
         print("No init script specified via --field-init-script. Not initializing fields.")
-
 
     case_dirs = find_case_directories(args.directory_pattern)
     
@@ -94,28 +129,13 @@ if __name__ == '__main__':
         case_count = case_count + 1
         print("(%s/%s) Initializing %s ..." % (str(case_count), str(len(case_dirs)), case))
 
-        # Meshing. Can be skipped 
-        if args.mesh_app != "none":
-            execute_init_step(args.mesh_app, args.job_mode, log_name=args.mesh_app)
+        script_name = create_init_script(args.mesh_app, args.init_script, args.parallel)
+
+        if args.job_mode:
+            run("sbatch " + script_name, shell=True)
+            # Forced wait time to prevent overloading the SLURM job manager
+            time.sleep(1)
         else:
-            print("Warning: skipping mesh generation. Make sure your init script generates a mesh.")
-
-        # Field initialization
-        if args.init_script:
-            # Note: the template replacement process invoked in 'argo-create-parameter-study.py'
-            #       removes the She-Bang from the init script. So we need to use the file extension
-            #       to detect the suitable interpreter (TT)
-            script_env = ""
-            if args.init_script.endswith('.py'):
-                script_env = "python3"
-            elif args.init_script.endswith('.sh'):
-                script_env = "bash"
-            else:
-                sys.exit("Error: unsupported script format", args.init_script.rsplit('.')[0], ". Use either .sh for BASH or .py for Python3.")
-            execute_init_step(script_env + " " + args.init_script, args.job_mode, log_name=args.init_script)
-
-        # Domain decomposition
-        if args.parallel:
-            execute_init_step("decomposePar -force", args.job_mode, log_name="decomposePar")
+            run("nohup bash " + script_name + " > log.argo-initialze-case", shell=True)
 
         os.chdir(pwd)

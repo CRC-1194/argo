@@ -14,10 +14,10 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-scale   0.001;
+scale   0.01;
 
-L   4;
-H   4;
+L   1;
+H   1;
 
 vertices
 (
@@ -25,15 +25,15 @@ vertices
     ($L 0  0)
     ($L $H 0)
     (0  $H 0)
-    (0  0  1)
-    ($L 0  1)
-    ($L $H 1)
-    (0  $H 1)
+    (0  0  0.1)
+    ($L 0  0.1)
+    ($L $H 0.1)
+    (0  $H 0.1)
 );
 
 blocks
 (
-    hex (0 1 2 3 4 5 6 7) (@!N_CELLS!@ @!N_CELLS!@ 1) simpleGrading (1 1 1)
+    hex (0 1 2 3 4 5 6 7) (|-RESOLUTION-| |-RESOLUTION-| 1) simpleGrading (1 1 1)
 );
 
 edges

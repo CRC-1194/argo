@@ -15,10 +15,10 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-field           alpha.water;
+field           alpha.dispersed;
 type            cylinder;
-radius          0.0005;
+radius          0.001;
 direction       (0 0 1);
-origin          (0.002 0.002 0.0001);
+origin          (0.005 0.005 0.0);
 
 // ************************************************************************* //

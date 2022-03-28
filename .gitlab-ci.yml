@@ -5,7 +5,7 @@ image: "registry.gitlab.com/leia-methods/argo/openfoam-v2112_ubuntu-focal:2021-1
     ##
     ## Configure the OpenFOAM environment
     ## 
-    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
+    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
 
     ##
     ## Re-use user-defined OF applications from the FOAM_USER_APPBIN artifact
@@ -20,12 +20,19 @@ image: "registry.gitlab.com/leia-methods/argo/openfoam-v2112_ubuntu-focal:2021-1
     - cp FOAM_USER_LIBBIN/* $FOAM_USER_LIBBIN
 
 
+workflow:
+  rules:
+    ##
+    ## The CI pipeline can only be started manually  
+    ##
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
 stages:
   - building
   - smoke_tests
   - reproduction
   - visualization    
-    #- testing          // Not defined yet (TT)
+
 
 build_debug:
   stage: building
@@ -34,12 +41,13 @@ build_debug:
     ##
     ## Configure the OpenFOAM environment
     ##
-    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
+    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
 
     ##
     ## Build and install
     ##
     - ./install.sh Debug
+
 
 build_release:
   stage: building
@@ -49,7 +57,7 @@ build_release:
     ##
     ## Configure the OpenFOAM environment
     ##
-    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
+    - source /opt/OpenFOAM/OpenFOAM-v2012/etc/bashrc || true
 
     ##
     ## Build and install
@@ -91,6 +99,14 @@ triSurface_initialization:
   script:
     - cd cases/initialization
     - ./run_triSurface_smoke_tests.sh
+    - git clone https://gitlab.com/dglaeser/simtest.git
+    - cd simtest && python -m pip install . && cd ..
+    - rm -rf simtest
+    - |
+      python -m simtest \
+             --results-directory triSurface-smoke-test-results \
+             --reference-directory triSurface-smoke-test-references \
+             --config "{\"ignore-fields\": [\"CPU_TIME_MICROSECONDS\", \"VOLUME_FROM_SURFACE_INTEGRAL\", \"VOLUME_ERROR_FROM_SURFACE_INTEGRAL\"], \"defaults\": {\"fuzzy-tolerance\": 1e-8}}"
   artifacts:
     paths:
       - cases/initialization/triSurface-smoke-test-results/*
@@ -110,6 +126,7 @@ cpc_2021_data:
   artifacts:
     paths:
         - cases/initialization/CPC2021-results/*
+
 
 cpc_2021_visualize:
   stage: visualization 
@@ -143,68 +160,3 @@ cpc_2021_visualize:
           #  artifacts:
           #    paths:
           #        - cases/hydrodynamic/translatingDroplet3D/test-nb.html
-
-#convert_notebooks:
-#  stage: visualization 
-#  dependencies:
-#    - param_study
-#  script:
-#
-#    ##
-#    ## Configure the OpenFOAM environment
-#    ##
-#    - source /opt/OpenFOAM/OpenFOAM-v2112/etc/bashrc || true
-#
-#    ##
-#    ## Process secondary data from applications in jupyter notebooks 
-#    ## - Visualize errors  
-#    ## - Compute convergence rates
-#    ## - Write the additional convergence data
-#    ##
-#    - cd cases && 
-#      jupyter nbconvert fvc-reconstruct-convergence.ipynb --execute --to markdown && 
-#      jupyter nbconvert fvc-reconstruct-convergence.ipynb --execute --to pdf 
-#
-#
-#  artifacts:
-#    paths:
-#        ##
-#        ## Secondary data used by Jupyter notebooks
-#        ##
-#        - cases/hex2D/*.csv 
-#
-#        ##
-#        ## Secondary data processed by Jupyter notebooks
-#        ##
-#        - cases/fvc-reconstruct-data/*
-#
-#        ##
-#        ## Jupyter Notebooks in different formats  
-#        ##
-#        - cases/fvc-reconstruct-convergence.ipynb
-#        - cases/fvc-reconstruct-convergence_files
-#        - cases/fvc-reconstruct-convergence.md
-#        - cases/fvc-reconstruct-convergence.pdf
-#
-#test_shear2D:
-#  stage: testing 
-#  dependencies:
-#    - convert_notebooks 
-#  script:
-#
-#    ##
-#    ## Test shear2D convergence 
-#    ##
-#    - cd cases &&  python test_convergence.py fvc-reconstruct-data/SHEAR_2D.csv  
-#
-#test_hadamard-rybczynsky2D:
-#  stage: testing 
-#  dependencies:
-#    - convert_notebooks 
-#  script:
-#
-#    ##
-#    ## Test hadamard-rybczynsky2D convergence 
-#    ##
-#    - cd cases &&  python test_convergence.py fvc-reconstruct-data/HADAMARD_RYBCZYNSKY_2D.csv
-#

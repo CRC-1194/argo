@@ -12,7 +12,7 @@
 argo-create-parameter-study.py j.compfluid.2018.10.021-table3-triSurface.parameter
 
 ## Mesh the solution domain with gmsh using the custom init script 
-argo-initilize-parameter-study.py -m none -f j.compfluid.2018.10.021-table3-init-triSurface.sh j.compfluid.2018.10.021-table3-triSurface
+argo-initialize-parameter-study.py -m none -f j.compfluid.2018.10.021-table3-init-triSurface.sh j.compfluid.2018.10.021-table3-triSurface
 
 ## Run the study  
 argo-run-study.py -d  j.compfluid.2018.10.021-table3-triSurface surfaceInitVolumeFraction

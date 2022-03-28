@@ -62,13 +62,14 @@ functions
     minMaxU 
     {
         type        fieldMinMax;
-        libs        ("libfieldFunctionObjects.so");
+        libs        (fieldFunctionObjects);
         writeToFile yes;
         log         yes;
         location    yes;
         mode        magnitude;
         fields      (U);
     }
+    /* only works for solvers providing the field 'cellCurvature'
     curvatureEval
     {
         type                curvatureEvaluation;
@@ -77,6 +78,7 @@ functions
         curvatureFieldName  cellCurvature;
         exactCurvature      2000.0;
     }
+    */
 }
 
 // ************************************************************************* //
