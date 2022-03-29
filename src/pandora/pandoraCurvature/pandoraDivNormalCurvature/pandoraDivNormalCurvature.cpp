@@ -127,13 +127,15 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
         cellCurvature_ = -fvc::div(averagedNormals_);
 
 	// TODO: Debugging, remove 
-        //cellCurvature_ = dimensionedScalar("cellCurvature", pow(dimLength,-1), 4000); 
+        // cellCurvature_ = dimensionedScalar("cellCurvature", pow(dimLength,-1), 4000); 
     }
     else
     {
         FatalErrorInFunction
             << "pandoraDivNormalCurvature::cellCurvature \n"
             << "Field " << fieldName_ << " not in mesh registry." 
+	    << "Available registered fields are : \n" 
+	    << mesh().names() 
             << abort(FatalError);
     }
 
