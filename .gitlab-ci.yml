@@ -99,14 +99,17 @@ triSurface_initialization:
   script:
     - cd cases/initialization
     - ./run_triSurface_smoke_tests.sh
-    - git clone https://gitlab.com/dglaeser/simtest.git
-    - cd simtest && python -m pip install . && cd ..
-    - rm -rf simtest
+    - git clone --branch=feature/cli-filtering-options --depth=1 https://gitlab.com/dglaeser/fieldcompare
+    - cd fieldcompare && python -m pip install . && cd ..
+    - rm -rf fieldcompare
     - |
-      python -m simtest \
-             --results-directory triSurface-smoke-test-results \
-             --reference-directory triSurface-smoke-test-references \
-             --config "{\"ignore-fields\": [\"CPU_TIME_MICROSECONDS\", \"VOLUME_FROM_SURFACE_INTEGRAL\", \"VOLUME_ERROR_FROM_SURFACE_INTEGRAL\"], \"defaults\": {\"fuzzy-tolerance\": 1e-8}}"
+      fieldcompare dir \
+        triSurface-smoke-test-results \
+        --reference-directory triSurface-smoke-test-references \
+        --exclude-fields "CPU_TIME*" \
+        --exclude-fields "VOLUME_FROM_SURFACE*" \
+        --exclude-fields "VOLUME_ERROR_FROM_SURFACE*" \
+        --relative-tolerance 1e-6
   artifacts:
     paths:
       - cases/initialization/triSurface-smoke-test-results/*
@@ -135,13 +138,17 @@ cpc_2021_compare_to_data_publication:
   script:
     - wget https://zenodo.org/record/5603255/files/argo-2021-10-27-SMCIA-R1-data.zip?download=1 -O ref_data.zip
     - unzip -d ref_data ref_data.zip
-    - git clone https://gitlab.com/dglaeser/simtest.git
-    - cd simtest && python -m pip install . && cd ..
+    - git clone --branch=feature/cli-filtering-options --depth=1 https://gitlab.com/dglaeser/fieldcompare
+    - cd fieldcompare && python -m pip install . && cd ..
+    - rm -rf fieldcompare
     - |
-      python -m simtest \
-             --results-directory cases/initialization/CPC2021-results \
-             --reference-directory ref_data/cases/initialization/CPC2021-results \
-             --config "{\"ignore-fields\": [\"CPU_TIME_MICROSECONDS\", \"VOLUME_FROM_SURFACE_INTEGRAL\", \"VOLUME_ERROR_FROM_SURFACE_INTEGRAL\"], \"defaults\": {\"fuzzy-tolerance\": 1e-8}}"
+      fieldcompare dir \
+        cases/initialization/CPC2021-results \
+        --reference-directory ref_data/cases/initialization/CPC2021-results \
+        --exclude-fields "CPU_TIME*" \
+        --exclude-fields "VOLUME_FROM_SURFACE*" \
+        --exclude-fields "VOLUME_ERROR_FROM_SURFACE*" \
+        --relative-tolerance 1e-6
 
 
 cpc_2021_visualize:
