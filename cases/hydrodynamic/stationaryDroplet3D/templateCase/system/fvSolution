@@ -87,7 +87,7 @@ pandora
         type divNormal;
         nPropagate 4; 
         nAverage 0; 
-        normalField "interfaceNormal.water"; 
+        normalField "interfaceNormal.dispersed"; 
     }
     curvatureExtension
     {

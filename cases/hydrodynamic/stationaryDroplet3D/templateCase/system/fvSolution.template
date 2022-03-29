@@ -56,7 +56,7 @@ solvers
     {
         solver          PBiCGStab;
         preconditioner  DILU;
-        tolerance       1e-06;
+        tolerance       1e-08;
         relTol          0;
     }
 
@@ -64,7 +64,7 @@ solvers
     {
         solver          PBiCGStab;
         preconditioner  DILU;
-        tolerance       1e-06;
+        tolerance       1e-08;
         relTol          0;
     }
 }
@@ -87,7 +87,7 @@ pandora
         type divNormal;
         nPropagate @!N_PROPAGATIONS!@;  
         nAverage   @!N_AVERAGES!@; 
-        normalField "interfaceNormal.water"; 
+        normalField "interfaceNormal.dispersed"; 
     }
     curvatureExtension
 	    {
