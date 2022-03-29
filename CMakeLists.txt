@@ -184,6 +184,7 @@ add_library("pandora" SHARED
     src/pandora/pandoraCurvature/pandoraCurvature/pandoraCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivGradCurvature/pandoraDivGradCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalCurvature/pandoraDivNormalCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraIsosurfaceCellCurvature/pandoraIsosurfaceCellCurvature.cpp
     src/pandora/pandoraCurvature/pandoraSmoothedMarkerCurvature/pandoraSmoothedMarkerCurvature.cpp
     src/pandora/pandoraCurvatureExtension/pandoraCurvatureAverageExtension/pandoraCurvatureAverageExtension.cpp
     src/pandora/pandoraCurvatureExtension/pandoraCurvatureExtension/pandoraCurvatureExtension.cpp
@@ -215,6 +216,8 @@ target_include_directories("pandora" SYSTEM PUBLIC
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
+    ${of_src_path}/sampling/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
 )
 
 
