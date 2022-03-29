@@ -148,6 +148,7 @@ cpc_2021_compare_to_data_publication:
       fieldcompare dir \
         cases/initialization/CPC2021-results \
         --reference-dir ref_data/cases/initialization/CPC2021-results \
+        --include-files "*.csv" \
         --exclude-fields "CPU_TIME*" \
         --exclude-fields "VOLUME_FROM_SURFACE*" \
         --exclude-fields "VOLUME_ERROR_FROM_SURFACE*" \
