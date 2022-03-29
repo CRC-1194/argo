@@ -135,6 +135,9 @@ cpc_2021_compare_to_data_publication:
   needs:
     - job: cpc_2021_data
       artifacts: true
+  rules:
+    - if: $REPRODUCE_CPC2021 != null
+    - if: $REPRODUCE_EVERYTHING != null
   script:
     - wget https://zenodo.org/record/5603255/files/argo-2021-10-27-SMCIA-R1-data.zip?download=1 -O ref_data.zip
     - unzip -d ref_data ref_data.zip
