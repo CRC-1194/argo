@@ -38,8 +38,8 @@ SourceFiles
 #ifndef pandoraIsosurfaceCurvature_H
 #define pandoraIsosurfaceCurvature_H
 
-#include "isoSurface.H"
-#include "pandoraCurvature.H"
+#include "isoSurfacePoint.H"
+#include "pandoraCurvature.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -55,6 +55,8 @@ class pandoraIsosurfaceCurvature
 {
     // Private Data
     const word fieldName_;
+    const label nPropagate_;
+    const label nAverage_;
 
 
     // Private Member Functions
