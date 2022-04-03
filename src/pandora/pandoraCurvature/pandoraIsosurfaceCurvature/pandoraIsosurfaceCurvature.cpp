@@ -93,18 +93,42 @@ volScalarField& pandoraIsosurfaceCurvature::cellCurvature()
     //isoParams.snap(false);
     //isoParams.mergeTol(1e-22);
 
-    isoSurfaceTopo alphaIso(
+    isoSurfaceTopo alphaIso001(
         mesh(),
         vf,
         pf,
-        0.5,
-        isoParams
+        0.01//,
+        //isoParams
     );
-    alphaIso.write("alphaIso.vtk");
+    alphaIso001.write("alphaIso001.vtk");
+
+    isoSurfaceTopo alphaIso099(
+        mesh(),
+        vf,
+        pf,
+        0.99//,
+        //isoParams
+    );
+    alphaIso099.write("alphaIso099.vtk");
+
+    isoSurfaceTopo alphaIso050(
+        mesh(),
+        vf,
+        pf,
+        0.5//,
+        //isoParams
+    );
+    alphaIso050.write("alphaIso050.vtk");
 
     // Get meshCells and normals from isoSurface. 
-    const auto& triToCell = alphaIso.meshCells();
-    const auto& triNormals = alphaIso.Sf();
+    const auto& triToCell001 = alphaIso001.meshCells();
+    const auto& triNormals001 = alphaIso001.Sf();
+
+    const auto& triToCell050 = alphaIso050.meshCells();
+    const auto& triNormals050 = alphaIso050.Sf();
+
+    const auto& triToCell099 = alphaIso099.meshCells();
+    const auto& triNormals099 = alphaIso099.Sf();
 
     volVectorField interfaceNormals
     (
@@ -124,13 +148,36 @@ volScalarField& pandoraIsosurfaceCurvature::cellCurvature()
         )
     );
 
-    forAll(triToCell, i)
+    /*
+    forAll(triToCell099, i)
     {
-        label cellI = triToCell[i];
-        interfaceNormals[cellI] = triNormals[i];
+        label cellI = triToCell099[i];
+        interfaceNormals[cellI] = triNormals099[i];
     }
+    interfaceNormals.rename("interfaceNormals1");
+    if(mesh().time().writeTime())
+        interfaceNormals.write();
 
-    // Use averaging to propagate the normals into the bulk. 
+    forAll(triToCell001, i)
+    {
+        label cellI = triToCell001[i];
+        interfaceNormals[cellI] = triNormals001[i];
+    }
+    interfaceNormals.rename("interfaceNormals2");
+    if(mesh().time().writeTime())
+        interfaceNormals.write();
+    */
+
+    forAll(triToCell050, i)
+    {
+        label cellI = triToCell050[i];
+        interfaceNormals[cellI] = triNormals050[i];
+    }
+    interfaceNormals.rename("interfaceNormals3");
+    if(mesh().time().writeTime())
+        interfaceNormals.write();
+
+    // Normalize the normal vectors. 
     volVectorField averagedNormals = interfaceNormals /
     (
         mag(interfaceNormals) +
@@ -138,11 +185,15 @@ volScalarField& pandoraIsosurfaceCurvature::cellCurvature()
             "SMALL", interfaceNormals.dimensions(), SMALL
         )
     );
+    averagedNormals.rename("normalizedNormals");
+    if(mesh().time().writeTime())
+        averagedNormals.write();
 
     // Propagate the normals into the bulk. 
+    interfaceNormals == averagedNormals;
     for (label i = 0; i < nPropagate_; i++)
     {
-        averagedNormals = fvc::average(averagedNormals);
+        averagedNormals == fvc::average(averagedNormals);
 
         averagedNormals /= mag(averagedNormals) + 
             dimensionedScalar("SMALL", averagedNormals.dimensions(), SMALL);
@@ -159,16 +210,22 @@ volScalarField& pandoraIsosurfaceCurvature::cellCurvature()
             }
         }
     }
+    averagedNormals.rename("averagedNormals");
+    if(mesh().time().writeTime())
+        averagedNormals.write();
 
     // Smooth the normals
     for (label i = 0; i < nAverage_; i++)
     {
-        averagedNormals = fvc::average(averagedNormals);
+        averagedNormals == fvc::average(averagedNormals);
 
         // Normalize the normal vectors. 
         averagedNormals /= mag(averagedNormals) +
             dimensionedScalar("SMALL", averagedNormals.dimensions(), SMALL);
     }
+    averagedNormals.rename("smoothedNormals");
+    if(mesh().time().writeTime())
+        averagedNormals.write();
 
     cellCurvature_ = -fvc::div(averagedNormals);
 
