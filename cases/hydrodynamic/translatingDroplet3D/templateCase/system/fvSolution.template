@@ -48,14 +48,12 @@ solvers
         solver          GAMG;
         smoother        DICGaussSeidel;
         tolerance       1e-09;
-        relTol          0.05;
+        relTol          0;
     }
 
     p_rghFinal
     {
         $p_rgh;
-        tolerance       1e-09;
-        relTol          0;
     }
 
     U
