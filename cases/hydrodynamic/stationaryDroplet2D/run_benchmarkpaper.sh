@@ -40,8 +40,8 @@ fi
 # Create the study split by the solver to be used:
 # NOTE: change if the parameter file changes so that the variation numbers
 # corresponds to interFoam / interIsoFoam
-argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interFoam -v 0-11
-argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interIsoFoam -v 12-23
+argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interFoam -v 0-8
+argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interIsoFoam -v 9-17
 
 # Initialize variants: create mesh and initialize fields
 argo-initialize-parameter-study.py benchmark- -m blockMesh -f initFields.sh -par $JOB_ARG

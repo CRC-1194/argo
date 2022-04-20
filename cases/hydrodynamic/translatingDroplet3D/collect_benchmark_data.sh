@@ -7,11 +7,11 @@ do
     cd $DIR/postProcessing
     python -c "import pandas as pd; \
         dfmax = pd.read_csv('minMaxUError/0/fieldMinMax.dat', delim_whitespace=True, \
-                            comment='#', header=None, names=['time', 'min_UError', 'max_UError']); \
+                            comment='#', header=None, names=['time', 'min_error_velocity', 'max_error_velocity']); \
         dfl1 = pd.read_csv('l1normUError/0/volFieldValue.dat', delim_whitespace=True, comment='#', header=None); \
         dfl2 = pd.read_csv('l2normUError/0/volFieldValue.dat', delim_whitespace=True, comment='#', header=None); \
-        dfmax['l1norm_UError'] = dfl1[1]; \
-        dfmax['l2norm_UError'] = dfl2[1]; \
+        dfmax['mean_absolute_error_velocity'] = dfl1[1]; \
+        dfmax['root_mean_square_deviation_velocity'] = dfl2[1]; \
         dfmax.to_csv('velocity_data.csv', index=False)"
     cd ../../
 done
