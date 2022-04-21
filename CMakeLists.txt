@@ -185,6 +185,8 @@ add_library("pandora" SHARED
     src/pandora/pandoraCurvature/pandoraDivGradCurvature/pandoraDivGradCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalCurvature/pandoraDivNormalCurvature.cpp
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature/pandoraIsosurfaceCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraIntegralCurvature/pandoraIntegralCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraRDFIsosurfaceCurvature/pandoraRDFIsosurfaceCurvature.cpp
     src/pandora/pandoraCurvature/pandoraIsosurfaceCellCurvature/pandoraIsosurfaceCellCurvature.cpp
     src/pandora/pandoraCurvature/pandoraSmoothedMarkerCurvature/pandoraSmoothedMarkerCurvature.cpp
     src/pandora/pandoraCurvatureExtension/pandoraCurvatureAverageExtension/pandoraCurvatureAverageExtension.cpp
@@ -203,6 +205,8 @@ target_include_directories("pandora" PUBLIC
     src/pandora/pandoraCurvature/pandoraDivGradCurvature
     src/pandora/pandoraCurvature/pandoraDivNormalCurvature
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature
+    src/pandora/pandoraCurvature/pandoraIntegralCurvature
+    src/pandora/pandoraCurvature/pandoraRDFIsosurfaceCurvature
     src/pandora/pandoraCurvature/pandoraIsosurfaceCellCurvature
     src/pandora/pandoraCurvature/pandoraSmoothedMarkerCurvature
     src/pandora/pandoraCurvatureExtension/pandoraCurvatureAverageExtension
