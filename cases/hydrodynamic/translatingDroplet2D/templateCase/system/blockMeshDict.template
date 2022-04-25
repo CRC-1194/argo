@@ -16,7 +16,7 @@ FoamFile
 
 L   #calc "2.0*|-DOMAIN_LENGTH-|";
 H   |-DOMAIN_LENGTH-|;
-D   #calc "|-DOMAIN_LENGTH-|/100.0";
+D   #calc "|-DOMAIN_LENGTH-|/|-RESOLUTION-|";
 
 vertices
 (
