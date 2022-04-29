@@ -1,9 +1,6 @@
 values
 {
-
-
 	DELTA_T ( 1e-5 );
-	RESOLUTION ( 64 128 256 );
+	RESOLUTION ( 32 64 128 );
 	solver ( interFoam interIsoFoam );
-
 }

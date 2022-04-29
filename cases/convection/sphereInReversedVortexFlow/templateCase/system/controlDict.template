@@ -23,7 +23,7 @@ startTime       0.0;
 
 stopAt          endTime;
 
-endTime         3.0;
+endTime         3;
 
 writeControl    adjustable;
 
@@ -146,15 +146,23 @@ functions
                  Foam::max(undershoot, 0.)  
             );
 
-            OFstream errorFile("advectionErrors.csv"); 
+            scalar MIN_ALPHA = Foam::min(alphaEnd).value();
+            scalar MAX_ALPHA = Foam::max(alphaEnd).value();
+
+            // Ensure result file is placed in its corresponding case dictionary
+            fileName dataFileName = runTime.rootPath() + "/" + time_.globalCaseName() + "/"
+                                    + "advectionErrors.csv";
+            OFstream errorFile(dataFileName); 
             errorFile << "T_END,N_CELLS,N_CELLS_PER_AXIS,L1_SHAPE_ERROR,"
-                << "VOLUME_ERROR,BOUNDEDNESS_ERROR\n";
+                << "VOLUME_ERROR,BOUNDEDNESS_ERROR,MIN_ALPHA,MAX_ALPHA\n";
             errorFile << runTime.endTime().value() << "," 
                 << mesh().nCells() << ","
                 << Foam::sqrt(double(mesh().nCells())) << "," 
                 << L1_SHAPE_ERROR << "," 
                 << VOLUME_ERROR << "," 
-                << BOUNDEDNESS_ERROR << "\n"; 
+                << BOUNDEDNESS_ERROR << ","
+                << MIN_ALPHA << ","
+                << MAX_ALPHA << "\n"; 
 
         #};
     }
