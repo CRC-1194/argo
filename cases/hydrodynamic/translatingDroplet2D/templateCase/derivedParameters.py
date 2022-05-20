@@ -20,18 +20,26 @@ def computeDeltaT(values):
     rho_ambient = 0.0
     rho_droplet = 0.0
     sigma = 0.0
+
+    # Fluid properties at T=20 degree Celsius as reported
+    # in table x in benchmark paper (add DOI)
+    rho_water = 998.2
+    rho_air = 1.19
+    rho_gearoil = 888.0
+    rho_oil_novec7500 = 1614.0
+
     if values["FLUID_PAIRING"] == "water-air":
-        rho_ambient = 1.0
-        rho_droplet = 1000.0
-        sigma = 72.75e-3
+        rho_ambient = rho_air
+        rho_droplet = rho_water
+        sigma = 72.74e-3
     elif values["FLUID_PAIRING"] == "oil_novec7500-water": 
-        rho_ambient = 1000.0
-        rho_droplet = 1614.0
+        rho_ambient = rho_water
+        rho_droplet = rho_oil_novec7500
         sigma = 49.5e-3
     elif values["FLUID_PAIRING"] == "gearoil-air":
-        rho_ambient = 1.0
-        rho_droplet = 888.0
-        sigma = 30.0e-3
+        rho_ambient = rho_air
+        rho_droplet = rho_gearoil
+        sigma = 32.9e-3
     else:
         sys.exit("Error: unknown FLUID PAIRING:" + values["FLUID_PAIRING"])
 
