@@ -72,7 +72,9 @@ functions    // sub-dictionary name under the system/controlDict file
         // Optional entries (runtime modifiable)
         alpha           alpha.dispersed;
         liquid          true;
-        direction       (0 0 1);
+        // The search directions has to be reversed to obtain proper values for interfaceHeight
+        // above location (TT)
+        direction       (0 0 -1);
         interpolationScheme    cellPoint;
 
         // Optional (inherited) entries. Most not listed as defaults are fine.
