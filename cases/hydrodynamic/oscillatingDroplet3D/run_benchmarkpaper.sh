@@ -54,5 +54,5 @@ then
     wait
 fi
 
-nohup argo-run-study.py interFoam -d benchmark-interFoam -np 8 $JOB_ARG $NUM_CASES > logs.interFoam &
-nohup argo-run-study.py interIsoFoam -d benchmark-interIsoFoam -np 8 $JOB_ARG $NUM_CASES > logs.interIsoFoam &
+nohup argo-run-study.py interFoam -d benchmark-interFoam -np 32 $JOB_ARG $NUM_CASES > logs.interFoam &
+nohup argo-run-study.py interIsoFoam -d benchmark-interIsoFoam -np 32 $JOB_ARG $NUM_CASES > logs.interIsoFoam &
