@@ -2,6 +2,7 @@
 
 # Header of interface height function object is broken. Add it manually before
 # agglomeration.
+# Add major semi axis length as additional column.
 for DIR in benchmark-inter*/;
 do
     cd $DIR/postProcessing/interfaceHeight1/0
