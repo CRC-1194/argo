@@ -86,7 +86,7 @@ pandoraCurvature::pandoraCurvature
                 IOobject::AUTO_WRITE
             ), 
             mesh, 
-            dimensionedScalar("cellCurvature", pow(dimLength, -1), 0)
+            dimensionedScalar("cellCurvature", dimless/dimLength, Zero)
         )
 {}
 

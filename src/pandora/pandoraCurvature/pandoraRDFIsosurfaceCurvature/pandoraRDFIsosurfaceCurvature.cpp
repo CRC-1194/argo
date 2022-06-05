@@ -25,7 +25,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "pandoraIsosurfaceCurvature.hpp"
+#include "pandoraRDFIsosurfaceCurvature.hpp"
 
 #include "addToRunTimeSelectionTable.H"
 #include "dictionary.H"
@@ -44,15 +44,15 @@ namespace Foam {
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-defineTypeNameAndDebug(pandoraIsosurfaceCurvature, false);
-addToRunTimeSelectionTable(pandoraCurvature, pandoraIsosurfaceCurvature, Dictionary);
+defineTypeNameAndDebug(pandoraRDFIsosurfaceCurvature, false);
+addToRunTimeSelectionTable(pandoraCurvature, pandoraRDFIsosurfaceCurvature, Dictionary);
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-pandoraIsosurfaceCurvature::pandoraIsosurfaceCurvature
+pandoraRDFIsosurfaceCurvature::pandoraRDFIsosurfaceCurvature
 (
     const fvMesh& mesh,
     const dictionary& dict
@@ -66,65 +66,94 @@ pandoraIsosurfaceCurvature::pandoraIsosurfaceCurvature
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-volScalarField& pandoraIsosurfaceCurvature::cellCurvature()
+volScalarField& pandoraRDFIsosurfaceCurvature::cellCurvature()
 {
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (!meshDb.found(fieldName_))
     {
         FatalErrorInFunction
-            << "pandoraIsosurfaceCurvature::cellCurvature \n"
+            << "pandoraRDFIsosurfaceCurvature::cellCurvature \n"
             << "Field " << fieldName_ << " not in mesh registry." 
             << abort(FatalError);
     }
 
     // Constuct isoSurface. 
-    const volScalarField& vf = mesh().lookupObject<volScalarField>(fieldName_);
-    
-    volScalarField vfAvg = vf;
-    for (label i = 0; i < 0; i++)
-        vfAvg = fvc::average(vfAvg);
+    volScalarField vof = mesh().lookupObject<volScalarField>("alpha.dispersed");
+    volScalarField rdf = mesh().lookupObject<volScalarField>(fieldName_);
+    scalar maxRDF = Foam::max(rdf).value();
+    scalar minRDF = Foam::min(rdf).value();
+
+    volScalarField rdfTmp = rdf;
+    forAll (rdf, cellI)
+    {
+        if (mag(rdf[cellI]) > SMALL 
+              && vof[cellI] > SMALL 
+              && vof[cellI] < 1 - SMALL) continue;
+
+        if (vof[cellI] < SMALL)
+            rdfTmp[cellI] = minRDF;
+        else if (vof[cellI] > 1 - SMALL)
+            rdfTmp[cellI] = maxRDF;
+    }
+    rdf = rdfTmp;
+
+    rdf.rename("rdf1");
+    if(mesh().time().writeTime())
+        rdf.write();
+
+    for (label i = 0; i < 1; i++)
+        rdf = fvc::average(rdf);
+
+    rdf.rename("rdf2");
+    if(mesh().time().writeTime())
+        rdf.write();
 
     volPointInterpolation vpInterp(mesh());
 
-    tmp<pointScalarField> pfTmp = vpInterp.interpolate(vfAvg);
-    pointScalarField& pf = pfTmp.ref();
+    tmp<pointScalarField> rdfpTmp = vpInterp.interpolate(rdf);
+    pointScalarField& rdfp = rdfpTmp.ref();
 
-    isoSurfaceTopo alphaIso001(
+    scalar delta_x = max(pow(mesh().deltaCoeffs(), -1)).value();
+
+    isoSurfaceTopo RDFIso000(
         mesh(),
-        vfAvg,
-        pf,
-        0.1//,
+        rdf,
+        rdfp,
+        0//,
         //isoParams
     );
-    alphaIso001.write("alphaIso001.vtk");
+    if(mesh().time().writeTime())
+        RDFIso000.write("RDFIso000.vtk");
 
-    isoSurfaceTopo alphaIso099(
+    isoSurfaceTopo RDFIso001(
         mesh(),
-        vfAvg,
-        pf,
-        0.9//,
+        rdf,
+        rdfp,
+        delta_x * 0.5//,
         //isoParams
     );
-    alphaIso099.write("alphaIso099.vtk");
+    if(mesh().time().writeTime())
+        RDFIso001.write("RDFIso001.vtk");
 
-    isoSurfaceTopo alphaIso050(
+    isoSurfaceTopo RDFIso002(
         mesh(),
-        vfAvg,
-        pf,
-        0.5//,
+        rdf,
+        rdfp,
+        - delta_x * 0.5//,
         //isoParams
     );
-    alphaIso050.write("alphaIso050.vtk");
+    if(mesh().time().writeTime())
+        RDFIso002.write("RDFIso002.vtk");
 
     // Get meshCells and normals from isoSurface. 
-    const auto& triToCell001 = alphaIso001.meshCells();
-    const auto& triNormals001 = alphaIso001.Sf();
+    const auto& triToCell000 = RDFIso000.meshCells();
+    const auto& triNormals000 = RDFIso000.Sf();
 
-    const auto& triToCell099 = alphaIso099.meshCells();
-    const auto& triNormals099 = alphaIso099.Sf();
+    const auto& triToCell001 = RDFIso001.meshCells();
+    const auto& triNormals001 = RDFIso001.Sf();
 
-    const auto& triToCell050 = alphaIso050.meshCells();
-    const auto& triNormals050 = alphaIso050.Sf();
+    const auto& triToCell002 = RDFIso002.meshCells();
+    const auto& triNormals002 = RDFIso002.Sf();
 
     volVectorField interfaceNormals
     (
@@ -147,39 +176,47 @@ volScalarField& pandoraIsosurfaceCurvature::cellCurvature()
     forAll(cellCurvature_, cellI)
         cellCurvature_[cellI] = 0.0;
 
-    /*
-    forAll(triToCell099, i)
-    {
-        label cellI = triToCell099[i];
-        interfaceNormals[cellI] = triNormals099[i];
-        //cellCurvature_[cellI] = 2000.0;
-    }
-    interfaceNormals.rename("interfaceNormals1");
-    if(mesh().time().writeTime())
-        interfaceNormals.write();
-
     forAll(triToCell001, i)
     {
         label cellI = triToCell001[i];
         interfaceNormals[cellI] = triNormals001[i];
         //cellCurvature_[cellI] = 2000.0;
     }
+    interfaceNormals.rename("interfaceNormals1");
+    if(mesh().time().writeTime())
+        interfaceNormals.write();
+
+    forAll(triToCell002, i)
+    {
+        label cellI = triToCell002[i];
+        interfaceNormals[cellI] = triNormals002[i];
+        //cellCurvature_[cellI] = 2000.0;
+    }
     interfaceNormals.rename("interfaceNormals2");
     if(mesh().time().writeTime())
         interfaceNormals.write();
-    */
 
-    forAll(triToCell050, i)
+    /*
+    forAll(triToCell000, i)
     {
-        label cellI = triToCell050[i];
-        interfaceNormals[cellI] = triNormals050[i];
+        label cellI = triToCell000[i];
+        interfaceNormals[cellI] = triNormals000[i];
         //cellCurvature_[cellI] = 2000.0;
     }
     interfaceNormals.rename("interfaceNormals3");
     if(mesh().time().writeTime())
         interfaceNormals.write();
 
-    /*
+    vector c(0.005, 0.005, 0.005);
+    forAll(interfaceNormals, i)
+    {
+        vector mc = mesh().C()[i];
+        interfaceNormals[i] = c - mc;
+    }
+    interfaceNormals.rename("interfaceNormals4");
+    if(mesh().time().writeTime())
+        interfaceNormals.write();
+
     for (label i = 0; i < nPropagate_; i++)
     {
         auto cc = cellCurvature_;

@@ -25,15 +25,27 @@
         fvc::makeAbsolute(phiHbyA, U);
     }
 
+scalar maxPhiHbyA = max(phiHbyA).value();
+Info<<"maxPhiHbyA = "<<maxPhiHbyA<<nl;
+
+surfaceScalarField stf = mixture.surfaceTensionForce();
+scalar maxStf = max(stf).value();
+Info<<"maxStf = "<<maxStf<<nl;
+
+scalar maxFSigma = max(fSigma).value();
+Info<<"maxFSigma = "<<maxFSigma<<nl;
+
     surfaceScalarField phig
     (
         (
             //mixture.surfaceTensionForce()
-            //pandoraModel.surfaceTensionForce(alpha1)
             fSigma
           - ghf*fvc::snGrad(rho)
         )*rAUf*mesh.magSf()
     );
+
+scalar maxPhig = max(phig).value();
+Info<<"maxPhig = "<<maxPhig<<nl;
 
     phiHbyA += phig;
 
@@ -58,7 +70,6 @@
             p_rgh.relax();
 
             U = HbyA + rAU()*fvc::reconstruct((phig - p_rghEqn.flux())/rAUf);
-            //U = fvc::reconstruct(phi);
             U.correctBoundaryConditions();
             fvOptions.correct(U);
         }
@@ -89,4 +100,10 @@
     {
         rAU.clear();
     }
+
+scalar maxP = max(p_rgh).value();
+Info<<"maxP = "<<maxP<<nl;
+
+scalar maxU = max(mag(U)).value();
+Info<<"maxU = "<<maxU<<nl;
 }

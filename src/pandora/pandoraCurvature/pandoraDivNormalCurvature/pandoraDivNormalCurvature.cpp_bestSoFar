@@ -1,0 +1,412 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | www.openfoam.com
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+    Copyright (C) 2020 AUTHOR,AFFILIATION
+-------------------------------------------------------------------------------
+License
+    This file is part of OpenFOAM.
+
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+\*---------------------------------------------------------------------------*/
+
+#include "pandoraDivNormalCurvature.hpp"
+
+#include "addToRunTimeSelectionTable.H"
+#include "dictionary.H"
+#include "fvcAverage.H"
+#include "fvcDiv.H"
+#include "fvcGrad.H"
+#include "error.H"
+
+namespace Foam {
+
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+defineTypeNameAndDebug(pandoraDivNormalCurvature, false);
+addToRunTimeSelectionTable(pandoraCurvature, pandoraDivNormalCurvature, Dictionary);
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+
+pandoraDivNormalCurvature::pandoraDivNormalCurvature
+(
+    const fvMesh& mesh, 
+    const dictionary& dict
+)
+    :
+        pandoraCurvature(mesh, dict), 
+        fieldName_(curvatureDict_.get<word>("normalField")),
+        nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 3)), 
+        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 3)), 
+        averagedNormals_ 
+        (
+            IOobject
+            (
+                "averagedNormals", 
+                mesh.time().timeName(), 
+                mesh,
+                IOobject::NO_READ, 
+                IOobject::AUTO_WRITE
+            ),
+            mesh, 
+            dimensionedVector("averagedNormals", dimless, vector(0,0,0))
+        )
+{}
+
+// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+
+volScalarField& pandoraDivNormalCurvature::cellCurvature()
+{
+    const auto& meshDb = cellCurvature_.mesh().thisDb();
+    if (meshDb.found(fieldName_))
+    {
+        const volVectorField& interfaceNormals = 
+            mesh().lookupObject<volVectorField>(fieldName_);
+        const volVectorField& interfaceCentres = 
+            mesh().lookupObject<volVectorField>("interfaceCentre.dispersed");
+        const volScalarField& isInterfaceCell = 
+            mesh().lookupObject<volScalarField>("isInterfaceCell");
+        const volScalarField& RDF = 
+            mesh().lookupObject<volScalarField>("RDF");
+        const volScalarField& psi = 
+            mesh().lookupObject<volScalarField>("alpha.dispersed");
+
+        List<DynamicList<label> > refCells(mesh().nCells());
+        forAll (refCells, cellI)
+        {
+            if (mag(interfaceNormals[cellI]) != 0)
+            {
+                refCells[cellI].append(cellI);
+            }
+        }
+
+vector sphereCentre(0.005, 0.005, 0.005); // Sphere centre
+scalar radius = 0.002; // Sphere radius
+vector origin(0, 0, 0); 
+
+        volVectorField in = interfaceNormals;
+        volScalarField rdf = RDF;
+
+/*
+forAll (in, i)
+{
+    if (mag(in[i]) < SMALL) continue;
+    in[i] = sphereCentre - mesh().C()[i];
+}
+*/
+
+        labelList markers(in.size(), -1);
+        forAll (markers, cellI)
+        {
+            if (mag(in[cellI]) != 0)
+            {
+                markers[cellI] = 0;
+            }
+        }
+
+        in /=
+        (
+            mag(in) + 
+            dimensionedScalar(
+                "SMALL", in.dimensions(), SMALL
+            )
+        );
+        in.rename("normals1");
+        if (cellCurvature_.time().writeTime())
+            in.write();
+
+        List<DynamicList<label> > cellNeighbours(markers.size());
+        for (label i = 0; i < nPropagate_; ++i)
+        {
+            // Mark propagated cells
+            forAll (markers, cellI)
+            {
+                //if (mag(in[cellI]) > SMALL)
+                if (markers[cellI] != i) continue;
+
+                const labelList& ncs = mesh().cellCells()[cellI];
+                forAll (ncs, cellJ)
+                {
+                    label id = ncs[cellJ];
+                    if (markers[id] == -1)
+                    {
+                        markers[id] = i + 1;
+                    }
+                }
+            }
+
+            volVectorField inTmp = in;
+            forAll (markers, cellI)
+            {
+                if (markers[cellI] != i + 1) continue;
+
+                inTmp[cellI] = Zero;
+                const point& p = mesh().C()[cellI];
+
+                labelHashSet hashSet;
+                DynamicList<label> neibrCells;
+                DynamicList<vector> vertcDist;
+                DynamicList<vector> vertcDistNorm;
+
+                const labelList& cps = mesh().cellPoints()[cellI];
+                forAll (cps, pI)
+                {
+                    const labelList& pcs = mesh().pointCells()[cps[pI]];
+                    forAll (pcs, cI)
+                    {
+                        label cellJ = pcs[cI];
+
+                        if (markers[cellJ] == -1) continue;
+                        if (markers[cellJ] == i + 1) continue;
+
+                        if (hashSet.found(cellJ)) continue;
+                        hashSet.insert(cellJ);
+
+                        vector n = in[cellJ];
+                        if (mag(n) != 0)
+                        {
+                            n /= mag(n);
+
+                            point centre{Zero};
+                            centre = mesh().C()[cellJ];
+
+                            /*
+                            scalar t = -rdf[cellJ];
+                            centre.x() += t * n.x();
+                            centre.y() += t * n.y();
+                            centre.z() += t * n.z();
+                            */
+
+                            vector dist = centre - p;
+
+                            vector distToSurf = dist & n / mag(n) * n;
+                            vector verticalDist = dist - distToSurf;
+                            inTmp[cellI] += n / max(mag(verticalDist), SMALL);
+
+                            neibrCells.append(cellJ);
+                            vertcDist.append(verticalDist);
+                            vertcDistNorm.append(verticalDist.normalise());
+                        }
+                    }
+                }
+
+                /*
+                scalar minDist = GREAT;
+                scalar maxDist = SMALL;
+                label minDistId = -1;
+                label maxDistId = -1;
+                forAll (vertcDist, i)
+                {
+                    vector vd = vertcDist[i];
+                    if (mag(vd) < minDist)
+                    {
+                        minDist = mag(vd);
+                        minDistId = i;
+                    }
+                    if (mag(vd) > maxDist)
+                    {
+                        maxDist = mag(vd);
+                        maxDistId = i;
+                    }
+                }
+                vector minVd = vertcDist[minDistId];
+                vector maxVd = vertcDist[maxDistId];
+                label minId = neibrCells[minDistId];
+                label maxId = neibrCells[maxDistId];
+                if (mag(minVd) == 0)
+                {
+                    inTmp[cellI] = in[minId];
+                    continue;
+                }
+                else
+                {
+                    //inTmp[cellI] -= in[maxId].normalise() / mag(maxVd);
+                }
+
+                label id1 = 0;
+                label id2 = 0;
+                scalar min = GREAT;
+                for (label i = 0; i < vertcDist.size(); i++)
+                {
+                    if (i == minDistId) continue;
+
+                    for (label j = i + 1; j < vertcDist.size(); j++)
+                    {
+                        if (j == minDistId) continue;
+
+                        vector vd1 = vertcDistNorm[i];
+                        vector vd2 = vertcDistNorm[j];
+                        
+                        scalar a0 = (minVd & vd1) / (mag(minVd) * mag(vd1));
+                        scalar a1 = (vd1 & vd2) / (mag(vd1) * mag(vd2));
+                        scalar a2 = (vd2 & minVd) / (mag(vd2) * mag(minVd));
+
+                        a0 = acos(a0);
+                        a1 = acos(a1);
+                        a2 = acos(a2);
+                        
+                        scalar avg = (a0 + a1 + a2) / 3;
+                        scalar sd = (sqr(a0 - avg) + sqr(a1 - avg) + sqr(a2 - avg)) / 3;
+
+                        if (sd < min)
+                        {
+                            min = sd;
+                            id1 = i;
+                            id2 = j;
+                        }
+                    }
+                }
+
+                vector vd0 = in[neibrCells[minDistId]];
+                vector vd1 = in[neibrCells[id1]];
+                vector vd2 = in[neibrCells[id2]];
+                scalar w0 = mag(vertcDist[minDistId]);
+                scalar w1 = mag(vertcDist[id1]);
+                scalar w2 = mag(vertcDist[id2]);
+                inTmp[cellI] = (vd0 / mag(vd0)) / max(w0, SMALL)
+                             + (vd1 / mag(vd1)) / max(w1, SMALL)
+                             + (vd2 / mag(vd2)) / max(w2, SMALL);
+                */
+            }
+
+            in = inTmp;
+
+            in /=
+            (
+                mag(in) + 
+                dimensionedScalar(
+                    "SMALL", in.dimensions(), SMALL
+                )
+            );
+        }
+        in.rename("normals3");
+        if (cellCurvature_.time().writeTime())
+        {
+            in.write();
+        }
+
+        for (label i = 0; i < nAverage_; i++)
+        {
+            in = fvc::average(in);
+            in /=
+            (
+                mag(in) + 
+                dimensionedScalar(
+                    "SMALL", in.dimensions(), SMALL
+                )
+            );
+        }
+
+volScalarField cellMarkers = isInterfaceCell;
+forAll (cellMarkers, cellI)
+    cellMarkers[cellI] = markers[cellI];
+cellMarkers.rename("cellMarkers");
+if (cellCurvature_.time().writeTime())
+    cellMarkers.write();
+
+scalar absError = 0;
+scalar l1 = 0;
+scalar l2 = 0;
+scalar lInf = 0;
+label count = 0;
+label index = 0;
+volVectorField exactNormals = in;
+volVectorField calcNormals = in;
+scalar delta_x = max(pow(mesh().deltaCoeffs(), -1)).value();
+scalar minArea = 0.001 * delta_x * delta_x;
+forAll(in, i)
+{
+    if (mag(in[i]) != 0)
+    {
+        vector n1 = Zero;
+        //if (mag(interfaceNormals[i]) < minArea || psi[i] < 0.005)
+            n1 = sphereCentre - mesh().C()[i];
+        //else
+        //    n1 = sphereCentre - interfaceCentres[i];
+        n1 /= mag(n1);
+        exactNormals[i] = n1;
+
+        vector n2 = in[i];
+        n2 /= mag(n2);
+        calcNormals[i] = n2;
+
+        if (markers[i] != 1) continue;
+
+        absError = mag(n1 - n2);
+        l1 += absError / mag(n1);
+        l2 += sqr(absError) / magSqr(n1);
+        count++;
+        if (absError > lInf)
+        {
+            lInf = absError;
+            index = i;
+        }
+    }
+}
+Info<<"l1 = "<<l1/count<<nl;
+Info<<"l2 = "<<sqrt(l2/count)<<nl;
+Info<<"lInf = "<<lInf/mag(exactNormals[index])<<nl;
+exactNormals.rename("normExct");
+if (cellCurvature_.time().writeTime())
+    exactNormals.write();
+calcNormals.rename("normCalc");
+if (cellCurvature_.time().writeTime())
+    calcNormals.write();
+
+        averagedNormals_ == in; 
+        //averagedNormals_ == exactNormals; 
+
+        cellCurvature_ = -fvc::div(averagedNormals_);
+        //cellCurvature_ = -fvc::div(fvc::grad(rdf) / (mag(fvc::grad(rdf)) + SMALL));
+        //cellCurvature_ = -fvc::div(fvc::grad(rdf) / (mag(fvc::grad(rdf)) + dimensionedScalar("SMALL", rdf.dimensions(), SMALL)));
+
+        forAll (cellCurvature_, cellI)
+        {
+            if (markers[cellI] == -1 || markers[cellI] == 2)
+            {
+                cellCurvature_[cellI] = 0;
+            }
+            else
+            {
+                cellCurvature_[cellI] = 2.0 / (2.0 / (cellCurvature_[cellI] + SMALL) + rdf[cellI] * 1.0);
+                //scalar dis = radius - mag(sphereCentre - mesh().C()[cellI]);
+                //cellCurvature_[cellI] = 2.0 / (2.0 / cellCurvature_[cellI] + dis);
+            }
+        }
+    }
+    else
+    {
+        FatalErrorInFunction
+            << "pandoraDivNormalCurvature::cellCurvature \n"
+            << "Field " << fieldName_ << " not in mesh registry." 
+	    << "Available registered fields are : \n" 
+	    << mesh().names() 
+            << abort(FatalError);
+    }
+
+
+    return cellCurvature_;
+}
+
+// * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * * //
+
+// ************************************************************************* //
+
+} // End namespace Foam
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

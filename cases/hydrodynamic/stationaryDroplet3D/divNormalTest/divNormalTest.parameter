@@ -9,12 +9,12 @@ values
 
     RESOLUTION 
     (
-        16 32
+        32 64 128
     );
 
     N_PROPAGATIONS
     (
-        0 
+        3 
     );
 
     N_AVERAGES

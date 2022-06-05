@@ -180,10 +180,13 @@ target_link_libraries("triSurfaceImmersion"
 
 add_library("pandora" SHARED
     src/pandora/curvatureFunctionObject/curvatureFunctionObject.cpp
+    src/pandora/curvatureSfFunctionObject/curvatureSfFunctionObject.cpp
     src/pandora/pandora/pandora.cpp
     src/pandora/pandoraCurvature/pandoraCurvature/pandoraCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivGradCurvature/pandoraDivGradCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalCurvature/pandoraDivNormalCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraDivNormalExactCurvature/pandoraDivNormalExactCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraDivNormalIsoCurvature/pandoraDivNormalIsoCurvature.cpp
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature/pandoraIsosurfaceCurvature.cpp
     src/pandora/pandoraCurvature/pandoraIntegralCurvature/pandoraIntegralCurvature.cpp
     src/pandora/pandoraCurvature/pandoraRDFIsosurfaceCurvature/pandoraRDFIsosurfaceCurvature.cpp
@@ -200,10 +203,13 @@ add_library("pandora" SHARED
 )
 target_include_directories("pandora" PUBLIC
     src/pandora/curvatureFunctionObject
+    src/pandora/curvatureSfFunctionObject
     src/pandora/pandora
     src/pandora/pandoraCurvature/pandoraCurvature
     src/pandora/pandoraCurvature/pandoraDivGradCurvature
     src/pandora/pandoraCurvature/pandoraDivNormalCurvature
+    src/pandora/pandoraCurvature/pandoraDivNormalExactCurvature
+    src/pandora/pandoraCurvature/pandoraDivNormalIsoCurvature
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature
     src/pandora/pandoraCurvature/pandoraIntegralCurvature
     src/pandora/pandoraCurvature/pandoraRDFIsosurfaceCurvature
@@ -433,9 +439,11 @@ target_include_directories("interIsoPandoraFoam" SYSTEM PRIVATE
     ${of_src_path}/transportModels/interfaceProperties/lnInclude
     ${of_src_path}/TurbulenceModels/turbulenceModels/lnInclude
     ${of_src_path}/TurbulenceModels/incompressible/lnInclude
+    ${of_src_path}/TurbulenceModels/phaseIncompressible/lnInclude
     ${of_src_path}/transportModels/immiscibleIncompressibleTwoPhaseMixture/lnInclude
+    ${of_src_path}/phaseSystemModels/twoPhaseInter/incompressibleInterPhaseTransportModel/lnInclude
+    ${of_src_path}/phaseSystemModels/twoPhaseInter/VoFphaseIncompressibleTurbulenceModels/lnInclude
     ${of_src_path}/surfMesh/lnInclude
-    ${of_src_path}/transportModels/geometricVoF/lnInclude
     ${of_app_path}/solvers/multiphase/VoF
     ${of_app_path}/solvers/multiphase/interFoam
 )
@@ -450,9 +458,11 @@ target_link_libraries("interIsoPandoraFoam"
     ${OF_INCOMPRESSIBLETRANSPORTMODELS}
     ${OF_INTERFACEPROPERTIES}
     ${OF_IMMISCIBLEINCOMPRESSIBLETWOPHASEMIXTURE}
+    ${OF_INCOMPRESSIBLEINTERPHASETRANSPORTMODELS}
     ${OF_TURBULENCEMODELS}
     ${OF_INCOMPRESSIBLETURBULENCEMODELS}
     ${OF_WAVEMODELS}
+    ${OF_VOFPHASETURBULENTTRANSPORTMODELS}
     ${OF_SURFMESH}
     dl
     m

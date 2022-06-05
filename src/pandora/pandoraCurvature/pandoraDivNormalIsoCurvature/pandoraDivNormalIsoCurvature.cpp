@@ -25,7 +25,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "pandoraIntegralCurvature.hpp"
+#include "pandoraDivNormalIsoCurvature.hpp"
 
 #include "addToRunTimeSelectionTable.H"
 #include "dictionary.H"
@@ -44,18 +44,20 @@ namespace Foam {
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-defineTypeNameAndDebug(pandoraIntegralCurvature, false);
-addToRunTimeSelectionTable(pandoraCurvature, pandoraIntegralCurvature, Dictionary);
+defineTypeNameAndDebug(pandoraDivNormalIsoCurvature, false);
+addToRunTimeSelectionTable(pandoraCurvature, pandoraDivNormalIsoCurvature, Dictionary);
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-void pandoraIntegralCurvature::calcKappa
+void pandoraDivNormalIsoCurvature::calcKappa
 (
     const isoSurfaceTopo& isoTopo,
-    const volScalarField& rdf,
     const scalar& iso,
     const scalar& delta_x,
+    vectorField& normal,
+    scalarField& isoList,
     scalarField& kappa,
+    scalarField& scaledKappa,
     scalarField& area,
     labelList& marker
 )
@@ -86,6 +88,9 @@ void pandoraIntegralCurvature::calcKappa
         }
 
         label cellId = meshCells[faceI];
+
+        normal[cellId] = faceAreas[cellId];
+        isoList[cellId] = iso;
         
         area[cellId] = Foam::sqr(magFaceAreas[faceI]);
 
@@ -95,15 +100,21 @@ void pandoraIntegralCurvature::calcKappa
         if (mag(kappa[cellId]) > SMALL)
         {
             scalar radius = 2.0 / kappa[cellId] + iso * delta_x;
-            kappa[cellId] = 2.0 / radius;
+            scaledKappa[cellId] = 2.0 / radius;
         }
     }
 }
 
-scalar pandoraIntegralCurvature::largestAreaCurv
+vector pandoraDivNormalIsoCurvature::largestAreaNormal
 (
+    const vectorField& normalList,
+    const scalarList& isoList,
     const scalarList& kappaList,
-    const scalarList& areaList
+    const scalarList& scaledKappaList,
+    const scalarList& areaList,
+    scalar& maxAreaIso,
+    scalar& maxAreaKappa,
+    scalar& maxAreaScaledKappa
 )
 {
     label which = 0;
@@ -116,12 +127,15 @@ scalar pandoraIntegralCurvature::largestAreaCurv
             max = areaList[i];
         }
     }
-    return kappaList[which];
+    maxAreaIso = isoList[which];
+    maxAreaKappa = kappaList[which];
+    maxAreaScaledKappa = scaledKappaList[which];
+    return normalList[which];
 }
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-pandoraIntegralCurvature::pandoraIntegralCurvature
+pandoraDivNormalIsoCurvature::pandoraDivNormalIsoCurvature
 (
     const fvMesh& mesh,
     const dictionary& dict
@@ -132,18 +146,31 @@ pandoraIntegralCurvature::pandoraIntegralCurvature
     nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 3)),
     nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 3)),
     range_(curvatureDict_.getOrDefault<scalar>("range", 1)),
-    nLayer_(curvatureDict_.getOrDefault<label>("nLayer", 3))
+    nLayer_(curvatureDict_.getOrDefault<label>("nLayer", 3)),
+    normals_
+    (
+        IOobject
+        (
+            "normals",
+            mesh.time().timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh,
+        dimensionedVector("normals", dimless, vector::zero)
+    )
 {}
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-volScalarField& pandoraIntegralCurvature::cellCurvature()
+volScalarField& pandoraDivNormalIsoCurvature::cellCurvature()
 {
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (!meshDb.found(fieldName_))
     {
         FatalErrorInFunction
-            << "pandoraIntegralCurvature::cellCurvature \n"
+            << "pandoraDivNormalIsoCurvature::cellCurvature \n"
             << "Field " << fieldName_ << " not in mesh registry." 
             << abort(FatalError);
     }
@@ -161,11 +188,10 @@ volScalarField& pandoraIntegralCurvature::cellCurvature()
     {
         rdfExt[cellI] = rdf[cellI];
 
-        /*
         //vector c(0.005, 0.005, 0.005);
         //rdfExt[cellI] = 0.002 - mag(mesh().C()[cellI] - c);
-        */
 
+        /*
         if (iic[cellI] > 0.5)
         {
             continue;
@@ -184,6 +210,7 @@ volScalarField& pandoraIntegralCurvature::cellCurvature()
         {
             rdfExt[cellI] = maxRdf;
         }
+        */
     }
 
     scalar delta_x = max(pow(mesh().deltaCoeffs(), -1)).value();
@@ -199,11 +226,13 @@ volScalarField& pandoraIntegralCurvature::cellCurvature()
 
     labelList marker(mesh().nCells(), 0);
 
+    DynamicList<vectorField> normalList;
+    DynamicList<scalarField> isoList;
     DynamicList<scalarField> kappaList;
+    DynamicList<scalarField> scaledKappaList;
     DynamicList<scalarField> areaList;
     for (label i = 0; i < nLayer_; i++)
     {
-        //scalar iso = -range_;
         scalar iso = -range_ + i * 2.0 * range_ / (nLayer_ - 1);
         isoSurfaceTopo isoTopo
         (
@@ -213,32 +242,77 @@ volScalarField& pandoraIntegralCurvature::cellCurvature()
             iso
         );
         isoTopo.write("isoTopo"+Foam::name(i)+".vtk");
+
+        vectorField normal(mesh().nCells(), vector::zero);
+        scalarField isoValue(mesh().nCells(), 0.0);
         scalarField kappa(mesh().nCells(), 0.0);
+        scalarField scaledKappa(mesh().nCells(), 0.0);
         scalarField area(mesh().nCells(), 0.0);
-        calcKappa(isoTopo, rdfExt, iso, delta_x, kappa, area, marker);
+
+        calcKappa(isoTopo, iso, delta_x, normal, isoValue, kappa, scaledKappa, area, marker);
+
+        normalList.append(normal);
+        isoList.append(isoValue);
         kappaList.append(kappa);
+        scaledKappaList.append(kappa);
         areaList.append(area);
     }
 
+    scalarList maxAreaIso(normals_.size(), 0.0);
+    scalarList maxAreaKappa(normals_.size(), 0.0);
+    scalarList maxAreaScaledKappa(normals_.size(), 0.0);
     forAll (cellCurvature_, cellI)
     {
         if (marker[cellI] == 0)
         {
             cellCurvature_[cellI] = 0.0;
+            normals_[cellI] = vector::zero;
             continue;
         }
         else
         {
+            vectorField nl(normalList.size());
+            scalarList il(isoList.size());
             scalarList kl(kappaList.size());
+            scalarList skl(scaledKappaList.size());
             scalarList al(areaList.size());
+            scalar mai = 0.0;
+            scalar mak = 0.0;
+            scalar mask = 0.0;
             forAll (kl, i)
             {
+                nl[i] = normalList[i][cellI];
+                il[i] = isoList[i][cellI];
                 kl[i] = kappaList[i][cellI];
+                skl[i] = scaledKappaList[i][cellI];
                 al[i] = areaList[i][cellI];
             }
-            cellCurvature_[cellI] = largestAreaCurv(kl, al);
-            //cellCurvature_[cellI] = 1000.0;
+            normals_[cellI] = largestAreaNormal(nl, il, kl, skl, al, mai, mak, mask);
+            maxAreaIso[cellI] = mai;
+            maxAreaKappa[cellI] = mak;
+            maxAreaScaledKappa[cellI] = mask;
         }
+    }
+
+    normals_ /= 
+    (
+        mag(normals_) + 
+        dimensionedScalar(
+            "SMALL", normals_.dimensions(), SMALL
+        )
+    );
+
+    cellCurvature_ = -fvc::div(normals_);
+    forAll(cellCurvature_, cellI)
+    {
+        if (mag(maxAreaKappa[cellI]) < SMALL
+               || mag(maxAreaScaledKappa[cellI]) < SMALL) continue;
+
+        scalar radius = 2.0 / maxAreaKappa[cellI];
+        scalar scaledRadius = 2.0 / maxAreaScaledKappa[cellI];
+        scalar scale = radius / scaledRadius;
+Info<<cellCurvature_[cellI] - maxAreaKappa[cellI]<<nl;
+        cellCurvature_[cellI] *= scale;
     }
 
     return cellCurvature_;

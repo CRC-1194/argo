@@ -59,22 +59,14 @@ solvers
         tolerance       1e-06;
         relTol          0;
     }
-
-    UFinal
-    {
-        solver          PBiCGStab;
-        preconditioner  DILU;
-        tolerance       1e-06;
-        relTol          0;
-    }
 }
 
 
 PIMPLE
 {
     momentumPredictor no;
-    nOuterCorrectors @!N_OUTER!@;
-    nCorrectors     @!N_INNER!@;
+    nOuterCorrectors 2;
+    nCorrectors     3;
     nNonOrthogonalCorrectors 0;
     // pRefCell        0;
     // pRefValue       0;
@@ -84,22 +76,23 @@ pandora
 {
     curvature
     {
-        type isosurface;
-        nPropagate @!N_PROPAGATIONS!@;  
-        nAverage   @!N_AVERAGES!@; 
-        fieldName "alpha.dispersed"; 
+        type smoothedMarker;
+        markerField alpha.water;
+        markerFieldTolerance 1e-02; 
+        nMarkerAverages @!N_MARKER_AVERAGES!@; 
+        nNormalAverages @!N_NORMAL_AVERAGES!@; 
     }
     curvatureExtension
     {
-        type noExtension;
-        //type averageExtension;
-        //nExtensionIterations @!N_EXTENSIONS!@; 
+        //type noExtension;
+        type averageExtension;
+        nExtensionIterations @!N_CURVATURE_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        type noRegularisation;
-        //type tangentialAverage;
-        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
+        //type noRegularisation;
+        type tangentialAverage;
+        nAveragingIterations @!N_CURVATURE_REGULARISATIONS!@; 
     }
 }
 

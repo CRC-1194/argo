@@ -79,6 +79,7 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const v
             curvature[cid] = tagValue_; 
         }
     }
+    curvature.correctBoundaryConditions();
 
     auto faceCurvatureTmp = fvc::interpolate(curvature);
     auto& faceCurvature = faceCurvatureTmp.ref();
@@ -178,6 +179,7 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const v
                 curvature[cid] = surfaceSum[cid] / faceCount[cid];
             }
         }
+        curvature.correctBoundaryConditions();
     }
 
     // Reset cells with tag value to zero to avoid explosions
@@ -188,6 +190,7 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const v
             curvature[cid] = 0.0;
         }
     }
+    curvature.correctBoundaryConditions();
 
     auto& meshBoundaries = curvature.boundaryFieldRef();
     for (auto& mBoundary : meshBoundaries)
@@ -203,6 +206,7 @@ void pandoraCurvatureAverageExtension::extend(volScalarField& curvature, const v
             }
         }
     }
+    curvature.correctBoundaryConditions();
 }
 
 

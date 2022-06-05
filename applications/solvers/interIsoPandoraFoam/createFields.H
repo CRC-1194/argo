@@ -72,10 +72,17 @@ surfaceScalarField rhoPhi
 );
 
 
-// Construct incompressible turbulence model
-autoPtr<incompressible::turbulenceModel> turbulence
+typedef incompressibleInterPhaseTransportModel
+    <
+        immiscibleIncompressibleTwoPhaseMixture
+    > transportModelType;
+
+autoPtr<transportModelType> turbulence
 (
-    incompressible::turbulenceModel::New(U, phi, mixture)
+    new transportModelType
+    (
+        rho, U, phi, rhoPhi, mixture
+    )
 );
 
 
@@ -124,19 +131,29 @@ mesh.setFluxRequired(alpha1.name());
 
 #include "createMRF.H"
 #include "createFvOptions.H"
+#include "createPorosity.H"
 
 isoAdvection advector(alpha1, phi, U);
 
-surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
-volVectorField fSigmaCell
+const boolList& ics = advector.surf().interfaceCell();
+volScalarField interfaceCells
 (
     IOobject
     (
-	"fSigmaCell", 
-	runTime.timeName(),
-	mesh,
-	IOobject::NO_READ, 
-	IOobject::AUTO_WRITE
+        "interfaceCells",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
     ),
-    fvc::reconstruct(fSigma * mesh.magSf())
+    mesh
 );
+forAll (interfaceCells, i)
+{
+    interfaceCells[i] = 0;
+    if (ics[i])
+        interfaceCells[i] = 1;
+}
+interfaceCells.correctBoundaryConditions();
+
+surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);

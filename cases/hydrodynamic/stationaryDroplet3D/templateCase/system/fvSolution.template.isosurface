@@ -91,15 +91,15 @@ pandora
     }
     curvatureExtension
     {
-        //type noExtension;
-        type averageExtension;
-        nExtensionIterations @!N_EXTENSIONS!@; 
+        type noExtension;
+        //type averageExtension;
+        //nExtensionIterations @!N_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        //type noRegularisation;
-        type tangentialAverage;
-        nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
+        type noRegularisation;
+        //type tangentialAverage;
+        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
     }
 }
 

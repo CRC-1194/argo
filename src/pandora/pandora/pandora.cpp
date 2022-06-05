@@ -31,6 +31,9 @@ License
 #include "fvcSnGrad.H"
 #include "processorFvPatch.H"
 
+#include "isoSurfaceTopo.H"
+#include "volPointInterpolation.H"
+
 namespace Foam {
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -52,7 +55,8 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
         return;
     }
 
-    /*  Central idea for determining whether a cell is an interface cell
+    /*
+     *  Central idea for determining whether a cell is an interface cell
      *  (a.k.a. a cell intersected by the fluid interface) is the following:
      *  assuming the interface is located at points for which the indicator value
      *  is 0.5, we need to find those cells which contain such points. Here we
@@ -239,13 +243,18 @@ const surfaceScalarField& pandora::surfaceTensionForce
     const volScalarField& indicator
 )
 {
-    updateInterfaceCells(indicator);
+    //updateInterfaceCells(indicator);
+
+const volScalarField& interfaceCells = 
+    indicator.mesh().lookupObject<volScalarField>("interfaceCells");
+isInterfaceCell_ = interfaceCells;
+isInterfaceCell_.correctBoundaryConditions();
 
     volScalarField& cellCurvature = curvPtr_->cellCurvature();
 
-    curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell_); 
+    //curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell_); 
 
-    curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
+    //curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
 
     fSigma_ = 
         sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);

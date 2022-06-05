@@ -9,8 +9,8 @@
     Copyright (C) 2016 DHI
     Copyright (C) 2017 OpenCFD Ltd.
     Copyright (C) 2018 Johan Roenby
-    Copyright (C) 2019-2020 DLR
-    Copyright (C) 2020 OpenCFD Ltd.
+    Copyright (C) 2019 DLR
+    Copyright (C) 2020 TU Darmstadt
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -29,16 +29,14 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    interIsoFoam
+    interIsoPandoraFoam
 
 Group
     grpMultiphaseSolvers
 
 Description
-    Solver derived from interFoam for two incompressible, isothermal immiscible
-    fluids using the isoAdvector phase-fraction based interface capturing
-    approach, with optional mesh motion and mesh topology changes including
-    adaptive re-meshing.
+    Solver derived from interIsoFoam for two incompressible, isothermal immiscible
+    fluids 
 
     Reference:
     \verbatim
@@ -50,6 +48,9 @@ Description
 
     isoAdvector code supplied by Johan Roenby, STROMNING (2018)
 
+    Surface-tension force regularization by 
+    Tomislav Maric, Tobias Tolle, and Anja Lippert (2020)
+
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -60,7 +61,7 @@ Description
 #include "CrankNicolsonDdtScheme.H"
 #include "subCycle.H"
 #include "immiscibleIncompressibleTwoPhaseMixture.H"
-#include "incompressibleInterPhaseTransportModel.H"
+#include "turbulentTransportModel.H"
 #include "pimpleControl.H"
 #include "fvOptions.H"
 #include "CorrectPhi.H"
@@ -91,8 +92,7 @@ int main(int argc, char *argv[])
 
     // TODO (TT): including this file raises compilation errors I do not know how to fix 
     // yet. Left out for now as it is not required to make the solver functional
-
-    #include "postProcess.H"
+    //#include "postProcess.H"
 
     #include "addCheckCaseOptions.H"
     #include "setRootCaseLists.H"
@@ -100,11 +100,14 @@ int main(int argc, char *argv[])
     #include "createDynamicFvMesh.H"
     #include "initContinuityErrs.H"
     #include "createDyMControls.H"
-    #include "createFields.H"
+    #include "createFields.hpp"
+
     #include "initCorrectPhi.H"
     #include "createUfIfPresent.H"
 
-    #include "porousCourantNo.H"
+    turbulence->validate();
+
+    #include "CourantNo.H"
     #include "setInitialDeltaT.H"
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -113,8 +116,8 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
         #include "readDyMControls.H"
-        #include "porousCourantNo.H"
-        #include "porousAlphaCourantNo.H"
+        #include "CourantNo.H"
+        #include "alphaCourantNo.H"
         #include "setDeltaT.H"
 
         // In the first time step
@@ -184,22 +187,47 @@ int main(int argc, char *argv[])
                 }
             }
 
-            #include "alphaControls.H"
-            #include "alphaEqnSubCycle.H"
+            runTime.cpuTimeIncrement();
+            #include "alphaControls.hpp"
+            #include "alphaEqnSubCycle.hpp"
 
-            //fSigma = pandoraModel.surfaceTensionForce(alpha1);
-
-            //advector.surf().reconstruct();
-
-forAll (interfaceCells, i)
-{
-    interfaceCells[i] = 0;
-    if (ics[i])
-        interfaceCells[i] = 1;
-}
-interfaceCells.correctBoundaryConditions();
+            // Compute the surface tension force after solving for
+            // volume fractions. 
+            // Reconstruct the interface in the new time step.
+	    // FIXME: next time-step the reconstruction will be repeated, this 
+	    //        will cause communication overhead and needs fixing. TM.
+            advector.surf().reconstruct();
 
             fSigma = pandoraModel.surfaceTensionForce(alpha1);
+            fSigmaCell = fvc::reconstruct(fSigma * mesh.magSf());
+
+scalar sum0 = Zero;
+scalar sum1 = Zero;
+scalar sum2 = Zero;
+forAll (fSigmaCell, i)
+{
+    if (fSigmaCell[i][0] > 0)
+        sum0 += fSigmaCell[i][0];
+    if (fSigmaCell[i][1] > 0)
+        sum1 += fSigmaCell[i][1];
+    if (fSigmaCell[i][2] > 0)
+        sum2 += fSigmaCell[i][2];
+}
+reduce(sum0, sumOp<scalar>());
+reduce(sum1, sumOp<scalar>());
+reduce(sum2, sumOp<scalar>());
+vector sum(sum0, sum1, sum2);
+Info<<"sumfSigmaCell = "<<sum<<nl;
+
+if (runTime.writeTime())
+{
+    volScalarField magfSigmaCell = mag(fSigmaCell);
+    magfSigmaCell.rename("magfSigmaCell");
+    magfSigmaCell.write();
+}
+
+            //Info << "alphaEqn solution time : " 
+            //    << runTime.cpuTimeIncrement() << endl;
 
             mixture.correct();
 
@@ -208,13 +236,21 @@ interfaceCells.correctBoundaryConditions();
                 continue;
             }
 
-            #include "UEqn.H"
+            //runTime.cpuTimeIncrement(); 
+            #include "UEqn.hpp"
+            //Info << "Ueqn time : " 
+            //    << runTime.cpuTimeIncrement() << endl;
+
+            //runTime.cpuTimeIncrement(); 
 
             // --- Pressure corrector loop
             while (pimple.correct())
             {
-                #include "pEqn.H"
+                #include "pEqn.hpp"
             }
+
+            //Info << "pEqn time : " 
+            //    << runTime.cpuTimeIncrement() << endl;
 
             if (pimple.turbCorr())
             {
@@ -222,7 +258,10 @@ interfaceCells.correctBoundaryConditions();
             }
         }
 
+        //runTime.cpuTimeIncrement(); 
         runTime.write();
+        //Info << "Write time : " 
+        //    << runTime.cpuTimeIncrement() << endl;
 
         runTime.printExecutionTime(Info);
     }
