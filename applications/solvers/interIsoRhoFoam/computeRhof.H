@@ -5,14 +5,38 @@ rhof == upwind<scalar>(phi.mesh(), phi).interpolate(rho);
 const auto& faceOwner = mesh.owner();
 const auto& faceNeighbour = mesh.neighbour();
 
+
 alphaf == upwind<scalar>(phi.mesh(), phi).interpolate(alpha1);
 
 //Jun: reference to reconstructionSchemes
 
 // const reconstructionSchemes& surf = advector.surf();-->
 reconstructionSchemes& surf = advector.surf(); 
-surf.reconstruct(); 
+surf.reconstruct();
 
+/*----------------write isofaces--------*/
+/* JUN: comment out this part because we can use functionObject surface 
+   to do the same work.
+DynamicList<List<point>> isoFacePts;
+const fvMesh& mesh_ = alpha1.mesh();
+const dictionary dict_= mesh_.solverDict(alpha1.name());
+// bool writeIsoFacesToFile = dict_.getOrDefault("writeIsoFaces", false); 
+const DynamicField<label>& interfaceLabels = surf.interfaceLabels();
+forAll(interfaceLabels, i)
+{
+    const label celli = interfaceLabels[i];
+    vector normali = -surf.normal()[celli];
+    if (mag(normali) == 0)
+    {
+        continue;
+    }
+    sIterPLIC.vofCutCell(celli, alpha1[celli], 1e-8, 100, normali);
+    isoFacePts.append(sIterPLIC.facePoints());
+}
+writeIsoFaces(mesh_,isoFacePts,writeIsoFacesToFile);
+*/
+
+/*----------compute Rhof---------------*/
 const boolList& isASurfaceCell = surf.interfaceCell();
 const surfaceScalarField& magSf = mesh.magSf();
 
@@ -30,7 +54,13 @@ forAll(alphaf, faceI) // alphaf geometric calculation
             vector n0 = surf.normal()[faceOwner[faceI]]; 
             n0 /= (mag(n0)+SMALL);
             cutFace.calcSubFace(faceI, n0, x0);
-            alphaf[faceI] = mag(cutFace.subFaceArea()) / sfArea; 
+            alphaf[faceI] = mag(cutFace.subFaceArea()) / sfArea;
+/*            const DynamicList<point>& subFacePoints = cutFace.subFacePoints();
+            const label nPoints = subFacePoints.size();
+            if (nPoints > 0)
+            {
+                isoFacePts.append(subFacePoints);
+            } */
         } 
     } 
     else 
@@ -43,10 +73,19 @@ forAll(alphaf, faceI) // alphaf geometric calculation
             vector n0 = surf.normal()[faceNeighbour[faceI]]; 
             n0 /= (mag(n0)+SMALL);
             cutFace.calcSubFace(faceI, n0, x0);
-            alphaf[faceI] = mag(cutFace.subFaceArea()) / sfArea; 
+            alphaf[faceI] = mag(cutFace.subFaceArea()) / sfArea;
+/*            const DynamicList<point>& subFacePoints = cutFace.subFacePoints();
+            const label nPoints = subFacePoints.size();
+            if (nPoints > 0)
+            {
+                isoFacePts.append(subFacePoints);
+            }*/
+ 
         }        
     }
 }
+
+// writeIsoFaces(mesh_,isoFacePts,writeIsoFacesToFile);
 
 rhof == alphaf*rho1 + (1 - alphaf)*rho2;
 muf == alphaf*rho1*nu1 + (1 - alphaf)*rho2*nu2;

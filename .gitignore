@@ -94,4 +94,6 @@ Data_*
 .vscode/
 uniform/
 *_00*_*/
-
+processor*/
+isoFaces/
+slurm-*

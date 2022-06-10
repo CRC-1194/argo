@@ -215,6 +215,8 @@ target_include_directories("pandora" SYSTEM PUBLIC
     ${of_src_path}/meshTools/lnInclude
     ${of_src_path}/OSspecific/POSIX/lnInclude
     ${of_src_path}/OpenFOAM/lnInclude
+    ${of_src_path}/transportModels/geometricVoF/lnInclude
+    ${of_src_path}/surfMesh/lnInclude
 )
 
 
@@ -471,11 +473,13 @@ target_include_directories("interIsoRhoFoam" SYSTEM PRIVATE
     ${of_src_path}/TurbulenceModels/incompressible/lnInclude
     ${of_src_path}/TurbulenceModels/phaseIncompressible/lnInclude
     ${of_src_path}/TurbulenceModels/turbulenceModels/lnInclude
+    ${of_src_path}/fileFormats/lnInclude
     ${of_app_path}/solvers/multiphase/interIsoFoam
     ${of_app_path}/solvers/multiphase/VoF
     ${of_app_path}/solvers/multiphase/interFoam
 )
 target_link_libraries("interIsoRhoFoam"
+    "pandora"
     ${OF_FINITEVOLUME}
     ${OF_FVOPTIONS}
     ${OF_MESHTOOLS}

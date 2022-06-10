@@ -56,9 +56,9 @@
             p_rgh.relax();
 
             // WTF is this? 
-            //U = HbyA + rAU()*fvc::reconstruct((phig - p_rghEqn.flux())/rAUf);
+            U = HbyA + rAU()*fvc::reconstruct((phig - p_rghEqn.flux())/rAUf);
             // TODO: Run this.
-            U = fvc::reconstruct(phi);
+            // U = fvc::reconstruct(phi);
             U.correctBoundaryConditions();
             fvOptions.correct(U);
         }

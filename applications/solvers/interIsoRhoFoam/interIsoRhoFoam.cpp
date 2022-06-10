@@ -56,6 +56,7 @@ Description
 #include "dynamicFvMesh.H"
 #include "isoAdvection.H"
 #include "cutFaceAdvect.H"
+#include "surfaceIteratorPLIC.H"
 #include "EulerDdtScheme.H"
 #include "localEulerDdtScheme.H"
 #include "CrankNicolsonDdtScheme.H"
@@ -69,7 +70,9 @@ Description
 #include "dynamicRefineFvMesh.H"
 #include "reconstructionSchemes.H"
 #include "upwind.H"
-#include "limitMassFlux.hpp"
+// #include "OBJstream.H"
+#include "fvMesh.H"
+// #include "writeIsoFaces.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -123,7 +126,7 @@ int main(int argc, char *argv[])
 
         // TODO: double-check, discussion points
         // - check what oldTime() does here really
-        //rhoPhi.oldTime() == rhoPhi; 
+        rhoPhi.oldTime() == rhoPhi; 
         //tAlpha.oldTime() == alpha1;
         // #include "computeRhof.H"
 
@@ -220,7 +223,6 @@ int main(int argc, char *argv[])
 
             tAlpha == (rho-rho2)/(rho1-rho2); //temporary alpha field used to bound rhoFromAlphaf
 //            #include "alphaSuSp.H"
-//            limiter.Boundingprocess(Sp,Su,alphaf);
 //            rho == tAlpha*(rho1-rho2) + rho2;
             // If rhoPhi is computed and upated in alphaEqnSubcycle.H
             // there is no need to calculate it explicitly, so 
@@ -248,11 +250,10 @@ int main(int argc, char *argv[])
                    0.5*runTime.time().deltaT()*fvc::surfaceIntegrate(rhoPhi.oldTime() + rhoPhi);
             }
 
-            // mixture.correct() corrects the laminar viscosity and sigma*K
+            // mixture.correct() corrects sigma*K - we need this for surface tension.
             mixture.correct();
-            // ?? Check mixture.correct() 
-            //rhof == alphaf*rho1 + (1 - alphaf)*rho2;
-            //muf == alphaf*rho1*nu1 + (1 - alphaf)*rho2*nu2;
+            // but mixture.correct() also overwrites muf, so we need our muf 
+            muf == alphaf*rho1*nu1 + (1 - alphaf)*rho2*nu2;
 
 
             if (pimple.frozenFlow())
