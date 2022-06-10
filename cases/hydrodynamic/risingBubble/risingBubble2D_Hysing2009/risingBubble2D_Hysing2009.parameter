@@ -1,0 +1,59 @@
+values
+{
+
+    solver (interIsoFoam);
+
+    // Parameters from constant/transportProperties
+    rho_droplet
+    (
+     	1000
+    );
+
+    nu_droplet
+    (
+        0.01 
+    );
+
+    rho_ambient
+    (
+     	1
+    );
+
+    nu_ambient
+    (
+     	0.1 
+    );
+
+    surface_tension_coefficient
+    (
+     	1.96 
+    );
+
+    g
+    (
+        -0.98
+    );
+
+    resolution
+    (
+            160 //256
+    );
+
+    CFL_num 
+    (
+        0.5 0.05
+    );
+
+    fluxSchemes
+    (
+            upwind
+            limitedLinearV1
+    );
+
+    timeSchemes
+    (
+            Euler
+            CrankNicolson0.9
+    );
+
+}
