@@ -249,13 +249,13 @@ void stationaryDropletFunctionObject::computeFrontVolume()
 
 void stationaryDropletFunctionObject::computeMassAndKineticEnergy()
 {
-    dimensionedScalar sumAlpha{};
-    dimensionedScalar sumKinE{};
+    dimensionedScalar sumAlpha{0};
+    dimensionedScalar sumKinE{0};
 
     // NOTE: only computes the energy of the droplet phase
     auto U = hydrodynamicFunctionObject::getCurrentField<vector, fvPatchField, volMesh>(velocityFieldName_);
     auto markerField = hydrodynamicFunctionObject::getCurrentField<scalar, fvPatchField, volMesh>(markerFieldName_);
-//    const auto& cellVolume = U.mesh().V();
+    const auto& cellVolume = U.mesh().V();
 
     // Assumption: the droplet phase has a higher density than the ambient phase
 /*    const auto& transportProperties = getTransportProperties();
@@ -280,7 +280,17 @@ void stationaryDropletFunctionObject::computeMassAndKineticEnergy()
     }
 */
     const auto& rhoField = hydrodynamicFunctionObject::getCurrentField<scalar, fvPatchField, volMesh>("rho");
-    const volScalarField& KinE = magSqr(rhoField*U);
+    const volScalarField& KinE = 0.5*rhoField*cellVolume*magSqr(U[cellID]);
+   /* 
+    forAll(markerField, cellID)
+    {
+        if(markerField[cellID]>1e-6)
+        {
+            sumAlpha += markerField[cellID]*cellVolume[cellID];
+            sumKinE += 0.5*rhoField[cellID]*cellVolume[cellID]*magSqr(U[cellID]);
+        }
+    }
+    */
     sumAlpha = gSum(markerField);
     sumKinE = gSum(KinE);
 
