@@ -280,7 +280,7 @@ void stationaryDropletFunctionObject::computeMassAndKineticEnergy()
     }
 */
     const auto& rhoField = hydrodynamicFunctionObject::getCurrentField<scalar, fvPatchField, volMesh>("rho");
-    const volScalarField& KinE = 0.5*rhoField*cellVolume*magSqr(U[cellID]);
+    const auto& KinE = 0.5*rhoField*cellVolume*magSqr(U);
    /* 
     forAll(markerField, cellID)
     {
