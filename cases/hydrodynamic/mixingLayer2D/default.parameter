@@ -1,0 +1,7 @@
+endTime 1e-3;
+
+timeStep 1e-7;
+
+writeInterval 1e-5;
+
+
