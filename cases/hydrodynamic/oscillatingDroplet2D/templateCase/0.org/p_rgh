@@ -25,6 +25,11 @@ boundaryField
         type    fixedFluxPressure;
         value   uniform 0;
     }
+
+    defaultFaces
+    {
+        type            empty;
+    }
 }
 
 // ************************************************************************* //
