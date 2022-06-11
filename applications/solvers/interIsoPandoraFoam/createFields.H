@@ -146,7 +146,8 @@ volScalarField interfaceCells
         IOobject::NO_READ,
         IOobject::AUTO_WRITE
     ),
-    mesh
+    mesh,
+    dimensionedScalar("interfaceCells", dimless, 0)
 );
 forAll (interfaceCells, i)
 {
