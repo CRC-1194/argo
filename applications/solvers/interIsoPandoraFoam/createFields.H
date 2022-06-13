@@ -135,26 +135,5 @@ mesh.setFluxRequired(alpha1.name());
 
 isoAdvection advector(alpha1, phi, U);
 
-const boolList& ics = advector.surf().interfaceCell();
-volScalarField interfaceCells
-(
-    IOobject
-    (
-        "interfaceCells",
-        runTime.timeName(),
-        mesh,
-        IOobject::NO_READ,
-        IOobject::AUTO_WRITE
-    ),
-    mesh,
-    dimensionedScalar("interfaceCells", dimless, 0)
-);
-forAll (interfaceCells, i)
-{
-    interfaceCells[i] = 0;
-    if (ics[i])
-        interfaceCells[i] = 1;
-}
-interfaceCells.correctBoundaryConditions();
-
 surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
+

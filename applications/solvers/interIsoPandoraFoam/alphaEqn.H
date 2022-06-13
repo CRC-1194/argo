@@ -5,18 +5,9 @@
         U -= fvc::reconstruct(mesh.phi());
     }
 
-const reconstructionSchemes& surf = advector.surf();
-const volVectorField& norm = surf.normal();
-
-scalar maxNorm = max(mag(norm)).value();
-Info<<"maxNorm = "<<maxNorm<<nl;
-
     // Updating alpha1
     #include "alphaSuSp.H"
     advector.advect(Sp, Su);
-
-maxNorm = max(mag(norm)).value();
-Info<<"maxNorm = "<<maxNorm<<nl;
 
     // Making U absolute again after advection step
     if (mesh.moving())

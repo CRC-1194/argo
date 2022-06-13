@@ -84,7 +84,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
             mesh().lookupObject<volVectorField>("interfaceCentre.dispersed");
         const volScalarField& isInterfaceCell = 
             mesh().lookupObject<volScalarField>("isInterfaceCell");
-        const volScalarField& RDF = 
+        const volScalarField& rdf = 
             mesh().lookupObject<volScalarField>("RDF");
         const volScalarField& psi = 
             mesh().lookupObject<volScalarField>("alpha.dispersed");
@@ -92,25 +92,37 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
 vector sphereCentre(0.005, 0.005, 0.005); // Sphere centre
 scalar radius = 0.002; // Sphere radius
 
-        averagedNormals_ == interfaceNormals /
+        averagedNormals_ = interfaceNormals /
         (
             mag(interfaceNormals) + 
             dimensionedScalar(
                 "SMALL", interfaceNormals.dimensions(), SMALL
             )
         );
-        volScalarField rdf = RDF;
+        averagedNormals_.correctBoundaryConditions();
 
-        volScalarField markers = psi;
+        volScalarField markers
+        (
+            IOobject
+            (
+                "cellMarkers",
+                mesh().time().timeName(),
+                mesh(),
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            mesh(),
+            dimensionedScalar("cellMarkers", dimless, -1)
+        );
+
         forAll (markers, cellI)
         {
-            markers[cellI] = -1;
-
             if (mag(averagedNormals_[cellI]) != 0)
             {
                 markers[cellI] = 0;
             }
         }
+        markers.correctBoundaryConditions();
 
         const auto& owner = mesh().owner();
         const auto& neibr = mesh().neighbour();
@@ -140,12 +152,16 @@ scalar radius = 0.002; // Sphere radius
                     markers[owner[fid]] = i + 1;
                 }
             }
+            markers.correctBoundaryConditions();
 
             auto& meshBoundary = markers.boundaryFieldRef();
             for (auto& mb : meshBoundary)
             {
                 if (isA<processorFvPatch>(mb.patch()))
                 {
+                    mb.initEvaluate();
+                    mb.evaluate();
+
                     const auto& faceToCell = mb.patch().faceCells();
                     const auto& neibrValue = mb.patchNeighbourField().cref();
                     
@@ -153,11 +169,12 @@ scalar radius = 0.002; // Sphere radius
                     {
                         if (neibrValue[j] == i && markers[faceToCell[j]] == -1)
                         {
-                            mb[j] = i + 1;
+                            markers[faceToCell[j]] = i + 1;
                         }
                     }
                 }
             }
+            markers.correctBoundaryConditions();
 
             boolList zone(mesh().nCells(), false);
             forAll (zone, zi)
@@ -178,7 +195,6 @@ scalar radius = 0.002; // Sphere radius
             const labelListList& stencil = distribute.getStencil();
 
             volVectorField avgNormTmp = averagedNormals_;
-
             forAll (markers, cellI)
             {
                 if (markers[cellI] != i + 1) continue;
@@ -186,7 +202,6 @@ scalar radius = 0.002; // Sphere radius
                 avgNormTmp[cellI] = Zero;
                 const point& p = mesh().C()[cellI];
 
-                label count = 0;
                 for (const label gblIdx : stencil[cellI])
                 {
                     scalar marker = distribute.getValue(markers, mapMarkers, gblIdx);
@@ -202,10 +217,12 @@ scalar radius = 0.002; // Sphere radius
                         vector distToSurf = dist & n / mag(n) * n;
                         vector verticalDist = dist - distToSurf;
                         avgNormTmp[cellI] += n / max(mag(verticalDist), SMALL);
-                        count++;
                     }
                 }
+
+                //avgNormTmp[cellI] = sphereCentre - mesh().C()[cellI];
             }
+            avgNormTmp.correctBoundaryConditions();
 
             averagedNormals_ = avgNormTmp / 
             (
@@ -214,13 +231,13 @@ scalar radius = 0.002; // Sphere radius
                     "SMALL", avgNormTmp.dimensions(), SMALL
                 )
             );
-
             averagedNormals_.correctBoundaryConditions();
         }
 
         for (label i = 0; i < nAverage_; i++)
         {
             averagedNormals_ = fvc::average(averagedNormals_);
+
             averagedNormals_ /=
             (
                 mag(averagedNormals_) + 
@@ -232,102 +249,19 @@ scalar radius = 0.002; // Sphere radius
             averagedNormals_.correctBoundaryConditions();
         }
 
-markers.rename("cellMarkers");
-if (mesh().time().writeTime())
-    markers.write();
+        #include "error.hpp"
 
-scalar absError = 0;
-scalar l1 = 0;
-scalar l2 = 0;
-scalar lInf = 0;
-label count = 0;
-volVectorField exactNormals = averagedNormals_;
-volVectorField calcNormals = averagedNormals_;
-scalar delta_x = max(pow(mesh().deltaCoeffs(), -1)).value();
-scalar minArea = 0.001 * delta_x * delta_x;
-forAll(averagedNormals_, i)
-{
-    if (mag(averagedNormals_[i]) != 0)
-    {
-        vector n1 = sphereCentre - mesh().C()[i];
-        n1 /= mag(n1);
-        exactNormals[i] = n1;
-
-        vector n2 = averagedNormals_[i];
-        n2 /= mag(n2);
-        calcNormals[i] = n2;
-
-        //if (markers[i] != 0) continue;
-
-        absError = mag(n1 - n2);
-        l1 += absError / mag(n1);
-        l2 += sqr(absError) / magSqr(n1);
-        count++;
-        if (absError > lInf)
-            lInf = absError;
-    }
-}
-reduce(l1, sumOp<scalar>());
-reduce(l2, sumOp<scalar>());
-reduce(count, sumOp<label>());
-reduce(lInf, maxOp<scalar>());
-Info<<"l1 = "<<l1/count<<nl;
-Info<<"l2 = "<<sqrt(l2/count)<<nl;
-Info<<"lInf = "<<lInf<<nl;
-exactNormals.rename("normExct");
-if (cellCurvature_.time().writeTime())
-    exactNormals.write();
-calcNormals.rename("normCalc");
-if (cellCurvature_.time().writeTime())
-    calcNormals.write();
-
-vector sumNorm = Zero;
-forAll(averagedNormals_, i)
-{
-    if 
-    (
-        averagedNormals_[i][0] > 0
-     && averagedNormals_[i][1] > 0
-     && averagedNormals_[i][2] > 0
-    )
-    {
-        sumNorm += averagedNormals_[i];
-    }
-}
-reduce(sumNorm, sumOp<vector>());
-Info<<"sumNorm = "<<sumNorm<<nl;
-
-        cellCurvature_ = -fvc::div(averagedNormals_);
-
-volScalarField cellCurv = cellCurvature_;
-cellCurv.rename("cellCurv");
-if(mesh().time().writeTime())
-    cellCurv.write();
-
-scalar sumCurv1 = 0;
-forAll(cellCurvature_, i)
-    sumCurv1 += cellCurvature_[i];
-reduce(sumCurv1, sumOp<scalar>());
-Info<<"sumCurv1 = "<<sumCurv1<<nl;
+        cellCurvature_ == -fvc::div(averagedNormals_);
 
         forAll (cellCurvature_, cellI)
         {
             if (markers[cellI] == -1 || markers[cellI] == 2)
-            {
                 cellCurvature_[cellI] = 0;
-            }
             else
-            {
                 cellCurvature_[cellI] = 2.0 / (2.0 / (cellCurvature_[cellI] + SMALL) + rdf[cellI] * 1.0);
-            }
         }
-        cellCurvature_.correctBoundaryConditions();
 
-scalar sumCurv2 = 0;
-forAll(cellCurvature_, i)
-    sumCurv2 += cellCurvature_[i];
-reduce(sumCurv2, sumOp<scalar>());
-Info<<"sumCurv2 = "<<sumCurv2<<nl;
+        cellCurvature_.correctBoundaryConditions();
     }
     else
     {

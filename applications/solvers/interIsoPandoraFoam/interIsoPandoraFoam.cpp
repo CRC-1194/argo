@@ -187,21 +187,11 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
-            //fSigma = pandoraModel.surfaceTensionForce(alpha1);
-
             //advector.surf().reconstruct();
 
-forAll (interfaceCells, i)
-{
-    interfaceCells[i] = 0;
-    if (ics[i])
-        interfaceCells[i] = 1;
-}
-interfaceCells.correctBoundaryConditions();
+            mixture.correct();
 
             fSigma = pandoraModel.surfaceTensionForce(alpha1);
-
-            mixture.correct();
 
             if (pimple.frozenFlow())
             {

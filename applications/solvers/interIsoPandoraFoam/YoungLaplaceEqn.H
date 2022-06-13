@@ -4,8 +4,3 @@ fvScalarMatrix YoungLaplaceEqn
 );
 YoungLaplaceEqn.solve();
 
-scalar sumP = 0;
-forAll (p_rgh, i)
-    sumP += p_rgh[i];
-reduce(sumP, sumOp<scalar>());
-Info<<"sumP = "<<sumP<<nl;
