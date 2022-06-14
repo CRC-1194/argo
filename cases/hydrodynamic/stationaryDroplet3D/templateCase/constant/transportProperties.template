@@ -66,5 +66,14 @@ oil_novec7500
 
 <!--(end)-->
 
+// Only relevant for interFlow
+surfaceForces
+{
+    sigma $sigma;
+    surfaceTensionForceModel fitParaboloid;
+    accelerationModel gravity;
+    deltaFunctionModel alphaCSF;
+}
+
 
 // ************************************************************************* //

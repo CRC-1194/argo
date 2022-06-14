@@ -53,6 +53,9 @@ maxCo           0.5;
 
 maxAlphaCo      0.5;
 
+// Only relevant for interFlow
+maxCapillaryNum 10;
+
 maxDeltaT       0.2;
 
 
