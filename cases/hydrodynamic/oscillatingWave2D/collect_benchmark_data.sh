@@ -17,3 +17,4 @@ done
 # Need to collect data for interFoam and interIsoFoam separately due to different case base names.
 argo-agglomerate-study-data.py benchmark-interFoam-benchmarkpaper_00000_templateCase/postProcessing/interfaceHeight1/0/interface_data.csv -p benchmarkpaper.parameter -f oscillating_wave_2D_interFoam
 argo-agglomerate-study-data.py benchmark-interIsoFoam-benchmarkpaper_00009_templateCase/postProcessing/interfaceHeight1/0/interface_data.csv -p benchmarkpaper.parameter -f oscillating_wave_2D_interIsoFoam
+argo-agglomerate-study-data.py benchmark-interFlow-benchmarkpaper_00009_templateCase/postProcessing/interfaceHeight1/0/interface_data.csv -p benchmarkpaper.parameter -f oscillating_wave_2D_interFlow

@@ -22,7 +22,14 @@ boundaryField
 {
     "(left|right|top|bottom)"
     {
+        <!--(if solver=="interFlow")-->
+        type            constantAlphaContactAngle;
+        theta0          90;
+        limit           zeroGradient;
+        value           uniform 0;
+        <!--(else)-->
         type            zeroGradient;
+        <!--(end)-->
     }
 
     "(front|back)"
