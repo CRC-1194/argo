@@ -23,7 +23,16 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         0.03;
+<!--(if FLUID_PAIRING=="water-air")-->
+endTime         0.031;
+
+<!--(elif FLUID_PAIRING=="oil_novec7500-water")-->
+endTime         0.0628;
+
+<!--(elif FLUID_PAIRING=="gearoil-air")-->
+endTime         0.0434;
+
+<!--(end)-->
 
 deltaT          |-DELTA_T-|;
 
