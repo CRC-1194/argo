@@ -67,6 +67,8 @@ Description
 #include "fvcSmooth.H"
 #include "dynamicRefineFvMesh.H"
 
+#include "cutCellPLIC.H"
+
 #include "pandora.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -187,11 +189,24 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
-            //advector.surf().reconstruct();
+            /*
+            advector.surf().reconstruct();
 
-            mixture.correct();
+            mesh.C();
+            cutCellPLIC cutCell(mesh);
+            alpha1.correctBoundaryConditions();
+            alpha1.oldTime().correctBoundaryConditions();
+
+            advector.surf().mapAlphaField();
+            */
+
+forAll (ics, i)
+    interfaceCells[i] = ics[i];
+interfaceCells.correctBoundaryConditions();
 
             fSigma = pandoraModel.surfaceTensionForce(alpha1);
+
+            mixture.correct();
 
             if (pimple.frozenFlow())
             {

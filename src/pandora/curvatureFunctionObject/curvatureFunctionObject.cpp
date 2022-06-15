@@ -142,6 +142,7 @@ curvatureFunctionObject::curvatureFunctionObject
 bool curvatureFunctionObject::execute()
 {
     auto K = filterCurvature();
+    if (K.size() < SMALL) return false;
     auto meanCurvature = std::accumulate(K.begin(), K.end(), 0.0)/K.size();
     scalar standardDeviation = 0.0;
     for (const auto val : K)

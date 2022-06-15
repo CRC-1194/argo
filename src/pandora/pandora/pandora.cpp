@@ -49,13 +49,13 @@ defineTypeNameAndDebug(pandora, false);
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 void pandora::updateInterfaceCells(const volScalarField& indicator)
 {
+    /*
     // isInterfaceCells already up-to-date
     if (lastUpdate_ == indicator.mesh().time().timeIndex())
     {
         return;
     }
 
-    /*
      *  Central idea for determining whether a cell is an interface cell
      *  (a.k.a. a cell intersected by the fluid interface) is the following:
      *  assuming the interface is located at points for which the indicator value
@@ -64,7 +64,6 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
      *  this does not guarantee to detect all interface cells, this approach
      *  relies on the available parallelization provided by OpenFOAM and
      *  detection may only fail for underresolved interfaces (TT).
-     */
      
     // Detect via face based indicator values
     auto indicatorFaceTmp = fvc::interpolate(indicator);
@@ -171,6 +170,11 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
     isInterfaceCell_.correctBoundaryConditions();
 
     lastUpdate_ = indicator.mesh().time().timeIndex();
+     */
+
+    isInterfaceCell_ = 
+        indicator.mesh().lookupObject<volScalarField>("interfaceCells");
+    isInterfaceCell_.correctBoundaryConditions();
 }
 
 
