@@ -186,25 +186,14 @@ int main(int argc, char *argv[])
                 }
             }
 
-            #include "alphaControls.H"
-            #include "alphaEqnSubCycle.H"
-
-            /*
-            advector.surf().reconstruct();
-
-            mesh.C();
-            cutCellPLIC cutCell(mesh);
-            alpha1.correctBoundaryConditions();
-            alpha1.oldTime().correctBoundaryConditions();
-
-            advector.surf().mapAlphaField();
-            */
-
-forAll (ics, i)
-    interfaceCells[i] = ics[i];
-interfaceCells.correctBoundaryConditions();
+            forAll (ics, i)
+                interfaceCells[i] = ics[i];
+            interfaceCells.correctBoundaryConditions();
 
             fSigma = pandoraModel.surfaceTensionForce(alpha1);
+
+            #include "alphaControls.H"
+            #include "alphaEqnSubCycle.H"
 
             mixture.correct();
 
