@@ -185,6 +185,7 @@ add_library("pandora" SHARED
     src/pandora/pandoraCurvature/pandoraCurvature/pandoraCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivGradCurvature/pandoraDivGradCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalCurvature/pandoraDivNormalCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraDivNormalSerialCurvature/pandoraDivNormalSerialCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalExactCurvature/pandoraDivNormalExactCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalIsoCurvature/pandoraDivNormalIsoCurvature.cpp
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature/pandoraIsosurfaceCurvature.cpp
@@ -208,6 +209,7 @@ target_include_directories("pandora" PUBLIC
     src/pandora/pandoraCurvature/pandoraCurvature
     src/pandora/pandoraCurvature/pandoraDivGradCurvature
     src/pandora/pandoraCurvature/pandoraDivNormalCurvature
+    src/pandora/pandoraCurvature/pandoraDivNormalSerialCurvature
     src/pandora/pandoraCurvature/pandoraDivNormalExactCurvature
     src/pandora/pandoraCurvature/pandoraDivNormalIsoCurvature
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature
@@ -231,6 +233,7 @@ target_include_directories("pandora" SYSTEM PUBLIC
     ${of_src_path}/OpenFOAM/lnInclude
     ${of_src_path}/sampling/lnInclude
     ${of_src_path}/surfMesh/lnInclude
+    ${of_src_path}/transportModels/geometricVoF/lnInclude
 )
 
 

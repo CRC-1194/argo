@@ -83,9 +83,6 @@ volScalarField& pandoraDivNormalExactCurvature::cellCurvature()
         const volScalarField& rdf = 
             mesh().lookupObject<volScalarField>("RDF");
 
-scalar maxNorm0 = sum(mag(interfaceNormals)).value();
-Info<<"maxNorm0 = "<<maxNorm0<<nl;
-
         // Use averaging to propagate the interface normal vectors  
         // into the bulk.
         averagedNormals_ == interfaceNormals /
@@ -96,9 +93,6 @@ Info<<"maxNorm0 = "<<maxNorm0<<nl;
             )
         );
         averagedNormals_.correctBoundaryConditions();
-
-scalar maxNorm1 = sum(mag(averagedNormals_)).value();
-Info<<"maxNorm1 = "<<maxNorm1<<nl;
 
         // Propagate PLIC normals into the bulk.
         for (label i = 0; i < nPropagate_; ++i)
@@ -125,10 +119,6 @@ Info<<"maxNorm1 = "<<maxNorm1<<nl;
             averagedNormals_.correctBoundaryConditions();
         }
 
-scalar maxNorm2 = sum(mag(averagedNormals_)).value();
-Info<<"maxNorm2 = "<<maxNorm2<<nl;
-
-
         // Smooth the PLIC normals.
         for (label i = 0; i < nAverage_; ++i)
         {
@@ -139,15 +129,9 @@ Info<<"maxNorm2 = "<<maxNorm2<<nl;
             averagedNormals_.correctBoundaryConditions();
         }
 
-scalar maxNorm3 = sum(mag(averagedNormals_)).value();
-Info<<"maxNorm3 = "<<maxNorm3<<nl;
-
         cellCurvature_ = -fvc::div(averagedNormals_);
 
         cellCurvature_.correctBoundaryConditions();
-
-scalar maxCurv1 = max(cellCurvature_).value();
-Info<<"maxCurv1 = "<<maxCurv1<<nl;
 
 /*
         forAll (cellCurvature_, cellI)
