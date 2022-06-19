@@ -186,14 +186,12 @@ int main(int argc, char *argv[])
                 }
             }
 
-            forAll (ics, i)
-                interfaceCells[i] = ics[i];
-            interfaceCells.correctBoundaryConditions();
-
-            fSigma = pandoraModel.surfaceTensionForce(alpha1);
-
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
+
+            advector.surf().reconstruct();
+
+            fSigma = pandoraModel.surfaceTensionForce(alpha1);
 
             mixture.correct();
 

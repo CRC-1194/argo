@@ -34,6 +34,8 @@ License
 #include "isoSurfaceTopo.H"
 #include "volPointInterpolation.H"
 
+#include "reconstructionSchemes.H"
+
 namespace Foam {
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -172,8 +174,14 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
     lastUpdate_ = indicator.mesh().time().timeIndex();
      */
 
-    isInterfaceCell_ = 
-        indicator.mesh().lookupObject<volScalarField>("interfaceCells");
+    reconstructionSchemes* surf = 
+        indicator.mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
+
+    const boolList& ics = surf->interfaceCell();
+
+    forAll (ics, i)
+        isInterfaceCell_[i] = ics[i];
+
     isInterfaceCell_.correctBoundaryConditions();
 }
 

@@ -1,4 +1,6 @@
 
+vector sphereCentre(0.005, 0.005, 0.005); // Sphere centre
+scalar radius = 0.002; // Sphere radius
 scalar absError = 0;
 scalar l1 = 0;
 scalar l2 = 0;

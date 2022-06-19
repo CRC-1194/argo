@@ -35,6 +35,7 @@ License
 #include "error.H"
 
 #include "processorFvPatchField.H"
+#include "reconstructionSchemes.H"
 #include "zoneDistribute.H"
 
 namespace Foam {
@@ -78,19 +79,14 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (meshDb.found(fieldName_))
     {
-        const volVectorField& interfaceNormals = 
-            mesh().lookupObject<volVectorField>(fieldName_);
-        const volVectorField& interfaceCentres = 
-            mesh().lookupObject<volVectorField>("interfaceCentre.dispersed");
-        const volScalarField& isInterfaceCell = 
-            mesh().lookupObject<volScalarField>("isInterfaceCell");
-        const volScalarField& rdf = 
-            mesh().lookupObject<volScalarField>("RDF");
-        const volScalarField& psi = 
-            mesh().lookupObject<volScalarField>("alpha.dispersed");
+        //const volVectorField& interfaceNormals = 
+        //    mesh().lookupObject<volVectorField>(fieldName_);
 
-vector sphereCentre(0.005, 0.005, 0.005); // Sphere centre
-scalar radius = 0.002; // Sphere radius
+        reconstructionSchemes* surf = 
+            mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
+
+        const boolList& interfaceCells = surf->interfaceCell();
+        const volVectorField& interfaceNormals = surf->normal();
 
         averagedNormals_ = interfaceNormals /
         (
@@ -117,39 +113,30 @@ scalar radius = 0.002; // Sphere radius
 
         forAll (markers, cellI)
         {
-            if (mag(averagedNormals_[cellI]) != 0)
+            if (interfaceCells[cellI])
+            //if (mag(averagedNormals_[cellI]) != 0)
             {
                 markers[cellI] = 0;
             }
         }
         markers.correctBoundaryConditions();
 
-        const auto& owner = mesh().owner();
-        const auto& neibr = mesh().neighbour();
+        const auto& own = mesh().owner();
+        const auto& nei = mesh().neighbour();
 
         zoneDistribute& distribute = zoneDistribute::New(mesh());
 
-        boolList surfCells(mesh().nCells(), false);
-        forAll (surfCells, zi)
-        {
-            if (markers[zi] == 0)
-            {
-                surfCells[zi] = true;
-            }
-        }
-        distribute.setUpCommforZone(surfCells, true);
-
         for (label i = 0; i < nPropagate_; ++i)
         {
-            forAll (neibr, fid)
+            forAll (nei, fid)
             {
-                if (markers[owner[fid]] == i && markers[neibr[fid]] == -1)
+                if (markers[own[fid]] == i && markers[nei[fid]] == -1)
                 {
-                    markers[neibr[fid]] = i + 1;
+                    markers[nei[fid]] = i + 1;
                 }
-                if (markers[neibr[fid]] == i && markers[owner[fid]] == -1)
+                if (markers[nei[fid]] == i && markers[own[fid]] == -1)
                 {
-                    markers[owner[fid]] = i + 1;
+                    markers[own[fid]] = i + 1;
                 }
             }
             markers.correctBoundaryConditions();
@@ -175,7 +162,19 @@ scalar radius = 0.002; // Sphere radius
                 }
             }
             markers.correctBoundaryConditions();
+        }
 
+        boolList updateZone(mesh().nCells(), false);
+        forAll (updateZone, uzi)
+        {
+            if (markers[uzi] == -1) continue;
+            if (markers[uzi] ==  0) continue;
+            updateZone[uzi] = true;
+        }
+        distribute.updateStencil(updateZone);
+
+        for (label i = 0; i < nPropagate_; ++i)
+        {
             boolList zone(mesh().nCells(), false);
             forAll (zone, zi)
             {
@@ -184,7 +183,8 @@ scalar radius = 0.002; // Sphere radius
                     zone[zi] = true;
                 }
             }
-            distribute.setUpCommforZone(zone, true);
+
+            distribute.setUpCommforZone(zone, false);
             Map<vector> mapCentres = 
                 distribute.getDatafromOtherProc(zone, mesh().C());
             Map<vector> mapNormals = 
@@ -219,8 +219,6 @@ scalar radius = 0.002; // Sphere radius
                         avgNormTmp[cellI] += n / max(mag(verticalDist), SMALL);
                     }
                 }
-
-                //avgNormTmp[cellI] = sphereCentre - mesh().C()[cellI];
             }
             avgNormTmp.correctBoundaryConditions();
 
@@ -253,9 +251,12 @@ scalar radius = 0.002; // Sphere radius
 
         cellCurvature_ == -fvc::div(averagedNormals_);
 
+        const volScalarField& rdf = 
+            mesh().lookupObject<volScalarField>("RDF");
+
         forAll (cellCurvature_, cellI)
         {
-            if (markers[cellI] == -1 || markers[cellI] == 2)
+            if (markers[cellI] == -1 || markers[cellI] == nPropagate_)
                 cellCurvature_[cellI] = 0;
             else
                 cellCurvature_[cellI] = 2.0 / (2.0 / (cellCurvature_[cellI] + SMALL) + rdf[cellI] * 1.0);
