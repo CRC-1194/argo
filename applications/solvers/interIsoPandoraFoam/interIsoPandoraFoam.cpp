@@ -86,9 +86,9 @@ int main(int argc, char *argv[])
 
     argList::addBoolOption
     (
-	"YoungLaplace",
-	"Solve Young-Laplace Equation in the first time step.",
-	false 
+        "YoungLaplace",
+        "Solve Young-Laplace Equation in the first time step.",
+        false 
     );
 
     // TODO (TT): including this file raises compilation errors I do not know how to fix 
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
-            advector.surf().reconstruct();
+            //advector.surf().reconstruct();
 
             fSigma = pandoraModel.surfaceTensionForce(alpha1);
 

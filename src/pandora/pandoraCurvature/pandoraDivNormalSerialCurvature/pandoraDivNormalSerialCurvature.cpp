@@ -69,7 +69,9 @@ pandoraDivNormalSerialCurvature::pandoraDivNormalSerialCurvature
             mesh, 
             dimensionedVector("averagedNormals", dimless, vector(0,0,0))
         )
-{}
+{
+    Info<<"Selecting divNormalSerial curvature"<<nl;
+}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
@@ -83,7 +85,35 @@ volScalarField& pandoraDivNormalSerialCurvature::cellCurvature()
         reconstructionSchemes* surf = 
             mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
 
+        //const boolList& interfaceCells = surf->interfaceCell();
+        const volScalarField& interfaceCells = 
+            mesh().lookupObject<volScalarField>("isInterfaceCell");
+
+volScalarField ic 
+(
+    IOobject
+    (
+        "interfaceCell",
+        mesh().time().timeName(),
+        mesh(),
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh(),
+    dimensionedScalar("interfaceCell", dimless, 0)
+);
+forAll (ic, i)
+    if (interfaceCells[i])
+        ic[i] = 1;
+if(mesh().time().writeTime())
+    ic.write();
+
         const volVectorField& interfaceNormals = surf->normal();
+
+volVectorField in = interfaceNormals;
+in.rename("interfaceNormal");
+if(mesh().time().writeTime())
+    in.write();
 
         averagedNormals_ = interfaceNormals /
         (
@@ -110,8 +140,8 @@ volScalarField& pandoraDivNormalSerialCurvature::cellCurvature()
 
         forAll (markers, cellI)
         {
-            if (surf->interfaceCell()[cellI])
-            //if (mag(averagedNormals_[cellI]) != 0)
+            //if (interfaceCells[cellI])
+            if (mag(averagedNormals_[cellI]) != 0)
             {
                 markers[cellI] = 0;
             }

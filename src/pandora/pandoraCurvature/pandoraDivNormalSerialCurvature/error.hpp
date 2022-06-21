@@ -22,7 +22,7 @@ forAll(averagedNormals_, i)
         n2 /= mag(n2);
         calcNormals[i] = n2;
 
-        //if (markers[i] != 0) continue;
+        if (markers[i] != 0) continue;
 
         absError = mag(n1 - n2);
         l1 += absError / mag(n1);
@@ -45,3 +45,7 @@ if (cellCurvature_.time().writeTime())
 calcNormals.rename("normCalc");
 if (cellCurvature_.time().writeTime())
     calcNormals.write();
+
+markers.rename("cellMarker");
+if (mesh().time().writeTime())
+    markers.write();
