@@ -138,11 +138,14 @@ int main(int argc, char *argv[])
         cellTriangleNearest 
     );
 
-    // TODO: check if unit normals are available already. @tmaric
+    // From PrimitivePatch that MeshedSurface inherits from.  
     const auto& faceNormals = isoTopo.faceNormals();
     
     // Calculate the distance to the cell center as the distance to the 
-    // nearest front triangle. 
+    // nearest front triangle.
+    // TODO: Inverse-Weighted Distance not to findNearest, but to findSphere: 
+    // a set of triangles that are all inside a sphere given by the search 
+    // radius! Idea from Tobi. 
     forAll(cellTriangleNearest, cellI)
     {
         const pointIndexHit& h = cellTriangleNearest[cellI];
