@@ -1,3 +1,4 @@
+    // - iso-surface field: can be signed-distance, or another field
     volScalarField psi
     (
         IOobject
@@ -10,62 +11,33 @@
         ),
         mesh
     );
-    
-    volVectorField fSigma
+
+    // - signed-distance field 
+    volScalarField sigDist 
     (
         IOobject
         (
-            "fSigma", 
+            "sigDist", 
             runTime.timeName(), 
             mesh,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         mesh,
-        dimensionedVector("fSigma", dimForce / pow(dimLength,3), vector(0,0,0)) 
+        dimensionedScalar("sigDist", dimLength, 0.)
     );
-
-    surfaceVectorField fSigmaFace 
+    
+    // - Squared octree search radius
+    volScalarField sqrSearchRadius 
     (
         IOobject
         (
-            "fSigmaFace", 
+            "sqrSearchRadius", 
             runTime.timeName(), 
             mesh,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
         mesh,
-        dimensionedVector("fSigmaFace", dimForce / pow(dimLength,3), vector(0,0,0)) 
+        dimensionedScalar("sqrSearchRadius", Foam::sqr(dimLength), 0)
     );
-
-    volScalarField kappa 
-    (
-        IOobject
-        (
-            "kappa", 
-            runTime.timeName(), 
-            mesh,
-            IOobject::NO_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh,
-        dimensionedScalar("kappa", pow(dimLength, -1), 0.)
-    );
-
-    // Young-Laplace equation
-    
-    volScalarField p_rgh
-    (
-        IOobject
-        (
-            "p_rgh", 
-            runTime.timeName(), 
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    );
-    
-    

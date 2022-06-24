@@ -39,9 +39,9 @@ Authors
 #include "error.H"
 #include "fvCFD.H"
 
-#include "isoSurfaceCell.H"
 #include "isoSurfaceTopo.H"
-#include "isoSurfacePoint.H"
+#include "fvcAverage.H"
+#include "triSurfaceMesh.H"
 #include "volPointInterpolation.H"
 #include <cstdlib>
 #include <iomanip>
@@ -65,8 +65,9 @@ int main(int argc, char *argv[])
 
     #include "createFields.H"
 
-    volPointInterpolation vpInterp(mesh); 
+    // Compute an isoSurface from the field fieldName
 
+    volPointInterpolation vpInterp(mesh); 
     tmp<pointScalarField> psiPointTmp = vpInterp.interpolate(psi);
     pointScalarField& psiPoint = psiPointTmp.ref();
     psiPoint.rename(fieldName + ".point");
@@ -83,7 +84,80 @@ int main(int argc, char *argv[])
     ss << "isoTopo-" << std::setw(8) << std::setfill('0') 
         << Pstream::myProcNo() << ".vtk";
     isoTopo.write(ss.str());
+
+    // Compute the nearest distance to the isoSurface
+    // - Compute the squared searchRadius 
+    sqrSearchRadius = Foam::sqr(
+        2*fvc::average(
+            Foam::pow(mesh.deltaCoeffs(), -1)
+        ) // search radius = 2 * \Delta x 
+    );
     
+    // - The map Cell -> Nearest Triangle, Triangle in iso-surface.  
+    DynamicList<pointIndexHit> cellTriangleNearest;
+    const auto& cellCenters = mesh.C();
+    
+    // TODO: WARNING, from this point on, we have triangulated isoTopo and have 
+    // multiple triangles per cell, meaning multiple triangle normals per cell. 
+    // The transfer of isoTopo normals to interface cells must happen before. TM. 
+    isoTopo.triangulate();
+    
+    // Construct triSurface for octree queries. 
+    // triSurface (const List< labelledTri > &triangles, const pointField &pts)
+    List<labelledTri> isoTopoTriangles(isoTopo.size(), labelledTri(-1,-1,-1,0));
+    forAll(isoTopoTriangles, triI)
+    {
+        // After isoTopo.triangulate() isoTopo faces are triangles. 
+        // triSurface needs labelledTri as a triangle data type.
+        for(char i = 0; i < 3; ++i)
+            isoTopoTriangles[triI][i] = isoTopo[triI][i];
+    }
+    
+    // Construct octree
+    
+    triSurface isoTriSurface(isoTopoTriangles, isoTopo.points());
+    isoTriSurface.write("isoTopoTriSurface.vtk");
+    
+    // triSurfaceMesh is constructed for octree queries. 
+    // TODO: figure out how to use indexedOctree for the search query using
+    // isoSurfaceTopo directly, if this is a computational bottlenechk. Profile. TM.
+    triSurfaceMesh triMesh(
+        IOobject(
+            "triSurfaceMesh",
+            "triSurfaceMesh",
+            mesh,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        isoTriSurface 
+    );
+
+    triMesh.findNearest(
+        cellCenters, // Find distance between iso-surface and cell centers.
+        sqrSearchRadius, // squared search radius
+        cellTriangleNearest 
+    );
+
+    // TODO: check if unit normals are available already. @tmaric
+    const auto& faceNormals = isoTopo.faceNormals();
+    
+    // Calculate the distance to the cell center as the distance to the 
+    // nearest front triangle. 
+    forAll(cellTriangleNearest, cellI)
+    {
+        const pointIndexHit& h = cellTriangleNearest[cellI];
+
+        if (h.hit())
+        {
+            const auto& normalVector = faceNormals[h.index()]; 
+            auto distanceVector = cellCenters[cellI] - h.hitPoint(); 
+            auto distSign = sign(normalVector & distanceVector); 
+            sigDist[cellI] = distSign * mag(distanceVector);  
+        }
+    }
+    
+    sigDist.write();
+
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< nl;
@@ -94,21 +168,4 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
 // ************************************************************************* //
-
-
-    //const auto& Sf = isoTopo.faceNormals(); 
-    //const auto& meshCells = isoTopo.meshCells();
-    //forAll(meshCells, polygonI)
-    //{
-        //nc[meshCells[polygonI]] = Sf[polygonI];
-    //}
-    
-    //volScalarField ncMag (Foam::mag(nc));
-    //forAll(nc, cellI)
-    //{
-        //if (ncMag[cellI] > SMALL)
-            //nc[cellI] /= ncMag[cellI];
-    //}
-    //surfaceVectorField nf (fvc::interpolate(nc));
