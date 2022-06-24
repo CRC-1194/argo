@@ -25,15 +25,40 @@
         fvc::makeAbsolute(phiHbyA, U);
     }
 
+scalar sumPhiHbyA = 0;
+forAll (phiHbyA, i)
+    if (phiHbyA[i] > 0)
+        sumPhiHbyA += phiHbyA[i];
+reduce(sumPhiHbyA, sumOp<scalar>());
+Info<<"sumPhiHbyA = "<<sumPhiHbyA<<nl;
+
+scalar sumFSigma = 0;
+surfaceScalarField stf = mixture.surfaceTensionForce();
+forAll (stf, i)
+    if (stf[i] > 0)
+        sumFSigma += stf[i];
+//forAll (fSigma, i)
+//    if (fSigma[i] > 0)
+//        sumFSigma += fSigma[i];
+reduce(sumFSigma, sumOp<scalar>());
+Info<<"sumFSigma = "<<sumFSigma<<nl;
+
     surfaceScalarField phig
     (
         (
-            //mixture.surfaceTensionForce()
+            mixture.surfaceTensionForce()
             //pandoraModel.surfaceTensionForce(alpha1)
-            fSigma
+            //fSigma
           - ghf*fvc::snGrad(rho)
         )*rAUf*mesh.magSf()
     );
+
+scalar sumPhig = 0;
+forAll (phig, i)
+    if (phig[i] > 0)
+        sumPhig += phig[i];
+reduce(sumPhig, sumOp<scalar>());
+Info<<"sumPhig = "<<sumPhig<<nl;
 
     phiHbyA += phig;
 

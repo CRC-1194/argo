@@ -25,7 +25,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "curvatureFunctionObject.hpp"
+#include "curvatureSfFunctionObject.hpp"
 
 #include "OSspecific.H"
 #include "addToRunTimeSelectionTable.H"
@@ -42,12 +42,12 @@ License
 namespace Foam {
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
-defineTypeNameAndDebug(curvatureFunctionObject, 0);
-addToRunTimeSelectionTable(functionObject, curvatureFunctionObject, dictionary);
+defineTypeNameAndDebug(curvatureSfFunctionObject, 0);
+addToRunTimeSelectionTable(functionObject, curvatureSfFunctionObject, dictionary);
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
-const volScalarField& curvatureFunctionObject::getField(const word& fieldName) const
+const volScalarField& curvatureSfFunctionObject::getField(const word& fieldName) const
 {
     // Get the reference to the object registry.
     const objectRegistry& reg
@@ -68,20 +68,24 @@ const volScalarField& curvatureFunctionObject::getField(const word& fieldName) c
     return field;
 }
 
-fileName curvatureFunctionObject::assembleFileName() const
+fileName curvatureSfFunctionObject::assembleFileName() const
 {
     fileName dataFileName = time_.rootPath() + "/" + time_.globalCaseName() + "/"
-        + "curvatureData.csv";
+        + "curvatureSfData.csv";
 
     return dataFileName;
 }
 
-std::vector<scalar> curvatureFunctionObject::filterCurvature() const
+std::vector<scalar> curvatureSfFunctionObject::filterCurvature() const
 {
     std::vector<scalar> curvatureSquashed{};
     const auto& volFraction = getField(vofFieldName_);
     const auto& curvature = getField(curvatureFieldName_);
-    std::vector<scalar> curvatureFiltered(volFraction.size(), 0.0);
+    auto curvSfTmp = fvc::interpolate(curvature);
+    const auto& curvSf = curvSfTmp.ref();
+
+    /*
+    std::vector<scalar> curvatureFiltered(curvSf.size(), 0.0);
 
     const auto& mesh = volFraction.mesh();
     const auto& owner = mesh.owner();
@@ -92,11 +96,19 @@ std::vector<scalar> curvatureFunctionObject::filterCurvature() const
 
     forAll(gradAlphaF, fid)
     {
-        if (mag(gradAlphaF[fid] != 0.0))
+        //if (mag(gradAlphaF[fid] != 0.0))
+        if (mag(gradAlphaF[fid] > 1e-6))
         {
-            curvatureFiltered[owner[fid]] = curvature[owner[fid]];
-            curvatureFiltered[neighbor[fid]] = curvature[neighbor[fid]];
+            curvatureFiltered[fid] = curvSf[fid];
         }
+    }
+    */
+
+    std::vector<scalar> curvatureFiltered(volFraction.size(), 0.0);
+    forAll (curvature, i)
+    {
+        if (curvature[i] > SMALL)
+            curvatureFiltered[i] = curvature[i];
     }
 
     curvatureSquashed.reserve(curvatureFiltered.size()/10);
@@ -111,7 +123,7 @@ std::vector<scalar> curvatureFunctionObject::filterCurvature() const
     return curvatureSquashed;
 }
 
-void curvatureFunctionObject::clearDataBuffer()
+void curvatureSfFunctionObject::clearDataBuffer()
 {
     timeSteps_.clear();
     meanCurvature_.clear();
@@ -124,7 +136,7 @@ void curvatureFunctionObject::clearDataBuffer()
 }
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
-curvatureFunctionObject::curvatureFunctionObject
+curvatureSfFunctionObject::curvatureSfFunctionObject
 (
     const word& name,
     const Time& time,
@@ -139,10 +151,9 @@ curvatureFunctionObject::curvatureFunctionObject
 {}
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-bool curvatureFunctionObject::execute()
+bool curvatureSfFunctionObject::execute()
 {
     auto K = filterCurvature();
-    if (K.size() < SMALL) return false;
     auto meanCurvature = std::accumulate(K.begin(), K.end(), 0.0)/K.size();
     scalar standardDeviation = 0.0;
     for (const auto val : K)
@@ -175,7 +186,7 @@ bool curvatureFunctionObject::execute()
     return true;
 }
 
-bool curvatureFunctionObject::write()
+bool curvatureSfFunctionObject::write()
 {
     std::ofstream outFile;
     std::string sep = ",";
@@ -217,7 +228,7 @@ bool curvatureFunctionObject::write()
     return true;
 }
 
-bool curvatureFunctionObject::read(const dictionary&)
+bool curvatureSfFunctionObject::read(const dictionary&)
 {
     return true;
 }

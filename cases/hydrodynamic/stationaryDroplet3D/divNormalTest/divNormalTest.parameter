@@ -1,0 +1,46 @@
+values
+{
+    solver (interIsoPandoraFoam);
+
+    FLUID_PAIRING
+    (
+        water-air	
+    );
+
+    RESOLUTION 
+    (
+        32 64 128
+    );
+
+    N_PROPAGATIONS
+    (
+        2 
+    );
+
+    N_AVERAGES
+    (
+        1 
+    );
+
+    N_EXTENSIONS
+    (
+        1
+    );
+
+    N_TANGENTIAL_AVERAGES 
+    (
+        5 
+    ); 
+
+    N_OUTER 
+    (
+        4 
+    );
+
+    N_INNER
+    (
+        1
+    );
+
+    REL_VOLUME_ERROR (1e-5);
+}

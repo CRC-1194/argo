@@ -31,6 +31,11 @@ License
 #include "fvcSnGrad.H"
 #include "processorFvPatch.H"
 
+#include "isoSurfaceTopo.H"
+#include "volPointInterpolation.H"
+
+#include "reconstructionSchemes.H"
+
 namespace Foam {
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
@@ -52,7 +57,8 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
         return;
     }
 
-    /*  Central idea for determining whether a cell is an interface cell
+    /*
+     *  Central idea for determining whether a cell is an interface cell
      *  (a.k.a. a cell intersected by the fluid interface) is the following:
      *  assuming the interface is located at points for which the indicator value
      *  is 0.5, we need to find those cells which contain such points. Here we
@@ -167,6 +173,23 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
     isInterfaceCell_.correctBoundaryConditions();
 
     lastUpdate_ = indicator.mesh().time().timeIndex();
+
+    /*
+    reconstructionSchemes* surf = 
+        indicator.mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
+
+    const boolList& ics = surf->interfaceCell();
+
+    forAll (ics, i)
+    {
+        if (ics[i])
+            isInterfaceCell_[i] = 1.0;
+        else
+            isInterfaceCell_[i] = 0.0;
+    }
+
+    isInterfaceCell_.correctBoundaryConditions();
+    */
 }
 
 

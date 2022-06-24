@@ -42,7 +42,7 @@ solvers
         solver          GAMG;
         smoother        DICGaussSeidel;
         tolerance       1e-09;
-        relTol          0.05;
+        relTol          0;
     }
 
     p_rghFinal
@@ -84,22 +84,22 @@ pandora
 {
     curvature
     {
-        type isosurface;
+        type divNormal;
         nPropagate @!N_PROPAGATIONS!@;  
         nAverage   @!N_AVERAGES!@; 
-        fieldName "alpha.dispersed"; 
+        normalField "interfaceNormal.dispersed"; 
     }
     curvatureExtension
     {
-        type noExtension;
-        //type averageExtension;
-        //nExtensionIterations @!N_EXTENSIONS!@; 
+        //type noExtension;
+        type averageExtension;
+        nExtensionIterations @!N_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        type noRegularisation;
-        //type tangentialAverage;
-        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
+        //type noRegularisation;
+        type tangentialAverage;
+        nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
     }
 }
 

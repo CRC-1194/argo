@@ -67,6 +67,7 @@ void pandoraCurvatureTangentialAverageRegularisation::regularise
             curvature[cid] = 0.0;
         }
     }
+    curvature.correctBoundaryConditions();
 
     labelField count{curvature.size(), 0};
     scalarField curvatureSum{curvature.size(), 0.0};

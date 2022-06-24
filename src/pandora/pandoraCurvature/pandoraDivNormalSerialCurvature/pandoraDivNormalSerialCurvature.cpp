@@ -25,7 +25,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "pandoraDivNormalCurvature.hpp"
+#include "pandoraDivNormalSerialCurvature.hpp"
 
 #include "addToRunTimeSelectionTable.H"
 #include "dictionary.H"
@@ -36,18 +36,17 @@ License
 
 #include "processorFvPatchField.H"
 #include "reconstructionSchemes.H"
-#include "zoneDistribute.H"
 
 namespace Foam {
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-defineTypeNameAndDebug(pandoraDivNormalCurvature, false);
-addToRunTimeSelectionTable(pandoraCurvature, pandoraDivNormalCurvature, Dictionary);
+defineTypeNameAndDebug(pandoraDivNormalSerialCurvature, false);
+addToRunTimeSelectionTable(pandoraCurvature, pandoraDivNormalSerialCurvature, Dictionary);
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-pandoraDivNormalCurvature::pandoraDivNormalCurvature
+pandoraDivNormalSerialCurvature::pandoraDivNormalSerialCurvature
 (
     const fvMesh& mesh, 
     const dictionary& dict
@@ -71,19 +70,18 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
             dimensionedVector("averagedNormals", dimless, vector(0,0,0))
         )
 {
-    Info<<"Selecting divNormal curvature"<<nl;
+    Info<<"Selecting divNormalSerial curvature"<<nl;
 }
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
-volScalarField& pandoraDivNormalCurvature::cellCurvature()
+volScalarField& pandoraDivNormalSerialCurvature::cellCurvature()
 {
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (meshDb.found(fieldName_))
     {
         //const volVectorField& interfaceNormals = 
         //    mesh().lookupObject<volVectorField>(fieldName_);
-
         reconstructionSchemes* surf = 
             mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
 
@@ -142,6 +140,7 @@ if(mesh().time().writeTime())
 
         forAll (markers, cellI)
         {
+            //if (interfaceCells[cellI])
             if (mag(averagedNormals_[cellI]) != 0)
             {
                 markers[cellI] = 0;
@@ -149,79 +148,27 @@ if(mesh().time().writeTime())
         }
         markers.correctBoundaryConditions();
 
-        const auto& own = mesh().owner();
-        const auto& nei = mesh().neighbour();
-
-        zoneDistribute& distribute = zoneDistribute::New(mesh());
+        const auto& owner = mesh().owner();
+        const auto& neibr = mesh().neighbour();
 
         for (label i = 0; i < nPropagate_; ++i)
         {
-            forAll (nei, fid)
+            forAll (neibr, fid)
             {
-                if (markers[own[fid]] == i && markers[nei[fid]] == -1)
+                if (markers[owner[fid]] == i && markers[neibr[fid]] == -1)
                 {
-                    markers[nei[fid]] = i + 1;
+                    markers[neibr[fid]] = i + 1;
                 }
-                if (markers[nei[fid]] == i && markers[own[fid]] == -1)
+                if (markers[neibr[fid]] == i && markers[owner[fid]] == -1)
                 {
-                    markers[own[fid]] = i + 1;
-                }
-            }
-            markers.correctBoundaryConditions();
-
-            auto& meshBoundary = markers.boundaryFieldRef();
-            for (auto& mb : meshBoundary)
-            {
-                if (isA<processorFvPatch>(mb.patch()))
-                {
-                    mb.initEvaluate();
-                    mb.evaluate();
-
-                    const auto& faceToCell = mb.patch().faceCells();
-                    const auto& neibrValue = mb.patchNeighbourField().cref();
-                    
-                    forAll(mb, j)
-                    {
-                        if (neibrValue[j] == i && markers[faceToCell[j]] == -1)
-                        {
-                            markers[faceToCell[j]] = i + 1;
-                        }
-                    }
+                    markers[owner[fid]] = i + 1;
                 }
             }
             markers.correctBoundaryConditions();
         }
 
-        boolList updateZone(mesh().nCells(), false);
-        forAll (updateZone, uzi)
-        {
-            if (markers[uzi] == -1) continue;
-            if (markers[uzi] ==  0) continue;
-            updateZone[uzi] = true;
-        }
-        distribute.updateStencil(updateZone);
-
         for (label i = 0; i < nPropagate_; ++i)
         {
-            boolList zone(mesh().nCells(), false);
-            forAll (zone, zi)
-            {
-                if (markers[zi] == i + 1)
-                {
-                    zone[zi] = true;
-                }
-            }
-
-            distribute.setUpCommforZone(zone, false);
-            Map<vector> mapCentres = 
-                distribute.getDatafromOtherProc(zone, mesh().C());
-            Map<vector> mapNormals = 
-                distribute.getDatafromOtherProc(zone, averagedNormals_);
-            Map<scalar> mapMarkers = 
-                distribute.getDatafromOtherProc(zone, markers);
-
-            const labelListList& stencil = distribute.getStencil();
-
             volVectorField avgNormTmp = averagedNormals_;
             forAll (markers, cellI)
             {
@@ -230,21 +177,36 @@ if(mesh().time().writeTime())
                 avgNormTmp[cellI] = Zero;
                 const point& p = mesh().C()[cellI];
 
-                for (const label gblIdx : stencil[cellI])
+                labelHashSet hashSet;
+
+                const labelList& cps = mesh().cellPoints()[cellI];
+                forAll (cps, pI)
                 {
-                    scalar marker = distribute.getValue(markers, mapMarkers, gblIdx);
-                    if (marker == -1 || marker == i + 1) continue;
-
-                    vector n = distribute.getValue(averagedNormals_, mapNormals, gblIdx);
-                    if (mag(n) != 0)
+                    const labelList& pcs = mesh().pointCells()[cps[pI]];
+                    forAll (pcs, cI)
                     {
-                        n /= mag(n);
+                        label cellJ = pcs[cI];
 
-                        vector centre = distribute.getValue(mesh().C(), mapCentres, gblIdx);
-                        vector dist = centre - p;
-                        vector distToSurf = dist & n / mag(n) * n;
-                        vector verticalDist = dist - distToSurf;
-                        avgNormTmp[cellI] += n / max(mag(verticalDist), SMALL);
+                        if (markers[cellJ] == -1) continue;
+                        if (markers[cellJ] == i + 1) continue;
+
+                        if (hashSet.found(cellJ)) continue;
+                        hashSet.insert(cellJ);
+
+                        vector n = averagedNormals_[cellJ];
+                        if (mag(n) != 0)
+                        {
+                            n /= mag(n);
+
+                            point centre{Zero};
+                            centre = mesh().C()[cellJ];
+
+                            vector dist = centre - p;
+
+                            vector distToSurf = dist & n / mag(n) * n;
+                            vector verticalDist = dist - distToSurf;
+                            avgNormTmp[cellI] += n / max(mag(verticalDist), SMALL);
+                        }
                     }
                 }
             }
@@ -295,7 +257,7 @@ if(mesh().time().writeTime())
     else
     {
         FatalErrorInFunction
-            << "pandoraDivNormalCurvature::cellCurvature \n"
+            << "pandoraDivNormalSerialCurvature::cellCurvature \n"
             << "Field " << fieldName_ << " not in mesh registry." 
 	    << "Available registered fields are : \n" 
 	    << mesh().names() 

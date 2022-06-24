@@ -84,10 +84,10 @@ pandora
 {
     curvature
     {
-        type isosurface;
+        type divNormal;
         nPropagate @!N_PROPAGATIONS!@;  
         nAverage   @!N_AVERAGES!@; 
-        fieldName "alpha.dispersed"; 
+        normalField "recon::normal"; 
     }
     curvatureExtension
     {

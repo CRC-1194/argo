@@ -5,7 +5,8 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2021 AUTHOR,AFFILIATION
+    Copyright (C) 2020 Tomislav Maric, Tobias Tolle, TU Darmstadt
+                       Anja Lippert, BOSCH CR 
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -24,78 +25,69 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::pandoraIsosurfaceCurvature
+    Foam::pandoraDivNormalExactCurvature
 
 Description
+    Extend the interface normal vector field by diffusion and calculate the 
+    curvature as div(normal). Re-sets the normals in interface cells during 
+    smoothing. 
 
 SourceFiles
-    pandoraIsosurfaceCurvatureI.H
-    pandoraIsosurfaceCurvature.C
-    pandoraIsosurfaceCurvatureIO.C
+    pandoraDivNormalExactCurvature.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef pandoraIsosurfaceCurvature_H
-#define pandoraIsosurfaceCurvature_H
+#ifndef pandoraDivNormalExactCurvature_H
+#define pandoraDivNormalExactCurvature_H
 
-#include "isoSurface.H"
-#include "pandoraCurvature.H"
+#include "pandoraCurvature.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-namespace Foam {
+namespace Foam
+{
 
 /*---------------------------------------------------------------------------*\
-                         Class pandoraIsosurfaceCurvature Declaration
+                         Class pandoraDivNormalExactCurvature Declaration
 \*---------------------------------------------------------------------------*/
 
-class pandoraIsosurfaceCurvature
-:
-    public pandoraCurvature 
+class pandoraDivNormalExactCurvature
+    :
+        public pandoraCurvature
 {
-    // Private Data
-    const word fieldName_;
 
+protected:
 
-    // Private Member Functions
-
+    const word fieldName_; 
+    const label nPropagate_;
+    const label nAverage_; 
+    volVectorField averagedNormals_; 
 
 public:
 
     // Static Data Members
-    TypeName ("isosurface");
+
+    TypeName ("divNormalExact");
 
     // Constructors
 
-        //- Construct null
-        pandoraIsosurfaceCurvature();
+    //- Construct from components
+    pandoraDivNormalExactCurvature(const fvMesh& mesh, const dictionary& dict);
 
-        //- Construct from components
-        pandoraIsosurfaceCurvature(const fvMesh& mesh, const dictionary& dict);
-
-        //- Construct as copy
-        pandoraIsosurfaceCurvature(const pandoraIsosurfaceCurvature&) = default;
-
+    //- Construct as copy
+    pandoraDivNormalExactCurvature(const pandoraDivNormalExactCurvature&) = default;
 
     //- Destructor
-    virtual ~pandoraIsosurfaceCurvature() = default;
-
+    virtual ~pandoraDivNormalExactCurvature() = default;
 
     // Member Functions
+    
     virtual volScalarField& cellCurvature(); 
-
-
-    // Member Operators
 };
-
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-//#include "pandoraIsosurfaceCurvatureI.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

@@ -19,8 +19,8 @@ solvers
 {
     "alpha.*"
     {
-        isoFaceTol      1e-08;
-        surfCellTol     1e-08;
+        isoFaceTol      1e-8;
+        surfCellTol     1e-8;
         nAlphaBounds    3;
         snapTol         0;
         clip            false;
@@ -56,7 +56,7 @@ solvers
     {
         solver          PBiCGStab;
         preconditioner  DILU;
-        tolerance       1e-06;
+        tolerance       1e-08;
         relTol          0;
     }
 
@@ -64,7 +64,7 @@ solvers
     {
         solver          PBiCGStab;
         preconditioner  DILU;
-        tolerance       1e-06;
+        tolerance       1e-08;
         relTol          0;
     }
 }
@@ -73,8 +73,8 @@ solvers
 PIMPLE
 {
     momentumPredictor no;
-    nOuterCorrectors @!N_OUTER!@;
-    nCorrectors     @!N_INNER!@;
+    nOuterCorrectors 4;
+    nCorrectors     1;
     nNonOrthogonalCorrectors 0;
     // pRefCell        0;
     // pRefValue       0;
@@ -84,22 +84,22 @@ pandora
 {
     curvature
     {
-        type isosurface;
-        nPropagate @!N_PROPAGATIONS!@;  
-        nAverage   @!N_AVERAGES!@; 
-        fieldName "alpha.dispersed"; 
+        type divNormal;
+        nPropagate 4; 
+        nAverage 0; 
+        normalField "interfaceNormal.dispersed"; 
     }
     curvatureExtension
     {
         type noExtension;
         //type averageExtension;
-        //nExtensionIterations @!N_EXTENSIONS!@; 
+        //nExtensionIterations 3; 
     }
     curvatureRegularisation
     {
         type noRegularisation;
         //type tangentialAverage;
-        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
+        //nAveragingIterations 20; 
     }
 }
 
