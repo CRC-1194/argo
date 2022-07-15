@@ -52,7 +52,7 @@ oil_novec7500
 <!--(if FLUID_PAIRING=="water-air")-->
     dispersed   { $water }
     continuous  { $air }
-    sigma       72.75e-3;
+    sigma       72.74e-3;
 
 <!--(elif FLUID_PAIRING=="oil_novec7500-water")-->
     dispersed   { $oil_novec7500 }
