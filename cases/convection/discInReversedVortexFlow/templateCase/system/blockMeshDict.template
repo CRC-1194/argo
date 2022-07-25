@@ -19,8 +19,9 @@ scale   1;
 L   1;
 nx  |-RESOLUTION-|;
 
-y1  -.01;
-y2  .01;
+// Depth in empty direction has to be unity for correct error computation
+y1  -0.5;
+y2   0.5;
 ny  1;
 
 H   1;

@@ -17,14 +17,16 @@ FoamFile
 scale   1;
 
 L   3;
-nx  |-RESOLUTION_X-|;
+nz  |-RESOLUTION-|;
 
-y1  -.0125;
-y2  .0125;
+// Ensure to have unit depth in empty direction as errors in 2D are scaled
+// by the domain depth.
+y1  -0.5;
+y2   0.5;
 ny  1;
 
 H   2;
-nz  #calc "|-RESOLUTION_X-|*2.0/3.0";
+nx  #calc "1.5*$nz";
 
 vertices
 (
