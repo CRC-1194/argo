@@ -45,43 +45,41 @@ defineRunTimeSelectionTable(implicitSurface, Dictionary);
 
 autoPtr<implicitSurface> implicitSurface::New(const word& name, ITstream& is)
 {
-    // Find the constructor pointer for the model in the constructor table.
-    ITstreamConstructorTable::iterator cstrIter =
-        ITstreamConstructorTablePtr_->find(name);
+    auto* ctorPtr = ITstreamConstructorTable(name);
 
-    // If the constructor pointer is not found in the table.
-    if (cstrIter == ITstreamConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
-        FatalErrorIn("AI::implicitSurface::New(const word&, ITstream&&)")
-            << "Unknown implicitSurface type " << name << nl << nl
-            << "Valid implicitSurfaces are : " << endl
-            << ITstreamConstructorTablePtr_->sortedToc() << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            is,
+            "implicitSurface",
+            name,
+            *ITstreamConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    // Construct the model and return the autoPtr to the object.
-    return autoPtr<implicitSurface>(cstrIter()(is));
+    return autoPtr<implicitSurface>(ctorPtr(is));
 }
 
 
 autoPtr<implicitSurface> implicitSurface::New(const dictionary& configDict)
 {
     const auto name = configDict.get<word>("surface");
-    // Find the constructor pointer for the model in the constructor table.
-    DictionaryConstructorTable::iterator cstrIter =
-        DictionaryConstructorTablePtr_->find(name);
 
-    // If the constructor pointer is not found in the table.
-    if (cstrIter == DictionaryConstructorTablePtr_->end())
+    auto* ctorPtr = DictionaryConstructorTable(name);
+
+    if (!ctorPtr)
     {
-        FatalErrorIn("Foam::TriSurfaceImmersion::implicitSurface::New(const "
-                     "word&, const dictionary&)")
-            << "Unknown implicitSurface type " << name << nl << nl
-            << "Valid implicitSurfaces are : " << endl
-            << DictionaryConstructorTablePtr_->sortedToc() << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            configDict,
+            "implicitSurface",
+            name,
+            *DictionaryConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    // Construct the model and return the autoPtr to the object.
-    return autoPtr<implicitSurface>(cstrIter()(configDict));
+    return autoPtr<implicitSurface>(ctorPtr(configDict));
 }
 
 

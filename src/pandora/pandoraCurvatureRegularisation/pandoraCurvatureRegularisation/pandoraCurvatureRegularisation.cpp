@@ -50,24 +50,20 @@ autoPtr<pandoraCurvatureRegularisation> pandoraCurvatureRegularisation::New
     const dictionary regDict = dict.subDict("curvatureRegularisation");
     const word name = regDict.get<word>("type"); 
 
-    // Find the constructor pointer for the model in the constructor table.
-    DictionaryConstructorTable::iterator cstrIter =
-        DictionaryConstructorTablePtr_->find(name);
+    auto* ctorPtr = DictionaryConstructorTable(name);
 
-    // If the constructor pointer is not found in the table.
-    if (cstrIter == DictionaryConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
-        FatalErrorIn(
-            "Foam::pandoraCurvatureRegularisation::New(const word&, const Dictionary&)" 
-        )   << "Unknown curvature model type "
-            << name << nl << nl
-            << "Valid curvature models are : " << endl
-            << DictionaryConstructorTablePtr_->sortedToc()
-            << exit(FatalError);
+        FatalIOErrorInLookup
+        (
+            regDict,
+            "pandoraCurvatureExtension",
+            name,
+            *DictionaryConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    // Construct the model and return the autoPtr to the object. 
-    return autoPtr<pandoraCurvatureRegularisation> (cstrIter()(regDict));
+    return autoPtr<pandoraCurvatureRegularisation>(ctorPtr(regDict));
 }
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //

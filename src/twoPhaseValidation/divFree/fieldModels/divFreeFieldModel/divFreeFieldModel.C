@@ -80,40 +80,20 @@ divFreeFieldModel::New
     const dictionary& dict
 )
 {
-    if (debug)
-    {
-        Info<< "Selecting function " << name << endl;
-    }
+    auto* ctorPtr = dictionaryConstructorTable(name);
 
-    if (!dictionaryConstructorTablePtr_)
+    if (!ctorPtr)
     {
-        FatalErrorIn
+        FatalIOErrorInLookup
         (
-            "divFreeFieldModel::New"
-            "(const word& name, const Time&, const dictionary&)"
-        )   << "Unknown function type "
-            << name << nl << nl
-            << "Table of divFreeFieldModels is empty" << endl
-            << exit(FatalError);
+            dict,
+            "divFreeModel",
+            name,
+            *dictionaryConstructorTablePtr_
+        ) << exit(FatalIOError);
     }
 
-    dictionaryConstructorTable::iterator cstrIter =
-        dictionaryConstructorTablePtr_->find(name);
-
-    if (cstrIter == dictionaryConstructorTablePtr_->end())
-    {
-        FatalErrorIn
-        (
-            "divFreeFieldModel::New"
-            "(const word& name, const Time&, const dictionary&)"
-        )   << "Unknown function type "
-            << name << nl << nl
-            << "Valid divFreeModels are : " << nl
-            << dictionaryConstructorTablePtr_->sortedToc() << endl
-            << exit(FatalError);
-    }
-
-    return autoPtr<divFreeFieldModel>(cstrIter()(time, dict));
+    return autoPtr<divFreeFieldModel>(ctorPtr(time, dict));
 }
 
 autoPtr<divFreeFieldModel>
