@@ -27,10 +27,12 @@ solvers
         isoFaceTol      1e-08;
         surfCellTol     1e-08;
         nAlphaBounds    3;
-        snapTol         0;
-        clip            false;
+        snapTol         1e-12;
+        clip            true;
+
+        nAlphaSubCycles 2;
         cAlpha          1;
-        nAlphaSubCycles 1;
+        nAlphaCorr      1;
         reconstructionScheme plicRDF; 
     <!--(elif solver=="interFlow")-->
         // Entries taken from "TwoPhaseFlow/testsuite/surfaceTension/sinWave/system/fvSolution"
@@ -38,9 +40,9 @@ solvers
 
 	    reconstructionScheme plicRDF;
 
-		vof2IsoTol 1e-8;
-		surfCellTol 1e-8;
-		writeVTK false;
+		vof2IsoTol      1e-8;
+		surfCellTol     1e-8;
+		writeVTK        false;
 
 
         isoFaceTol      1e-8;
@@ -50,9 +52,9 @@ solvers
         clip            true;
 
         nAlphaSubCycles 2;
-        nAlphaCorr 1;
+        nAlphaCorr      1;
         cAlpha          1;
-        writeIsoFaces false;
+        writeIsoFaces   false;
     <!--(end)-->
     }
 
@@ -84,14 +86,19 @@ solvers
         tolerance       1e-08;
         relTol          0;
     }
+
+    UFinal
+    {
+        $U;
+    }
 }
 
 
 PIMPLE
 {
-    momentumPredictor no;
-    nOuterCorrectors  2;
-    nCorrectors       3;
+    momentumPredictor   yes;
+    nOuterCorrectors    1;
+    nCorrectors         3;
     nNonOrthogonalCorrectors 0;
 }
 
