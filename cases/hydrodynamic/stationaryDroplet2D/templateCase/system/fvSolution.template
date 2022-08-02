@@ -34,7 +34,7 @@ solvers
         cAlpha          1;
         nAlphaCorr      1;
         reconstructionScheme plicRDF; 
-    <!--(elif solver=="interFlow")-->
+    <!--(elif solver=="interFlow-fP" or solver=="interFlow-RDF")-->
         // Entries taken from "TwoPhaseFlow/testsuite/surfaceTension/sinWave/system/fvSolution"
         advectionScheme isoAdvection;
 

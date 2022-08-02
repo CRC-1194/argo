@@ -70,7 +70,13 @@ oil_novec7500
 surfaceForces
 {
     sigma $sigma;
-    surfaceTensionForceModel fitParaboloid;
+
+    <!--(if solver=="interFlow-fP")-->
+        surfaceTensionForceModel fitParaboloid;
+    <!--(elif solver=="interFlow-RDF")-->
+        surfaceTensionForceModel RDF;
+    <!--(end)-->
+
     accelerationModel gravity;
     deltaFunctionModel alphaCSF;
 }

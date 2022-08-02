@@ -42,7 +42,7 @@ fi
 # corresponds to interFoam / interIsoFoam
 argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interFoam -v 0-11
 argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interIsoFoam -v 12-23
-argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interFlow -v 24-35
+argo-create-parameter-study.py benchmarkpaper.parameter -p benchmark-interFlow -v 24-47
 
 # Initialize variants: create mesh and initialize fields
 argo-initialize-parameter-study.py benchmark- -m blockMesh -f initFields.sh -par $JOB_ARG

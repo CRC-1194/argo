@@ -15,5 +15,5 @@ values
         water-air oil_novec7500-water gearoil-air
     );
 
-    solver ( interFoam interIsoFoam interFlow );
+    solver ( interFoam interIsoFoam interFlow-fP interFlow-RDF );
 }
