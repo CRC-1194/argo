@@ -30,8 +30,6 @@ volVectorField U
 
 #include "createPhi.H"
 
-pandora pandoraModel(mesh);
-
 Info<< "Reading transportProperties\n" << endl;
 immiscibleIncompressibleTwoPhaseMixture mixture(U, phi);
 
@@ -40,7 +38,6 @@ volScalarField& alpha2(mixture.alpha2());
 
 const dimensionedScalar& rho1 = mixture.rho1();
 const dimensionedScalar& rho2 = mixture.rho2();
-
 
 // Need to store rho for ddt(rho, U)
 volScalarField rho
@@ -135,5 +132,6 @@ mesh.setFluxRequired(alpha1.name());
 
 isoAdvection advector(alpha1, phi, U);
 
+pandora pandoraModel(mesh);
 surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
 

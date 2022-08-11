@@ -87,7 +87,4 @@
     {
         rAU.clear();
     }
-
-scalar maxU = max(mag(U)).value();
-Info<<"maxU = "<<maxU<<nl;
 }

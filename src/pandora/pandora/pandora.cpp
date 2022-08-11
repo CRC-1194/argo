@@ -262,9 +262,9 @@ const surfaceScalarField& pandora::surfaceTensionForce
     const volScalarField& indicator
 )
 {
-    updateInterfaceCells(indicator);
-
     volScalarField& cellCurvature = curvPtr_->cellCurvature();
+
+    updateInterfaceCells(indicator);
 
     curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell_); 
 

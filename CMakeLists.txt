@@ -179,6 +179,7 @@ target_link_libraries("triSurfaceImmersion"
 
 
 add_library("pandora" SHARED
+    src/pandora/interpolationSchemes/interpolationSchemes.cpp
     src/pandora/curvatureFunctionObject/curvatureFunctionObject.cpp
     src/pandora/curvatureSfFunctionObject/curvatureSfFunctionObject.cpp
     src/pandora/pandora/pandora.cpp
@@ -188,6 +189,7 @@ add_library("pandora" SHARED
     src/pandora/pandoraCurvature/pandoraDivNormalSerialCurvature/pandoraDivNormalSerialCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalExactCurvature/pandoraDivNormalExactCurvature.cpp
     src/pandora/pandoraCurvature/pandoraDivNormalIsoCurvature/pandoraDivNormalIsoCurvature.cpp
+    src/pandora/pandoraCurvature/pandoraDivNormalIsoRDFCurvature/pandoraDivNormalIsoRDFCurvature.cpp
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature/pandoraIsosurfaceCurvature.cpp
     src/pandora/pandoraCurvature/pandoraIntegralCurvature/pandoraIntegralCurvature.cpp
     src/pandora/pandoraCurvature/pandoraRDFIsosurfaceCurvature/pandoraRDFIsosurfaceCurvature.cpp
@@ -203,6 +205,7 @@ add_library("pandora" SHARED
     src/pandora/pandoraCurvatureRegularisation/pandoraCurvatureTangentialAverageRegularisation/pandoraCurvatureTangentialAverageRegularisation.cpp
 )
 target_include_directories("pandora" PUBLIC
+    src/pandora/interpolationSchemes
     src/pandora/curvatureFunctionObject
     src/pandora/curvatureSfFunctionObject
     src/pandora/pandora
@@ -212,6 +215,7 @@ target_include_directories("pandora" PUBLIC
     src/pandora/pandoraCurvature/pandoraDivNormalSerialCurvature
     src/pandora/pandoraCurvature/pandoraDivNormalExactCurvature
     src/pandora/pandoraCurvature/pandoraDivNormalIsoCurvature
+    src/pandora/pandoraCurvature/pandoraDivNormalIsoRDFCurvature
     src/pandora/pandoraCurvature/pandoraIsosurfaceCurvature
     src/pandora/pandoraCurvature/pandoraIntegralCurvature
     src/pandora/pandoraCurvature/pandoraRDFIsosurfaceCurvature
