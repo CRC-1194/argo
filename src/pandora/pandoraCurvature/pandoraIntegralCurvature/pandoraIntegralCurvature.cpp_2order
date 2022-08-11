@@ -1,0 +1,429 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | www.openfoam.com
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+    Copyright (C) 2021 AUTHOR,AFFILIATION
+-------------------------------------------------------------------------------
+License
+    This file is part of OpenFOAM.
+
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+\*---------------------------------------------------------------------------*/
+
+#include "pandoraIntegralCurvature.hpp"
+
+#include "addToRunTimeSelectionTable.H"
+#include "dictionary.H"
+#include "fvcAverage.H"
+#include "fvcDiv.H"
+#include "error.H"
+#include "dimensionedScalarFwd.H"
+#include "pointFields.H"
+#include "pointMesh.H"
+#include "volFieldsFwd.H"
+
+#include "volPointInterpolation.H"
+#include "isoSurfaceTopo.H"
+#include "tensor2D.H"
+#include "reconstructionSchemes.H"
+#include "zoneDistribute.H"
+
+#define iter 5
+#define rr 1
+
+namespace Foam {
+
+#include "inverseDistanceInterpolate.H"
+
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+defineTypeNameAndDebug(pandoraIntegralCurvature, false);
+addToRunTimeSelectionTable(pandoraCurvature, pandoraIntegralCurvature, Dictionary);
+
+
+// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+void pandoraIntegralCurvature::calcKappa
+(
+    const isoSurfaceTopo& isoTopo,
+    const volScalarField& rdf,
+    scalarField& kappa,
+    scalarField& area,
+    volScalarField& curvMarkers
+)
+{
+    const auto& faceAreas = isoTopo.faceAreas();
+    const auto& pointNormals = isoTopo.pointNormals();
+    const auto& points = isoTopo.points(); 
+    const auto& meshCells = isoTopo.meshCells();
+    const auto& magFaceAreas = isoTopo.magFaceAreas();
+    const auto& V = mesh().V();
+    forAll(isoTopo, faceI)
+    {
+        const auto& isoFace = isoTopo[faceI]; 
+        vector kappaSum (0, 0, 0);
+        for (decltype(isoFace.size()) pI0 = 0; pI0 < isoFace.size(); ++pI0)
+        {
+            auto pI1 = (pI0 + 1) % isoFace.size(); 
+            const auto& pG0 = isoFace[pI0]; // Global p0 label
+            const auto& pG1 = isoFace[pI1]; // Global p1 label
+
+            const auto& p0 = points[pG0];
+            const auto& p1 = points[pG1];
+
+            vector edgeNormal = 0.5 * (pointNormals[pG0] + pointNormals[pG1]); 
+            edgeNormal /= mag(edgeNormal);
+            vector edgeVector = p1 - p0;
+            kappaSum += (edgeVector ^ edgeNormal); 
+        }
+
+        label cellId = meshCells[faceI];
+
+        curvMarkers[cellId] = 0;
+        
+        area[cellId] = Foam::sqr(magFaceAreas[faceI]);
+        kappa[cellId] = (kappaSum & faceAreas[faceI]) / area[cellId];
+
+        if (mag(kappa[cellId]) > SMALL)
+        {
+            scalar radius = 2.0 / kappa[cellId] + rdf[cellId];
+            kappa[cellId] = 2.0 / radius;
+Info<<kappa[cellId]<<nl;
+            curvMarkers[cellId] = 1;
+        }
+    }
+}
+
+// * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
+pandoraIntegralCurvature::pandoraIntegralCurvature
+(
+    const fvMesh& mesh,
+    const dictionary& dict
+)
+:
+    pandoraCurvature{mesh, dict},
+    fieldName_{curvatureDict_.get<word>("normalField")},
+    nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 3)),
+    nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 3)),
+    range_(curvatureDict_.getOrDefault<scalar>("range", 1)),
+    nLayer_(curvatureDict_.getOrDefault<label>("nLayer", 3))
+{}
+
+
+// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+volScalarField& pandoraIntegralCurvature::cellCurvature()
+{
+    const auto& meshDb = cellCurvature_.mesh().thisDb();
+    if (!meshDb.found(fieldName_))
+    {
+        FatalErrorInFunction
+            << "pandoraIntegralCurvature::cellCurvature \n"
+            << "Field " << fieldName_ << " not in mesh registry." 
+            << abort(FatalError);
+    }
+
+    // Constuct isoSurface. 
+    const volScalarField& vf = mesh().lookupObject<volScalarField>(fieldName_);
+    const volScalarField& rdf = mesh().lookupObject<volScalarField>("RDF");
+
+    volPointInterpolation vpInterp(mesh());
+
+    tmp<pointScalarField> pfTmp = vpInterp.interpolate(vf);
+    pointScalarField& pf = pfTmp.ref();
+
+    labelList marker(mesh().nCells(), 0);
+
+    isoSurfaceTopo isoTopo
+    (
+        mesh(),
+        vf,
+        pf,
+        0.5
+    );
+    //isoTopo.write("isoTopo.vtk");
+
+    volScalarField curvMarkers
+    (
+        IOobject
+        (
+            "curvMarkers",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("curvMarkers", dimless, 0)
+    );
+
+    scalarField kappa(mesh().nCells(), 0.0);
+    scalarField area(mesh().nCells(), 0.0);
+    calcKappa(isoTopo, rdf, kappa, area, curvMarkers);
+
+    forAll (cellCurvature_, cellI)
+    {
+        if (curvMarkers[cellI] == 1)
+        {
+            cellCurvature_[cellI] = kappa[cellI];
+            //cellCurvature_[cellI] = 1000.0;
+        }
+        else
+        {
+            cellCurvature_[cellI] = 0.0;
+        }
+    }
+
+    reconstructionSchemes* surf = 
+        mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
+
+    const volVectorField& interfaceNormals = surf->normal();
+
+    volVectorField unitInterNorms = interfaceNormals /
+    (
+        mag(interfaceNormals) + 
+        dimensionedScalar(
+            "SMALL", interfaceNormals.dimensions(), SMALL
+        )
+    );
+    unitInterNorms.correctBoundaryConditions();
+
+    // Mark interface markers
+    volScalarField markers
+    (
+        IOobject
+        (
+            "cellMarkers",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("cellMarkers", dimless, -1)
+    );
+
+    forAll (markers, cellI)
+    {
+        if (mag(interfaceNormals[cellI]) != 0)
+        {
+            markers[cellI] = 0;
+        }
+    }
+    markers.correctBoundaryConditions();
+
+    const auto& own = mesh().owner();
+    const auto& nei = mesh().neighbour();
+
+    zoneDistribute& distribute = zoneDistribute::New(mesh());
+
+    forAll (nei, fid)
+    {
+        if (markers[own[fid]] == 0 && markers[nei[fid]] == -1)
+        {
+            markers[nei[fid]] = 1;
+        }
+        if (markers[nei[fid]] == 0 && markers[own[fid]] == -1)
+        {
+            markers[own[fid]] = 1;
+        }
+    }
+    markers.correctBoundaryConditions();
+
+    auto& meshBoundary = markers.boundaryFieldRef();
+    for (auto& mb : meshBoundary)
+    {
+        if (isA<processorFvPatch>(mb.patch()))
+        {
+            mb.initEvaluate();
+            mb.evaluate();
+
+            const auto& faceToCell = mb.patch().faceCells();
+            const auto& neibrValue = mb.patchNeighbourField().cref();
+            
+            forAll(mb, j)
+            {
+                if (neibrValue[j] == 0 && markers[faceToCell[j]] == -1)
+                {
+                    markers[faceToCell[j]] = 1;
+                }
+            }
+        }
+    }
+    markers.correctBoundaryConditions();
+
+    boolList updateZone(mesh().nCells(), false);
+    forAll (updateZone, uzi)
+    {
+        if (markers[uzi] == -1) continue;
+        updateZone[uzi] = true;
+    }
+    distribute.updateStencil(updateZone);
+
+{
+    // Layer 0
+    boolList zone0(mesh().nCells(), false);
+    label num = 0;
+    forAll (zone0, zi)
+    {
+        if (markers[zi] == 0 && curvMarkers[zi] == 0)
+        {
+            zone0[zi] = true;
+            num++;
+        }
+    }
+    if (num != 0)
+    {
+        distribute.setUpCommforZone(zone0, false);
+        Map<vector> mapMC = 
+            distribute.getDatafromOtherProc(zone0, mesh().C());
+        Map<vector> mapNormals = 
+            distribute.getDatafromOtherProc(zone0, unitInterNorms);
+        Map<scalar> mapCurvs = 
+            distribute.getDatafromOtherProc(zone0, cellCurvature_);
+        Map<scalar> mapCurvMks = 
+            distribute.getDatafromOtherProc(zone0, curvMarkers);
+
+        const labelListList& stencil = distribute.getStencil();
+
+        volScalarField cellCurvTmp = cellCurvature_;
+
+        forAll (markers, cellI)
+        {
+            if (!(markers[cellI] == 0 && curvMarkers[cellI] == 0)) continue;
+
+            cellCurvTmp[cellI] = 0.0;
+
+            point p = mesh().C()[cellI];
+
+            DynamicField<vector> centres;
+            DynamicField<scalar> curvs;
+
+            for (const label gblIdx : stencil[cellI])
+            {
+                scalar curvMarker = distribute.getValue(curvMarkers, mapCurvMks, gblIdx);
+                if (curvMarker == 0) continue;
+
+                scalar curv = distribute.getValue(cellCurvature_, mapCurvs, gblIdx);
+
+                vector n = distribute.getValue(unitInterNorms, mapNormals, gblIdx);
+
+                if (mag(n) != 0)
+                {
+                    n /= mag(n);
+
+                    vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
+
+                    vector dist = centre - p;
+                    vector distToSurf = dist & n / mag(n) * n;
+                    vector verticalDist = dist - distToSurf;
+
+                    vector cc = p - verticalDist;
+
+                    centres.append(cc);
+                    curvs.append(curv);
+                }
+            }
+
+            cellCurvTmp[cellI] = interpolateSecondOrder(p, centres, curvs, rr);
+        }
+        cellCurvTmp.correctBoundaryConditions();
+
+        cellCurvature_ = cellCurvTmp;
+        cellCurvature_.correctBoundaryConditions();
+    }
+}
+
+{
+    // Layer 1
+    boolList zone1(mesh().nCells(), false);
+    forAll (zone1, zi)
+    {
+        if (markers[zi] == 1)
+        {
+            zone1[zi] = true;
+        }
+    }
+    distribute.setUpCommforZone(zone1, false);
+    Map<vector> mapMC = 
+        distribute.getDatafromOtherProc(zone1, mesh().C());
+    Map<vector> mapNormals = 
+        distribute.getDatafromOtherProc(zone1, unitInterNorms);
+    Map<scalar> mapCurvs = 
+        distribute.getDatafromOtherProc(zone1, cellCurvature_);
+    Map<scalar> mapMks = 
+        distribute.getDatafromOtherProc(zone1, markers);
+
+    const labelListList& stencil = distribute.getStencil();
+
+    volScalarField cellCurvTmp = cellCurvature_;
+
+    forAll (markers, cellI)
+    {
+        if (markers[cellI] != 1) continue;
+
+        cellCurvTmp[cellI] = 0.0;
+
+        point p = mesh().C()[cellI];
+
+        DynamicField<vector> centres;
+        DynamicField<scalar> curvs;
+
+        for (const label gblIdx : stencil[cellI])
+        {
+            scalar marker = distribute.getValue(markers, mapMks, gblIdx);
+            if (marker != 0) continue;
+
+            scalar curv = distribute.getValue(cellCurvature_, mapCurvs, gblIdx);
+
+            vector n = distribute.getValue(unitInterNorms, mapNormals, gblIdx);
+
+            if (mag(n) != 0)
+            {
+                n /= mag(n);
+
+                vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
+
+                vector dist = centre - p;
+                vector distToSurf = dist & n / mag(n) * n;
+                vector verticalDist = dist - distToSurf;
+
+                vector cc = p - verticalDist;
+
+                centres.append(cc);
+                curvs.append(curv);
+            }
+        }
+
+        cellCurvTmp[cellI] = interpolateSecondOrder(p, centres, curvs, rr);
+    }
+    cellCurvTmp.correctBoundaryConditions();
+
+    cellCurvature_ = cellCurvTmp;
+    cellCurvature_.correctBoundaryConditions();
+}
+
+    #include "error.hpp"
+
+    return cellCurvature_;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+} // End namespace Foam
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// ************************************************************************* //

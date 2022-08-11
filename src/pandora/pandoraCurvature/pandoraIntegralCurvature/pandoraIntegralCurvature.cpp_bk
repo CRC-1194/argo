@@ -238,8 +238,6 @@ volScalarField& pandoraIntegralCurvature::cellCurvature()
             }
             cellCurvature_[cellI] = largestAreaCurv(kl, al);
             //cellCurvature_[cellI] = 1000.0;
-if (vf[cellI] > 1e-8 && vf[cellI] < 1 - 1e-8)
-    Info<<cellCurvature_[cellI]<<nl;
         }
     }
 
