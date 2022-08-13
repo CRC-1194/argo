@@ -32,6 +32,7 @@ License
 #include "fvcAverage.H"
 #include "fvcDiv.H"
 #include "fvcGrad.H"
+#include "fvcSmooth.H"
 #include "error.H"
 
 #include "processorFvPatchField.H"
@@ -184,7 +185,6 @@ scalar sphereRadius = 0.002; // Sphere radius
     forAll (updateZone, uzi)
     {
         if (markers[uzi] == -1) continue;
-        if (markers[uzi] ==  0) continue;
         updateZone[uzi] = true;
     }
     distribute.updateStencil(updateZone);
@@ -197,7 +197,7 @@ scalar sphereRadius = 0.002; // Sphere radius
         )
     );
     averagedNormals_.correctBoundaryConditions();
-
+    
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
     {
@@ -260,7 +260,9 @@ scalar sphereRadius = 0.002; // Sphere radius
             avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
             avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
             avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+            */
 
+            /*
             avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
             avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
             avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
@@ -269,8 +271,6 @@ scalar sphereRadius = 0.002; // Sphere radius
             avgNormTmp[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
             avgNormTmp[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
             avgNormTmp[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
-            /*
-            */
         }
         avgNormTmp.correctBoundaryConditions();
 
@@ -304,19 +304,6 @@ scalar sphereRadius = 0.002; // Sphere radius
     const volScalarField& RDF = mesh().lookupObject<volScalarField>("RDF");
     volScalarField rdf = RDF;
 
-/*
-    if (mesh().time().timeIndex() == 1)
-    {
-        forAll (rdf, cellI)
-        {
-            if (markers[cellI] == -1 || markers[cellI] == nPropagate_)
-                rdf[cellI] = 0;
-            else
-                rdf[cellI] = sphereRadius - mag(sphereCentre - mesh().C()[cellI]);
-        }
-    }
-*/
-
     forAll (cellCurvature_, cellI)
     {
         if (markers[cellI] == -1 || markers[cellI] == nPropagate_)
@@ -329,6 +316,7 @@ scalar sphereRadius = 0.002; // Sphere radius
                 (2.0 / (cellCurvature_[cellI] + SMALL) + rdf[cellI] * 1.0);
         }
     }
+
     cellCurvature_.correctBoundaryConditions();
 
     //#include "error.hpp"

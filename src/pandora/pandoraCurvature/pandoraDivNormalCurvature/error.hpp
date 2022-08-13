@@ -47,13 +47,14 @@ label countRdf = 0;
 forAll (rdf, i)
 {
     if (markers[i] == -1 || markers[i] == nPropagate_) continue;
+    //if (markers[i] != 0) continue;
 
     scalar exactRdf = sphereRadius - mag(sphereCentre - mesh().C()[i]);
     absErrorRdf = fabs(rdf[i] - exactRdf);
-    l1Rdf += absErrorRdf / fabs(exactRdf);
-    l2Rdf += sqr(absErrorRdf / exactRdf);
+    l1Rdf += absErrorRdf / sphereRadius;
+    l2Rdf += sqr(absErrorRdf / sphereRadius);
     countRdf++;
-    scalar inf = absErrorRdf / fabs(exactRdf);
+    scalar inf = absErrorRdf / sphereRadius;
     if (inf > lInfRdf)
         lInfRdf = inf;
 }
