@@ -33,6 +33,7 @@ License
 #include "fvcDiv.H"
 #include "fvcGrad.H"
 #include "fvcSmooth.H"
+#include "surfaceInterpolate.H"
 #include "error.H"
 
 #include "processorFvPatchField.H"
@@ -286,7 +287,7 @@ scalar sphereRadius = 0.002; // Sphere radius
 
     for (label i = 0; i < nAverage_; i++)
     {
-        averagedNormals_ = fvc::average(averagedNormals_);
+        averagedNormals_ = fvc::average(fvc::interpolate(averagedNormals_));
 
         averagedNormals_ /=
         (
