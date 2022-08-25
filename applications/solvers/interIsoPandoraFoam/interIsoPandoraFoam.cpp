@@ -189,10 +189,10 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
-            //volVectorField norm = advector.surf().normal();
-            //volVectorField cent = advector.surf().centre();
+            volVectorField norm = advector.surf().normal();
+            volVectorField cent = advector.surf().centre();
 
-            //advector.surf().reconstruct();
+            advector.surf().reconstruct();
 
 {
 const boolList& ics = advector.surf().interfaceCell();
@@ -205,6 +205,7 @@ Info<<"icsCount = "<<icsCount<<nl;
 }
 
             fSigma = pandoraModel.surfaceTensionForce(alpha1);
+            //fSigma = pandoraModel.surfaceTensionForce(alpha1.prevIter());
 
             mixture.correct();
 
@@ -226,8 +227,8 @@ Info<<"icsCount = "<<icsCount<<nl;
                 turbulence->correct();
             }
 
-            //advector.surf().normal() = norm;
-            //advector.surf().centre() = cent;
+            advector.surf().normal() = norm;
+            advector.surf().centre() = cent;
 
 scalar maxU = max(mag(U)).value();
 Info<<"maxU = "<<maxU<<nl;

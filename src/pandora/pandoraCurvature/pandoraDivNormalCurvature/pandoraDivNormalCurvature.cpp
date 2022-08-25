@@ -115,6 +115,15 @@ scalar sphereRadius = 0.002; // Sphere radius
     const volVectorField& interfaceNormals = surf->normal();
     const volVectorField& interfaceCentres = surf->centre();
 
+    volVectorField ifn = interfaceNormals / 
+    (
+        mag(interfaceNormals) + 
+        dimensionedScalar(
+            "SMALL", interfaceNormals.dimensions(), SMALL
+        )
+    );
+    ifn.correctBoundaryConditions();
+
     // Mark interface markers
     volScalarField markers
     (
@@ -198,6 +207,129 @@ scalar sphereRadius = 0.002; // Sphere radius
         )
     );
     averagedNormals_.correctBoundaryConditions();
+
+// PLIC normals refinement.
+{
+    boolList zone(mesh().nCells(), false);
+    forAll (zone, zi)
+    {
+        if (markers[zi] == 0)
+        {
+            zone[zi] = true;
+        }
+    }
+    distribute.setUpCommforZone(zone, false);
+    const labelListList& stencil = distribute.getStencil();
+
+    Map<vector> mapCentres = 
+        distribute.getDatafromOtherProc(zone, interfaceCentres);
+
+/*
+    for (label i = 0; i < nAverage_; i++)
+    {
+        volVectorField ifnTmp = ifn;
+        forAll(markers, cellI)
+        {
+            if (markers[cellI] != 0) continue;
+            ifnTmp[cellI] = Zero;
+            point p = interfaceCentres[cellI];
+            vector n = ifn[cellI];
+            DynamicList<vector> centres;
+            for (const label gblIdx : stencil[cellI])
+            {
+                vector q = distribute.getValue(interfaceCentres, mapCentres, gblIdx);
+                if (mag(q) == 0) continue;
+                vector pq = q - p;
+                if (mag(pq) == 0) continue;
+                vector w = pq ^ (n ^ pq);
+                if (mag(w) == 0) continue;
+                ifnTmp[cellI] += (w/mag(w)) / mag(pq);
+            }
+        }
+        ifnTmp.correctBoundaryConditions();
+
+        ifn = ifnTmp / 
+        (
+            mag(ifnTmp) + 
+            dimensionedScalar(
+                "SMALL", ifnTmp.dimensions(), SMALL
+            )
+        );
+        ifn.correctBoundaryConditions();
+    }
+*/
+
+    Map<vector> mapIfn = 
+        distribute.getDatafromOtherProc(zone, ifn);
+    Map<vector> mapMC = 
+        distribute.getDatafromOtherProc(zone, mesh().C());
+
+    forAll (markers, cellI)
+    {
+        averagedNormals_[cellI] = Zero;
+
+        if (markers[cellI] != 0) continue;
+
+        point p = mesh().C()[cellI];
+
+        DynamicField<vector> centres;
+        DynamicField<scalar> valuesX;
+        DynamicField<scalar> valuesY;
+        DynamicField<scalar> valuesZ;
+
+        for (const label gblIdx : stencil[cellI])
+        {
+            vector n = distribute.getValue(ifn, mapIfn, gblIdx);
+
+            if (mag(n) != 0)
+            {
+                n /= mag(n);
+
+                //vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
+                vector centre = distribute.getValue(interfaceCentres, mapCentres, gblIdx);
+
+                vector dist = centre - p;
+                vector distToSurf = dist & n / mag(n) * n;
+                vector verticalDist = dist - distToSurf;
+                scalar weight = 1 / max(mag(verticalDist), SMALL);
+
+                vector cc = p - verticalDist;
+
+                centres.append(cc);
+                valuesX.append(n.x());
+                valuesY.append(n.y());
+                valuesZ.append(n.z());
+            }
+        }
+
+        /*
+        averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+        averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+        averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+        */
+
+        /*
+        averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+        averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+        averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+        */
+
+        averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
+        averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
+        averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+        /*
+        */
+    }
+
+    averagedNormals_ /=  
+    (
+        mag(averagedNormals_) + 
+        dimensionedScalar(
+            "SMALL", averagedNormals_.dimensions(), SMALL
+        )
+    );
+    averagedNormals_.correctBoundaryConditions();
+}
     
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
@@ -272,6 +404,8 @@ scalar sphereRadius = 0.002; // Sphere radius
             avgNormTmp[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
             avgNormTmp[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
             avgNormTmp[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+            /*
+            */
         }
         avgNormTmp.correctBoundaryConditions();
 
@@ -287,7 +421,7 @@ scalar sphereRadius = 0.002; // Sphere radius
 
     for (label i = 0; i < nAverage_; i++)
     {
-        averagedNormals_ = fvc::average(fvc::interpolate(averagedNormals_));
+        averagedNormals_ = fvc::average(averagedNormals_);
 
         averagedNormals_ /=
         (
@@ -299,6 +433,8 @@ scalar sphereRadius = 0.002; // Sphere radius
 
         averagedNormals_.correctBoundaryConditions();
     }
+/*
+*/
 
     cellCurvature_ == -fvc::div(averagedNormals_);
 

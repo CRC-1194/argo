@@ -66,7 +66,6 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
      *  this does not guarantee to detect all interface cells, this approach
      *  relies on the available parallelization provided by OpenFOAM and
      *  detection may only fail for underresolved interfaces (TT).
-     */
      
     // Detect via face based indicator values
     auto indicatorFaceTmp = fvc::interpolate(indicator);
@@ -171,10 +170,10 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
         }
     }
     isInterfaceCell_.correctBoundaryConditions();
+     */
 
     lastUpdate_ = indicator.mesh().time().timeIndex();
 
-    /*
     reconstructionSchemes* surf = 
         indicator.mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
 
@@ -189,6 +188,7 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
     }
 
     isInterfaceCell_.correctBoundaryConditions();
+    /*
     */
 }
 
