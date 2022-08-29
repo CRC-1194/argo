@@ -67,4 +67,3 @@ if (!pimple.firstIter())
 }
 
 rho == alpha1*rho1 + alpha2*rho2;
-

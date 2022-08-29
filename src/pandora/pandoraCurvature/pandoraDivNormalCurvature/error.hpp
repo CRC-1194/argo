@@ -9,7 +9,7 @@ volVectorField calcNormals = averagedNormals_;
 forAll(markers, i)
 {
     if (markers[i] == -1) continue;
-    //if (markers[i] != 0) continue;
+    if (markers[i] != 0) continue;
 
     vector n1 = sphereCentre - mesh().C()[i];
     n1 /= mag(n1);
@@ -24,14 +24,16 @@ forAll(markers, i)
     l2 += sqr(absError) / magSqr(n1);
     count++;
     if ((absError/mag(n1)) > lInf)
+    {
         lInf = absError/mag(n1);
+    }
 }
 reduce(l1, sumOp<scalar>());
 reduce(l2, sumOp<scalar>());
 reduce(count, sumOp<label>());
 reduce(lInf, maxOp<scalar>());
 
-Info<<"count = "<<count<<nl;
+//Info<<"count = "<<count<<nl;
 if (count > 0)
 {
     Info<<"l1 = "<<l1/count*100<<nl;
@@ -47,7 +49,7 @@ label countRdf = 0;
 forAll (rdf, i)
 {
     if (markers[i] == -1 || markers[i] == nPropagate_) continue;
-    //if (markers[i] != 0) continue;
+    if (markers[i] != 0) continue;
 
     scalar exactRdf = sphereRadius - mag(sphereCentre - mesh().C()[i]);
     absErrorRdf = fabs(rdf[i] - exactRdf);
@@ -56,15 +58,47 @@ forAll (rdf, i)
     countRdf++;
     scalar inf = absErrorRdf / sphereRadius;
     if (inf > lInfRdf)
+    {
         lInfRdf = inf;
+    }
 }
 
-Info<<"countRdf = "<<countRdf<<nl;
+//Info<<"countRdf = "<<countRdf<<nl;
 if (countRdf > 0)
 {
     Info<<"l1Rdf = "<<l1Rdf/count*100<<nl;
     Info<<"l2Rdf = "<<sqrt(l2Rdf/count)*100<<nl;
     Info<<"lInfRdf = "<<lInfRdf*100<<nl;
+}
+
+scalar absErrorCurv = 0;
+scalar l1Curv = 0;
+scalar l2Curv = 0;
+scalar lInfCurv = 0;
+label countCurv = 0;
+forAll (cellCurvature_, i)
+{
+    if (markers[i] == -1 || markers[i] == nPropagate_) continue;
+    if (markers[i] != 0) continue;
+
+    scalar exactCurv = 1000;
+    absErrorCurv = fabs(cellCurvature_[i] - exactCurv);
+    l1Curv += absErrorCurv / exactCurv;
+    l2Curv += sqr(absErrorCurv / exactCurv);
+    countCurv++;
+    scalar inf = absErrorCurv;
+    if (inf > lInfCurv)
+    {
+        lInfCurv = inf;
+    }
+}
+
+//Info<<"countCurv = "<<countCurv<<nl;
+if (countCurv > 0)
+{
+    Info<<"l1Curv = "<<l1Curv/count*100<<nl;
+    Info<<"l2Curv = "<<sqrt(l2Curv/count)*100<<nl;
+    Info<<"lInfCurv = "<<lInfCurv<<nl;
 }
 
 /*

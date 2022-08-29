@@ -67,8 +67,6 @@ Description
 #include "fvcSmooth.H"
 #include "dynamicRefineFvMesh.H"
 
-#include "cutCellPLIC.H"
-
 #include "pandora.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -189,23 +187,16 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
-            volVectorField norm = advector.surf().normal();
-            volVectorField cent = advector.surf().centre();
+//volVectorField norm = advector.surf().normal();
+//volVectorField cent = advector.surf().centre();
 
-            advector.surf().reconstruct();
+//advector.surf().reconstruct();
 
-{
-const boolList& ics = advector.surf().interfaceCell();
-label icsCount = 0;
-forAll (ics, i)
-    if (ics[i])
-        icsCount++;
-reduce(icsCount, sumOp<label>());
-Info<<"icsCount = "<<icsCount<<nl;
-}
+//fSigma = pandoraModel.surfaceTensionForce(alpha1);
+fSigma = pandoraModel.surfaceTensionForce(alpha1.prevIter());
 
-            fSigma = pandoraModel.surfaceTensionForce(alpha1);
-            //fSigma = pandoraModel.surfaceTensionForce(alpha1.prevIter());
+//advector.surf().normal() = norm;
+//advector.surf().centre() = cent;
 
             mixture.correct();
 
@@ -227,10 +218,16 @@ Info<<"icsCount = "<<icsCount<<nl;
                 turbulence->correct();
             }
 
-            advector.surf().normal() = norm;
-            advector.surf().centre() = cent;
+const boolList& ics = advector.surf().interfaceCell();
+label interfaceCells = 0;
+forAll (ics, i)
+    if (ics[i])
+        interfaceCells++;
+reduce(interfaceCells, sumOp<label>());
+Info<<"interfaceCells = "<<interfaceCells<<nl;
 
 scalar maxU = max(mag(U)).value();
+reduce(maxU, maxOp<scalar>());
 Info<<"maxU = "<<maxU<<nl;
         }
 

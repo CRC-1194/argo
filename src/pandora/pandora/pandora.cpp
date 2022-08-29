@@ -174,11 +174,11 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
 
     lastUpdate_ = indicator.mesh().time().timeIndex();
 
+    /*
+    */
     reconstructionSchemes* surf = 
         indicator.mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
-
     const boolList& ics = surf->interfaceCell();
-
     forAll (ics, i)
     {
         if (ics[i])
@@ -186,10 +186,7 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
         else
             isInterfaceCell_[i] = 0.0;
     }
-
     isInterfaceCell_.correctBoundaryConditions();
-    /*
-    */
 }
 
 
