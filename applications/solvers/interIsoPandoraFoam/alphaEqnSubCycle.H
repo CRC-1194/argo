@@ -59,6 +59,19 @@ else
     #include "alphaEqn.H"
 }
 
+{
+    volVectorField norm = advector.surf().normal();
+    volVectorField cent = advector.surf().centre();
+
+    advector.surf().reconstruct();
+
+    fSigma = pandoraModel.surfaceTensionForce(alpha1);
+    //fSigma = pandoraModel.surfaceTensionForce(alpha1.prevIter());
+
+    advector.surf().normal() = norm;
+    advector.surf().centre() = cent;
+}
+
 if (!pimple.firstIter())
 {
     // Resetting U and phi to value at latest iteration.

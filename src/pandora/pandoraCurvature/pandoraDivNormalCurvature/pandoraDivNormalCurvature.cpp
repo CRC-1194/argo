@@ -208,6 +208,8 @@ scalar sphereRadius = 0.002; // Sphere radius
     );
     averagedNormals_.correctBoundaryConditions();
 
+/*
+*/
 // PLIC normals refinement.
 {
     boolList zone(mesh().nCells(), false);
@@ -223,50 +225,6 @@ scalar sphereRadius = 0.002; // Sphere radius
 
     Map<vector> mapCentres = 
         distribute.getDatafromOtherProc(zone, interfaceCentres);
-
-/*
-    for (label i = 0; i < nAverage_; i++)
-    {
-        volVectorField ifnTmp = ifn;
-        forAll(markers, cellI)
-        {
-            if (markers[cellI] != 0) continue;
-            ifnTmp[cellI] = Zero;
-            point p = interfaceCentres[cellI];
-            vector n = ifn[cellI];
-            DynamicList<vector> centres;
-            for (const label gblIdx : stencil[cellI])
-            {
-                vector q = distribute.getValue(interfaceCentres, mapCentres, gblIdx);
-                if (mag(q) == 0) continue;
-                vector pq = q - p;
-                if (mag(pq) == 0) continue;
-                vector w = pq ^ (n ^ pq);
-                if (mag(w) == 0) continue;
-                ifnTmp[cellI] += (w/mag(w)) / mag(pq);
-            }
-        }
-        ifnTmp.correctBoundaryConditions();
-
-        ifn = ifnTmp / 
-        (
-            mag(ifnTmp) + 
-            dimensionedScalar(
-                "SMALL", ifnTmp.dimensions(), SMALL
-            )
-        );
-        ifn.correctBoundaryConditions();
-    }
-
-    averagedNormals_ = ifn /  
-    (
-        mag(ifn) + 
-        dimensionedScalar(
-            "SMALL", ifn.dimensions(), SMALL
-        )
-    );
-    averagedNormals_.correctBoundaryConditions();
-*/
 
     Map<vector> mapIfn = 
         distribute.getDatafromOtherProc(zone, ifn);
@@ -436,14 +394,14 @@ scalar sphereRadius = 0.002; // Sphere radius
 
         averagedNormals_.correctBoundaryConditions();
     }
-/*
-*/
 
     cellCurvature_ == -fvc::div(averagedNormals_);
 
     const volScalarField& RDF = mesh().lookupObject<volScalarField>("RDF");
     volScalarField rdf = RDF;
 
+/*
+*/
     forAll (cellCurvature_, cellI)
     {
         if (markers[cellI] == -1 || markers[cellI] == nPropagate_)

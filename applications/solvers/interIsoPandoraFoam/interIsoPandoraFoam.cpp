@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
+/*
 volVectorField norm = advector.surf().normal();
 volVectorField cent = advector.surf().centre();
 
@@ -197,6 +198,7 @@ fSigma = pandoraModel.surfaceTensionForce(alpha1);
 
 advector.surf().normal() = norm;
 advector.surf().centre() = cent;
+*/
 
             mixture.correct();
 
