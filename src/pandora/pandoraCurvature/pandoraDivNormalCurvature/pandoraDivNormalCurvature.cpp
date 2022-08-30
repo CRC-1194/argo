@@ -294,8 +294,8 @@ scalar sphereRadius = 0.002; // Sphere radius
             {
                 n /= mag(n);
 
-                vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
-                //vector centre = distribute.getValue(interfaceCentres, mapCentres, gblIdx);
+                //vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
+                vector centre = distribute.getValue(interfaceCentres, mapCentres, gblIdx);
 
                 vector dist = centre - p;
                 vector distToSurf = dist & n / mag(n) * n;
@@ -311,17 +311,17 @@ scalar sphereRadius = 0.002; // Sphere radius
             }
         }
 
-        averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-        averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-        averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+        //averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+        //averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+        //averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
 
         //averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
         //averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
         //averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
 
-        //averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
-        //averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
-        //averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+        averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
+        averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
+        averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
     }
 
     averagedNormals_ /=  
