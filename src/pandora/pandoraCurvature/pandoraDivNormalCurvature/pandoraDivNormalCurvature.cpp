@@ -199,7 +199,6 @@ scalar sphereRadius = 0.002; // Sphere radius
     );
     averagedNormals_.correctBoundaryConditions();
 
-/*
 // PLIC normals refinement.
 {
     averagedNormals_ = vector::zero;
@@ -264,20 +263,24 @@ scalar sphereRadius = 0.002; // Sphere radius
         {
             Pout<<"!!!THREE1!!!"<<nl;
 
-            averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-            averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-            averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+            //averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+            //averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+            //averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+
+            averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+            averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+            averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
 
             continue;
         }
 
-        averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
-        averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
-        averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+        //averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+        //averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+        //averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
 
-        //averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
-        //averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
-        //averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+        averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
+        averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
+        averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
     }
     averagedNormals_ /=  
     (
@@ -288,7 +291,6 @@ scalar sphereRadius = 0.002; // Sphere radius
     );
     averagedNormals_.correctBoundaryConditions();
 }
-*/
 
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
@@ -357,9 +359,13 @@ scalar sphereRadius = 0.002; // Sphere radius
             {
                 Pout<<"!!!THREE2!!!"<<nl;
 
-                avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-                avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-                avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+                //avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+                //avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+                //avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+
+                avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+                avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+                avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
                 
                 continue;
             }
