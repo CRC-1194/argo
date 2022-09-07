@@ -137,3 +137,21 @@ isoAdvection advector(alpha1, phi, U);
 pandora pandoraModel(mesh);
 surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
 
+volScalarField cellId
+(
+    IOobject
+    (
+        "cellId",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless, 0)
+);
+forAll (cellId, i)
+    cellId[i] = i;
+if (runTime.write())
+    cellId.write();
+

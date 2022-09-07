@@ -100,6 +100,7 @@ void Foam::interpolationSchemes::convert
     }
 }
 
+/*
 Foam::vector Foam::interpolationSchemes::gradLeastSquare
 (
     const vector & p, 
@@ -127,8 +128,8 @@ Foam::vector Foam::interpolationSchemes::gradLeastSquare
 
     return lsGrad.grad(centres, values);
 }
+*/
 
-/*
 Foam::vector Foam::interpolationSchemes::gradLeastSquare
 (
     const vector & p, 
@@ -165,20 +166,6 @@ Foam::vector Foam::interpolationSchemes::gradLeastSquare
     t.zy() = sum(w*w*deltaz*deltay);
     t.zz() = sum(w*w*deltaz*deltaz);
 
-if (c.size() == 2)
-{
-Info<<"001"<<nl;
-Info<<"p = "<<p<<nl;
-Info<<"alphap = "<<alphap<<nl;
-Info<<"c = "<<c<<nl;
-Info<<"alphac = "<<alphac<<nl;
-Info<<"t = "<<t<<nl;
-Info<<"det = "<<det(t)<<nl;
-    tensor invt = inv(t);
-Info<<"invt = "<<invt<<nl;
-Info<<"002"<<nl<<nl;
-}
-
     vector b; 
     b.x() = sum(w*w*deltax*deltaAlpha); 
     b.y() = sum(w*w*deltay*deltaAlpha); 
@@ -186,7 +173,6 @@ Info<<"002"<<nl<<nl;
 
     return (inv(t) & b); 
 }
-*/
 
 Foam::vector2D Foam::interpolationSchemes::gradLeastSquare
 (
@@ -302,7 +288,7 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
         psi_p = inverseDistanceInterpolate(p, c, psi_bar, r);
 
         count++;
-        //if (count > 20) break;
+        if (count > 20) break;
     }
     return psi_p;
 }
@@ -444,5 +430,6 @@ Foam::scalar Foam::interpolationSchemes::LSinterpolate
 
     return fitData[0];
 }
+
 
 // ************************************************************************* //
