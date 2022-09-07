@@ -197,7 +197,7 @@ scalar sphereRadius = 0.002; // Sphere radius
             "SMALL", interfaceNormals.dimensions(), SMALL
         )
     );
-    averagedNormals_.normalise();
+    //averagedNormals_.normalise();
     averagedNormals_.correctBoundaryConditions();
 
 // PLIC normals refinement.
@@ -261,7 +261,14 @@ if (centres.size() == 3)
         averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
         averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
     }
-    averagedNormals_.normalise();  
+    //averagedNormals_.normalise();  
+    averagedNormals_ /=  
+    (
+        mag(averagedNormals_) + 
+        dimensionedScalar(
+            "SMALL", averagedNormals_.dimensions(), SMALL
+        )
+    );
     averagedNormals_.correctBoundaryConditions();
 }
 
@@ -346,7 +353,14 @@ if (centres.size() == 3)
         }
 
         averagedNormals_ == avgNormTmp;
-        averagedNormals_.normalise();
+        //averagedNormals_.normalise();
+        averagedNormals_ /=  
+        (
+            mag(averagedNormals_) + 
+            dimensionedScalar(
+                "SMALL", averagedNormals_.dimensions(), SMALL
+            )
+        );
         averagedNormals_.correctBoundaryConditions();
         lessThanFour.correctBoundaryConditions();
 
@@ -420,8 +434,14 @@ if (centres.size() == 3)
             }
 
             averagedNormals_ == avgNormTmp;
-            averagedNormals_.normalise();
-            averagedNormals_.correctBoundaryConditions();
+            //averagedNormals_.normalise();
+            averagedNormals_ /=  
+            (
+                mag(averagedNormals_) + 
+                dimensionedScalar(
+                    "SMALL", averagedNormals_.dimensions(), SMALL
+                )
+            );
         }
     }
 
@@ -429,7 +449,15 @@ if (centres.size() == 3)
     {
         averagedNormals_ = fvc::average(averagedNormals_);
 
-        averagedNormals_.normalise();
+        //averagedNormals_.normalise();
+        averagedNormals_ /=  
+        (
+            mag(averagedNormals_) + 
+            dimensionedScalar(
+                "SMALL", averagedNormals_.dimensions(), SMALL
+            )
+        );
+        averagedNormals_.correctBoundaryConditions();
 
         averagedNormals_.correctBoundaryConditions();
     }
