@@ -26,21 +26,25 @@ solvers
         clip            false;
         cAlpha          1;
         nAlphaSubCycles 1;
+        nSmooth         0;
         reconstructionScheme plicRDF; 
     }
 
     "pcorr.*"
     {
         solver          PCG;
-        preconditioner  DIC;
+        preconditioner  diagonal;
+        //preconditioner  DIC;
         tolerance       1e-10;
         relTol          0;
     }
 
     p_rgh
     {
-        solver          GAMG;
-        smoother        DICGaussSeidel;
+        solver          PCG;
+        preconditioner  diagonal;
+        //solver          GAMG;
+        //smoother        DICGaussSeidel;
         tolerance       1e-09;
         relTol          0;
     }
@@ -55,7 +59,8 @@ solvers
     U
     {
         solver          PBiCGStab;
-        preconditioner  DILU;
+        preconditioner  diagonal;
+        //preconditioner  DILU;
         tolerance       1e-06;
         relTol          0;
     }
@@ -63,7 +68,8 @@ solvers
     UFinal
     {
         solver          PBiCGStab;
-        preconditioner  DILU;
+        preconditioner  diagonal;
+        //preconditioner  DILU;
         tolerance       1e-06;
         relTol          0;
     }
@@ -87,19 +93,19 @@ pandora
         type divNormal;
         nPropagate @!N_PROPAGATIONS!@;  
         nAverage   @!N_AVERAGES!@; 
-        normalField "interfaceNormal.dispersed"; 
+        normalField "alpha.dispersed"; 
     }
     curvatureExtension
     {
-        //type noExtension;
-        type averageExtension;
-        nExtensionIterations @!N_EXTENSIONS!@; 
+        type noExtension;
+        //type averageExtension;
+        //nExtensionIterations @!N_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        //type noRegularisation;
-        type tangentialAverage;
-        nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
+        type noRegularisation;
+        //type tangentialAverage;
+        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
     }
 }
 
