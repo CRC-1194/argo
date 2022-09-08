@@ -33,20 +33,43 @@ solvers
     "pcorr.*"
     {
         solver          PCG;
-        preconditioner  diagonal;
-        //preconditioner  DIC;
+        //preconditioner  diagonal;
+        preconditioner  DIC;
         tolerance       1e-10;
         relTol          0;
     }
 
+    /*
+    p_rgh
+    {
+        //solver          PCG;
+        //preconditioner  diagonal;
+        solver          GAMG;
+        smoother        DICGaussSeidel;
+        tolerance       1e-09;
+        relTol          0;
+    }
+    */
     p_rgh
     {
         solver          PCG;
-        preconditioner  diagonal;
-        //solver          GAMG;
-        //smoother        DICGaussSeidel;
+        preconditioner  
+        {
+            preconditioner GAMG;
+            tolerance      1e-09;
+            relTol         0;
+            smoother       DIC;//GaussSeidel;
+            nPreSweeps     0;
+            nPostSweeps    2;
+            nBottomSweeps  2;
+            cacheAgglomeration false;
+            nCellsInCoarsestLevel 10;
+            agglomerator   faceAreaPair;
+            mergeLevels    1;
+        }
         tolerance       1e-09;
         relTol          0;
+        //maxIter         100;
     }
 
     p_rghFinal
@@ -59,8 +82,8 @@ solvers
     U
     {
         solver          PBiCGStab;
-        preconditioner  diagonal;
-        //preconditioner  DILU;
+        //preconditioner  diagonal;
+        preconditioner  DILU;
         tolerance       1e-06;
         relTol          0;
     }
@@ -68,8 +91,8 @@ solvers
     UFinal
     {
         solver          PBiCGStab;
-        preconditioner  diagonal;
-        //preconditioner  DILU;
+        //preconditioner  diagonal;
+        preconditioner  DILU;
         tolerance       1e-06;
         relTol          0;
     }
