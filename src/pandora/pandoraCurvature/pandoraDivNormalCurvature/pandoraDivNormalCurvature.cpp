@@ -259,30 +259,53 @@ scalar sphereRadius = 0.002; // Sphere radius
         valuesY.shrink();
         valuesZ.shrink();
 
-        /*
         if (centres.capacity() < 4 && centres.capacity() > 0)
         {
-            Pout<<"!!!THREE1!!!"<<nl;
+            if (centres.capacity() == 1)
+            {
+                Pout<<"!!!ONE1!!!"<<nl;
 
-            //averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-            //averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-            //averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+                averagedNormals_[cellI][0] = valuesX[0];
+                averagedNormals_[cellI][1] = valuesY[0];
+                averagedNormals_[cellI][2] = valuesZ[0];
 
-            averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
-            averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
-            averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+                continue;
+            }
 
-            continue;
+            else if (centres.capacity() == 2)
+            {
+                Pout<<"!!!TWO1!!!"<<nl;
+
+                averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+                averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+                averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+
+                continue;
+            }
+
+            else if (centres.capacity() == 3)
+            {
+                Pout<<"!!!THREE1!!!"<<nl;
+
+                averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+                averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+                averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+
+                continue;
+            }
         }
-        */
 
-        averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
-        averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
-        averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+        //averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+        //averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+        //averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
 
-        //averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
-        //averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
-        //averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+        //averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+        //averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+        //averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+
+        averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
+        averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
+        averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
     }
     averagedNormals_ /=  
     (
@@ -357,30 +380,53 @@ scalar sphereRadius = 0.002; // Sphere radius
             valuesY.shrink();
             valuesZ.shrink();
 
-            /*
             if (centres.capacity() < 4 && centres.capacity() > 0)
             {
-                Pout<<"!!!THREE2!!!"<<nl;
+                if (centres.capacity() == 1)
+                {
+                    Pout<<"!!!ONE2!!!"<<nl;
 
-                //avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-                //avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-                //avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+                    avgNormTmp[cellI][0] = valuesX[0];
+                    avgNormTmp[cellI][1] = valuesY[0];
+                    avgNormTmp[cellI][2] = valuesZ[0];
 
-                avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
-                avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
-                avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
-                
-                continue;
+                    continue;
+                }
+
+                else if (centres.capacity() == 2)
+                {
+                    Pout<<"!!!TWO2!!!"<<nl;
+
+                    avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+                    avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+                    avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+
+                    continue;
+                }
+
+                else if (centres.capacity() == 3)
+                {
+                    Pout<<"!!!THREE2!!!"<<nl;
+
+                    avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+                    avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+                    avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+
+                    continue;
+                }
             }
-            */
 
-            avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
-            avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
-            avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+            //avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+            //avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+            //avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
 
-            //avgNormTmp[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
-            //avgNormTmp[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
-            //avgNormTmp[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+            //avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+            //avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+            //avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+
+            avgNormTmp[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
+            avgNormTmp[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
+            avgNormTmp[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
         }
         avgNormTmp.correctBoundaryConditions();
 
