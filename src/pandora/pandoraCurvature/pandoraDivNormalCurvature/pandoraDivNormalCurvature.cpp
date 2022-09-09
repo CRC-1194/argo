@@ -261,6 +261,7 @@ scalar sphereRadius = 0.002; // Sphere radius
 
         if (centres.capacity() == 0)
         {
+            Pout<<"!!!ZERO1!!!"<<nl;
             continue;
         }
         
@@ -272,27 +273,18 @@ scalar sphereRadius = 0.002; // Sphere radius
             averagedNormals_[cellI][2] = valuesZ[0];
         }
 
-        else if (centres.capacity() == 2)
-        {
-            Pout<<"!!!TWO1!!!"<<nl;
-            averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-            averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-            averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
-        }
-
-        else if (centres.capacity() == 3)
-        {
-            Pout<<"!!!THREE1!!!"<<nl;
-            averagedNormals_[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
-            averagedNormals_[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
-            averagedNormals_[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
-        }
-
-        else
+        else if (centres.capacity() >= 4)
         {
             averagedNormals_[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
             averagedNormals_[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
             averagedNormals_[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+        }
+
+        else
+        {
+            averagedNormals_[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+            averagedNormals_[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+            averagedNormals_[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
         }
     }
     averagedNormals_ /=  
@@ -370,10 +362,11 @@ scalar sphereRadius = 0.002; // Sphere radius
 
             if (centres.capacity() == 0)
             {
+                Pout<<"!!!ZERO2!!!"<<nl;
                 continue;
             }
 
-            if (centres.capacity() == 1)
+            else if (centres.capacity() == 1)
             {
                 Pout<<"!!!ONE2!!!"<<nl;
                 avgNormTmp[cellI][0] = valuesX[0];
@@ -381,37 +374,27 @@ scalar sphereRadius = 0.002; // Sphere radius
                 avgNormTmp[cellI][2] = valuesZ[0];
             }
 
-            else if (centres.capacity() == 2)
-            {
-                Pout<<"!!!TWO2!!!"<<nl;
-                avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-                avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-                avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
-            }
-
-            else if (centres.capacity() == 3)
-            {
-                Pout<<"!!!THREE2!!!"<<nl;
-                avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
-                avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
-                avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
-            }
-
-            else 
+            else if (centres.capacity() >= 4)
             {
                 avgNormTmp[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
                 avgNormTmp[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
                 avgNormTmp[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
             }
+
+            else
+            {
+                avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
+                avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
+                avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+            }
         }
         avgNormTmp.correctBoundaryConditions();
 
-        averagedNormals_ == avgNormTmp;
-        averagedNormals_ /=  
+        averagedNormals_ = avgNormTmp /  
         (
-            mag(averagedNormals_) + 
+            mag(avgNormTmp) + 
             dimensionedScalar(
-                "SMALL", averagedNormals_.dimensions(), SMALL
+                "SMALL", avgNormTmp.dimensions(), SMALL
             )
         );
         averagedNormals_.correctBoundaryConditions();
@@ -428,7 +411,6 @@ scalar sphereRadius = 0.002; // Sphere radius
                 "SMALL", averagedNormals_.dimensions(), SMALL
             )
         );
-        averagedNormals_.correctBoundaryConditions();
 
         averagedNormals_.correctBoundaryConditions();
     }
