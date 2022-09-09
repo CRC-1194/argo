@@ -261,26 +261,11 @@ const surfaceScalarField& pandora::surfaceTensionForce
 {
     volScalarField& cellCurvature = curvPtr_->cellCurvature();
 
-{
-scalar sumCurv = sum(cellCurvature).value();
-Info<<"sumCurv1 = "<<sumCurv<<nl;
-}
-
     updateInterfaceCells(indicator);
 
     curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell_); 
 
-{
-scalar sumCurv = sum(cellCurvature).value();
-Info<<"sumCurv2 = "<<sumCurv<<nl;
-}
-
     curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
-
-{
-scalar sumCurv = sum(cellCurvature).value();
-Info<<"sumCurv3 = "<<sumCurv<<nl;
-}
 
     fSigma_ = 
         sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);
