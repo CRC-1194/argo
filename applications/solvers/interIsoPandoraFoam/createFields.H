@@ -135,7 +135,7 @@ mesh.setFluxRequired(alpha1.name());
 isoAdvection advector(alpha1, phi, U);
 
 pandora pandoraModel(mesh);
-//surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
+surfaceScalarField fSigma = pandoraModel.surfaceTensionForce(alpha1);
 
 volScalarField cellId
 (

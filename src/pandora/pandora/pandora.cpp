@@ -57,6 +57,22 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
         return;
     }
 
+    lastUpdate_ = indicator.mesh().time().timeIndex();
+
+    /*
+    reconstructionSchemes* surf = 
+        indicator.mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
+    const boolList& ics = surf->interfaceCell();
+    forAll (ics, i)
+    {
+        if (ics[i])
+            isInterfaceCell_[i] = 1.0;
+        else
+            isInterfaceCell_[i] = 0.0;
+    }
+    isInterfaceCell_.correctBoundaryConditions();
+    */
+
     /*
      *  Central idea for determining whether a cell is an interface cell
      *  (a.k.a. a cell intersected by the fluid interface) is the following:
@@ -171,22 +187,6 @@ void pandora::updateInterfaceCells(const volScalarField& indicator)
         }
     }
     isInterfaceCell_.correctBoundaryConditions();
-
-    lastUpdate_ = indicator.mesh().time().timeIndex();
-
-    /*
-    reconstructionSchemes* surf = 
-        indicator.mesh().getObjectPtr<reconstructionSchemes>("reconstructionScheme");
-    const boolList& ics = surf->interfaceCell();
-    forAll (ics, i)
-    {
-        if (ics[i])
-            isInterfaceCell_[i] = 1.0;
-        else
-            isInterfaceCell_[i] = 0.0;
-    }
-    isInterfaceCell_.correctBoundaryConditions();
-    */
 }
 
 
@@ -259,9 +259,11 @@ const surfaceScalarField& pandora::surfaceTensionForce
     const volScalarField& indicator
 )
 {
-    //volScalarField& cellCurvature = curvPtr_->cellCurvature();
-    volScalarField& cellCurvature = 
-        indicator.mesh().lookupObjectRef<volScalarField>("interfaceProperties:K");
+    volScalarField& cellCurvature = curvPtr_->cellCurvature();
+
+    // interIsoFoam with regularisation and extension. 
+    //volScalarField& cellCurvature = 
+    //    indicator.mesh().lookupObjectRef<volScalarField>("interfaceProperties:K");
 
     updateInterfaceCells(indicator);
 
@@ -269,8 +271,8 @@ const surfaceScalarField& pandora::surfaceTensionForce
 
     curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
 
-    //fSigma_ = 
-    //    sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);
+    fSigma_ = 
+        sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);
 
     return fSigma_;
 }
