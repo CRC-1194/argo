@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
             // initial pressure.
             Info << "Solving Young-Laplace equation to recover "
             << "the pressure jump in the first time step." << endl;
-            #include "YoungLaplaceEqn.H"
+            //#include "YoungLaplaceEqn.H"
         }
 
         ++runTime;
@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 
+/*
 volVectorField norm = advector.surf().normal();
 volVectorField cent = advector.surf().centre();
 
@@ -197,8 +198,11 @@ fSigma = pandoraModel.surfaceTensionForce(alpha1);
 
 advector.surf().normal() = norm;
 advector.surf().centre() = cent;
+*/
 
             mixture.correct();
+
+pandoraModel.surfaceTensionForce(alpha1);
 
             if (pimple.frozenFlow())
             {

@@ -24,8 +24,8 @@
             fvc::reconstruct
             (
                 (
-                    //mixture.surfaceTensionForce()
-                    fSigma
+                    mixture.surfaceTensionForce()
+                    //fSigma
                   - ghf*fvc::snGrad(rho)
                   - fvc::snGrad(p_rgh)
                 ) * mesh.magSf()

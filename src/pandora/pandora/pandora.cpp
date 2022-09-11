@@ -259,7 +259,9 @@ const surfaceScalarField& pandora::surfaceTensionForce
     const volScalarField& indicator
 )
 {
-    volScalarField& cellCurvature = curvPtr_->cellCurvature();
+    //volScalarField& cellCurvature = curvPtr_->cellCurvature();
+    volScalarField& cellCurvature = 
+        indicator.mesh().lookupObjectRef<volScalarField>("interfaceProperties:K");
 
     updateInterfaceCells(indicator);
 
@@ -267,8 +269,8 @@ const surfaceScalarField& pandora::surfaceTensionForce
 
     curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
 
-    fSigma_ = 
-        sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);
+    //fSigma_ = 
+    //    sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);
 
     return fSigma_;
 }
