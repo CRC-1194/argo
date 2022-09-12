@@ -193,7 +193,6 @@ volVectorField cent = advector.surf().centre();
 advector.surf().reconstruct();
 
 fSigma = pandoraModel.surfaceTensionForce(alpha1);
-//fSigma = pandoraModel.surfaceTensionForce(alpha1.prevIter());
 
 advector.surf().normal() = norm;
 advector.surf().centre() = cent;

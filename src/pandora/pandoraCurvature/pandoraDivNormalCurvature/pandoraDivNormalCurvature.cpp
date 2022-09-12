@@ -111,6 +111,8 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
 
 vector sphereCentre(0.005, 0.005, 0.005);
 scalar sphereRadius = 0.002; // Sphere radius
+//scalar deltaN = 1e-8/cbrt(average(mesh().V()).value());
+scalar deltaN = SMALL;
 
     const volVectorField& interfaceNormals = surf->normal();
     const volVectorField& interfaceCentres = surf->centre();
@@ -193,9 +195,7 @@ scalar sphereRadius = 0.002; // Sphere radius
     averagedNormals_ = interfaceNormals /  
     (
         mag(interfaceNormals) + 
-        dimensionedScalar(
-            "SMALL", interfaceNormals.dimensions(), SMALL
-        )
+        dimensionedScalar(interfaceNormals.dimensions(), deltaN)
     );
     averagedNormals_.correctBoundaryConditions();
 
@@ -261,13 +261,13 @@ scalar sphereRadius = 0.002; // Sphere radius
 
         if (centres.capacity() == 0)
         {
-            Pout<<"!!!ZERO1!!!"<<nl;
+            //Pout<<"!!!ZERO1!!!"<<nl;
             continue;
         }
         
         else if (centres.capacity() == 1)
         {
-            Pout<<"!!!ONE1!!!"<<nl;
+            //Pout<<"!!!ONE1!!!"<<nl;
             averagedNormals_[cellI][0] = valuesX[0];
             averagedNormals_[cellI][1] = valuesY[0];
             averagedNormals_[cellI][2] = valuesZ[0];
@@ -290,12 +290,27 @@ scalar sphereRadius = 0.002; // Sphere radius
     averagedNormals_ /=  
     (
         mag(averagedNormals_) + 
-        dimensionedScalar(
-            "SMALL", averagedNormals_.dimensions(), SMALL
-        )
+        dimensionedScalar(averagedNormals_.dimensions(), deltaN)
     );
     averagedNormals_.correctBoundaryConditions();
 }
+
+    //for (label i = 0; i < nAverage_; i++)
+    {
+        averagedNormals_ = fvc::average(averagedNormals_);
+
+        forAll (averagedNormals_, cellI)
+            if (markers[cellI] != 0)
+                averagedNormals_[cellI] = vector::zero;
+
+        averagedNormals_ /=  
+        (
+            mag(averagedNormals_) + 
+            dimensionedScalar(averagedNormals_.dimensions(), deltaN)
+        );
+
+        averagedNormals_.correctBoundaryConditions();
+    }
 
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
@@ -362,13 +377,13 @@ scalar sphereRadius = 0.002; // Sphere radius
 
             if (centres.capacity() == 0)
             {
-                Pout<<"!!!ZERO2!!!"<<nl;
+                //Pout<<"!!!ZERO2!!!"<<nl;
                 continue;
             }
 
             else if (centres.capacity() == 1)
             {
-                Pout<<"!!!ONE2!!!"<<nl;
+                //Pout<<"!!!ONE2!!!"<<nl;
                 avgNormTmp[cellI][0] = valuesX[0];
                 avgNormTmp[cellI][1] = valuesY[0];
                 avgNormTmp[cellI][2] = valuesZ[0];
@@ -393,9 +408,7 @@ scalar sphereRadius = 0.002; // Sphere radius
         averagedNormals_ = avgNormTmp /  
         (
             mag(avgNormTmp) + 
-            dimensionedScalar(
-                "SMALL", avgNormTmp.dimensions(), SMALL
-            )
+            dimensionedScalar(avgNormTmp.dimensions(), deltaN)
         );
         averagedNormals_.correctBoundaryConditions();
     }
@@ -407,9 +420,7 @@ scalar sphereRadius = 0.002; // Sphere radius
         averagedNormals_ /=  
         (
             mag(averagedNormals_) + 
-            dimensionedScalar(
-                "SMALL", averagedNormals_.dimensions(), SMALL
-            )
+            dimensionedScalar(averagedNormals_.dimensions(), deltaN)
         );
 
         averagedNormals_.correctBoundaryConditions();
@@ -429,7 +440,7 @@ scalar sphereRadius = 0.002; // Sphere radius
         else
         {
             cellCurvature_[cellI] = 2.0 / 
-                (2.0 / (cellCurvature_[cellI] + SMALL) + rdf[cellI] * 1.0);
+                (2.0 / (cellCurvature_[cellI] + deltaN) + rdf[cellI] * 1.0);
         }
     }
 

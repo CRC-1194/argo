@@ -411,8 +411,8 @@ Foam::scalar Foam::interpolationSchemes::LSinterpolate
 {
     multiDimPolyFitter<scalar> polyFitter("polyDegree1", mesh_.geometricD());
 
-    DynamicField<vector> centres(100);
-    DynamicField<scalar> values(100);
+    DynamicField<vector> centres;
+    DynamicField<scalar> values;
 
     forAll (c, i)
     {
