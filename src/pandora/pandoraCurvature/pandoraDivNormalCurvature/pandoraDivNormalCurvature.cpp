@@ -295,6 +295,7 @@ scalar deltaN = SMALL;
     averagedNormals_.correctBoundaryConditions();
 }
 
+/*
     //for (label i = 0; i < nAverage_; i++)
     {
         averagedNormals_ = fvc::average(averagedNormals_);
@@ -311,6 +312,7 @@ scalar deltaN = SMALL;
 
         averagedNormals_.correctBoundaryConditions();
     }
+*/
 
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
