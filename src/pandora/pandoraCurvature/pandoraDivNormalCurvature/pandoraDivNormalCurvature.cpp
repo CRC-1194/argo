@@ -295,25 +295,6 @@ scalar deltaN = SMALL;
     averagedNormals_.correctBoundaryConditions();
 }
 
-/*
-    //for (label i = 0; i < nAverage_; i++)
-    {
-        averagedNormals_ = fvc::average(averagedNormals_);
-
-        forAll (averagedNormals_, cellI)
-            if (markers[cellI] != 0)
-                averagedNormals_[cellI] = vector::zero;
-
-        averagedNormals_ /=  
-        (
-            mag(averagedNormals_) + 
-            dimensionedScalar(averagedNormals_.dimensions(), deltaN)
-        );
-
-        averagedNormals_.correctBoundaryConditions();
-    }
-*/
-
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
     {
@@ -448,7 +429,7 @@ scalar deltaN = SMALL;
 
     cellCurvature_.correctBoundaryConditions();
 
-    //#include "error.hpp"
+    #include "error.hpp"
 
 markers.rename("cellMarker");
 if (mesh().time().writeTime())

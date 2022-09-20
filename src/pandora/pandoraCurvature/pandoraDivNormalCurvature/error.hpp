@@ -11,10 +11,12 @@ forAll(markers, i)
     if (markers[i] == -1) continue;
     if (markers[i] != 0) continue;
 
+    //vector n1 = sphereCentre - interfaceCentres[i];
     vector n1 = sphereCentre - mesh().C()[i];
     n1 /= mag(n1);
     exactNormals[i] = n1;
 
+    //vector n2 = interfaceNormals[i];
     vector n2 = averagedNormals_[i];
     n2 /= mag(n2);
     calcNormals[i] = n2;
