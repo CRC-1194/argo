@@ -132,6 +132,20 @@ scalar deltaN = SMALL;
         dimensionedScalar("cellMarkers", dimless, -1)
     );
 
+    volScalarField counts
+    (
+        IOobject
+        (
+            "cellCounts",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("cellCounts", dimless, 0)
+    );
+
     forAll (markers, cellI)
     {
         if (mag(interfaceNormals[cellI]) != 0)
@@ -144,20 +158,26 @@ scalar deltaN = SMALL;
     const auto& own = mesh().owner();
     const auto& nei = mesh().neighbour();
 
+    labelList maxCount(nPropagate_);
+
     for (label i = 0; i < nPropagate_; ++i)
     {
+        volScalarField markersTmp = markers;
+
         forAll (nei, fid)
         {
             if (markers[own[fid]] == i && markers[nei[fid]] == -1)
             {
-                markers[nei[fid]] = i + 1;
+                markersTmp[nei[fid]] = i + 1;
+                counts[nei[fid]]++;
             }
             if (markers[nei[fid]] == i && markers[own[fid]] == -1)
             {
-                markers[own[fid]] = i + 1;
+                markersTmp[own[fid]] = i + 1;
+                counts[own[fid]]++;
             }
         }
-        markers.correctBoundaryConditions();
+        markersTmp.correctBoundaryConditions();
 
         auto& meshBoundary = markers.boundaryFieldRef();
         for (auto& mb : meshBoundary)
@@ -174,13 +194,21 @@ scalar deltaN = SMALL;
                 {
                     if (neibrValue[j] == i && markers[faceToCell[j]] == -1)
                     {
-                        markers[faceToCell[j]] = i + 1;
+                        markersTmp[faceToCell[j]] = i + 1;
+                        counts[faceToCell[j]]++;
                     }
                 }
             }
         }
+        markersTmp.correctBoundaryConditions();
+        counts.correctBoundaryConditions();
+
+        markers = markersTmp;
         markers.correctBoundaryConditions();
+
+        maxCount[i] = max(counts).value();
     }
+Info<<"maxCount = "<<maxCount<<nl;
 
     zoneDistribute& distribute = zoneDistribute::New(mesh());
 
@@ -199,6 +227,7 @@ scalar deltaN = SMALL;
     );
     averagedNormals_.correctBoundaryConditions();
 
+/*
 // PLIC normals refinement.
 {
     averagedNormals_ = vector::zero;
@@ -294,6 +323,7 @@ scalar deltaN = SMALL;
     );
     averagedNormals_.correctBoundaryConditions();
 }
+*/
 
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
@@ -306,94 +336,101 @@ scalar deltaN = SMALL;
                 zone[zi] = true;
             }
         }
-
         distribute.setUpCommforZone(zone, false);
-        Map<vector> mapMC = 
-            distribute.getDatafromOtherProc(zone, mesh().C());
-        Map<vector> mapNormals = 
-            distribute.getDatafromOtherProc(zone, averagedNormals_);
-
         const labelListList& stencil = distribute.getStencil();
 
-        volVectorField avgNormTmp = averagedNormals_;
-
-        forAll (markers, cellI)
+        for (label j = maxCount[i]; j > 0; --j)
         {
-            if (markers[cellI] != i + 1) continue;
+            Map<vector> mapMC = 
+                distribute.getDatafromOtherProc(zone, mesh().C());
+            Map<vector> mapNormals = 
+                distribute.getDatafromOtherProc(zone, averagedNormals_);
 
-            avgNormTmp[cellI] = vector::zero;
+            volVectorField avgNormTmp = averagedNormals_;
 
-            point p = mesh().C()[cellI];
-
-            DynamicField<vector> centres;
-            DynamicField<scalar> valuesX;
-            DynamicField<scalar> valuesY;
-            DynamicField<scalar> valuesZ;
-
-            for (const label gblIdx : stencil[cellI])
+            forAll (markers, cellI)
             {
-                vector n = distribute.getValue(averagedNormals_, mapNormals, gblIdx);
+                if (markers[cellI] != i + 1) continue;
+                if (counts[cellI] != j) continue;
 
-                if (mag(n) != 0)
+                avgNormTmp[cellI] = vector::zero;
+
+                point p = mesh().C()[cellI];
+
+                DynamicField<vector> centres;
+                DynamicField<scalar> valuesX;
+                DynamicField<scalar> valuesY;
+                DynamicField<scalar> valuesZ;
+
+                for (const label gblIdx : stencil[cellI])
                 {
-                    n /= mag(n);
+                    vector n = distribute.getValue(averagedNormals_, mapNormals, gblIdx);
 
-                    vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
+                    if (mag(n) != 0)
+                    {
+                        n /= mag(n);
 
-                    vector dist = centre - p;
-                    vector distToSurf = dist & n / mag(n) * n;
-                    vector verticalDist = dist - distToSurf;
+                        vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
 
-                    vector cc = p - verticalDist;
+                        vector dist = centre - p;
+                        vector distToSurf = dist & n / mag(n) * n;
+                        vector verticalDist = dist - distToSurf;
 
-                    centres.append(cc);
-                    valuesX.append(n.x());
-                    valuesY.append(n.y());
-                    valuesZ.append(n.z());
+                        vector cc = p - verticalDist;
+
+                        centres.append(cc);
+                        valuesX.append(n.x());
+                        valuesY.append(n.y());
+                        valuesZ.append(n.z());
+                    }
                 }
-            }
 
-            centres.shrink();
-            valuesX.shrink();
-            valuesY.shrink();
-            valuesZ.shrink();
+                centres.shrink();
+                valuesX.shrink();
+                valuesY.shrink();
+                valuesZ.shrink();
 
-            if (centres.capacity() == 0)
-            {
-                //Pout<<"!!!ZERO2!!!"<<nl;
-                continue;
-            }
+                /*
+                if (centres.capacity() == 0)
+                {
+                    Pout<<"!!!ZERO2!!!"<<nl;
+                    continue;
+                }
 
-            else if (centres.capacity() == 1)
-            {
-                //Pout<<"!!!ONE2!!!"<<nl;
-                avgNormTmp[cellI][0] = valuesX[0];
-                avgNormTmp[cellI][1] = valuesY[0];
-                avgNormTmp[cellI][2] = valuesZ[0];
-            }
+                else if (centres.capacity() == 1)
+                {
+                    Pout<<"!!!ONE2!!!"<<nl;
+                    avgNormTmp[cellI][0] = valuesX[0];
+                    avgNormTmp[cellI][1] = valuesY[0];
+                    avgNormTmp[cellI][2] = valuesZ[0];
+                }
 
-            else if (centres.capacity() >= 4)
-            {
-                avgNormTmp[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
-                avgNormTmp[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
-                avgNormTmp[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
-            }
+                else if (centres.capacity() >= 4)
+                */
+                {
+                    avgNormTmp[cellI][0] = interpolator.LSinterpolate(p, centres, valuesX);
+                    avgNormTmp[cellI][1] = interpolator.LSinterpolate(p, centres, valuesY);
+                    avgNormTmp[cellI][2] = interpolator.LSinterpolate(p, centres, valuesZ);
+                }
 
-            else
-            {
-                avgNormTmp[cellI][0] = interpolator.IDWinterpolate(p, centres, valuesX, rr);
-                avgNormTmp[cellI][1] = interpolator.IDWinterpolate(p, centres, valuesY, rr);
-                avgNormTmp[cellI][2] = interpolator.IDWinterpolate(p, centres, valuesZ, rr);
+                /*
+                else
+                {
+                    avgNormTmp[cellI][0] = interpolator.IDeCinterpolate(p, centres, valuesX, rr);
+                    avgNormTmp[cellI][1] = interpolator.IDeCinterpolate(p, centres, valuesY, rr);
+                    avgNormTmp[cellI][2] = interpolator.IDeCinterpolate(p, centres, valuesZ, rr);
+                }
+                */
             }
+            avgNormTmp.correctBoundaryConditions();
+
+            averagedNormals_ = avgNormTmp /  
+            (
+                mag(avgNormTmp) + 
+                dimensionedScalar(avgNormTmp.dimensions(), deltaN)
+            );
+            averagedNormals_.correctBoundaryConditions();
         }
-        avgNormTmp.correctBoundaryConditions();
-
-        averagedNormals_ = avgNormTmp /  
-        (
-            mag(avgNormTmp) + 
-            dimensionedScalar(avgNormTmp.dimensions(), deltaN)
-        );
-        averagedNormals_.correctBoundaryConditions();
     }
 
     for (label i = 0; i < nAverage_; i++)
@@ -429,11 +466,13 @@ scalar deltaN = SMALL;
 
     cellCurvature_.correctBoundaryConditions();
 
-    #include "error.hpp"
+    //#include "error.hpp"
 
-markers.rename("cellMarker");
 if (mesh().time().writeTime())
+{
     markers.write();
+    counts.write();
+}
 
     return cellCurvature_;
 }

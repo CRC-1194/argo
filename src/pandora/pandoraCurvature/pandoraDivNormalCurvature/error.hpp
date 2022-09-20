@@ -64,6 +64,10 @@ forAll (rdf, i)
         lInfRdf = inf;
     }
 }
+reduce(l1Rdf, sumOp<scalar>());
+reduce(l2Rdf, sumOp<scalar>());
+reduce(countRdf, sumOp<label>());
+reduce(lInfRdf, maxOp<scalar>());
 
 //Info<<"countRdf = "<<countRdf<<nl;
 if (countRdf > 0)
@@ -94,6 +98,10 @@ forAll (cellCurvature_, i)
         lInfCurv = inf;
     }
 }
+reduce(l1Curv, sumOp<scalar>());
+reduce(l2Curv, sumOp<scalar>());
+reduce(countCurv, sumOp<label>());
+reduce(lInfCurv, maxOp<scalar>());
 
 //Info<<"countCurv = "<<countCurv<<nl;
 if (countCurv > 0)
