@@ -75,7 +75,7 @@ volScalarField& pandoraDivNormalExactCurvature::cellCurvature()
     if (meshDb.found(fieldName_))
     {
         const volVectorField& interfaceNormals = 
-            mesh().lookupObject<volVectorField>(fieldName_);
+            mesh().lookupObject<volVectorField>("interfaceNormal.dispersed");
         const volVectorField& interfaceCentres = 
             mesh().lookupObject<volVectorField>("interfaceCentre.dispersed");
         const volScalarField& isInterfaceCell = 
@@ -102,7 +102,6 @@ volScalarField& pandoraDivNormalExactCurvature::cellCurvature()
             averagedNormals_ /= mag(averagedNormals_) + 
                 dimensionedScalar("SMALL", averagedNormals_.dimensions(), SMALL);
 
-            /*
             // Re-set the smoothed normal vectors in interface cells. 
             forAll(interfaceNormals, cellI)
             {
@@ -114,7 +113,6 @@ volScalarField& pandoraDivNormalExactCurvature::cellCurvature()
                         mag(interfaceNormals[cellI]);
                 }
             }
-            */
 
             averagedNormals_.correctBoundaryConditions();
         }
@@ -133,7 +131,6 @@ volScalarField& pandoraDivNormalExactCurvature::cellCurvature()
 
         cellCurvature_.correctBoundaryConditions();
 
-/*
         forAll (cellCurvature_, cellI)
         {
             if (mag(cellCurvature_[cellI]) < SMALL) continue;
@@ -141,15 +138,7 @@ volScalarField& pandoraDivNormalExactCurvature::cellCurvature()
             cellCurvature_[cellI] = 2.0 / (2.0 / cellCurvature_[cellI] + rdf[cellI]);
         }
 
-scalar sumCurv2 = 0;
-forAll(cellCurvature_, i)
-    if (cellCurvature_[i] > 0)
-        sumCurv2 += cellCurvature_[i];
-reduce(sumCurv2, sumOp<scalar>());
-Info<<"sumCurv2 = "<<sumCurv2<<nl;
-
         cellCurvature_.correctBoundaryConditions();
-*/
     }
     else
     {
