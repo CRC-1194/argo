@@ -111,6 +111,30 @@ cpc_2021_data:
     paths:
         - cases/initialization/CPC2021-results/*
 
+cpc_2021_regression:
+  stage: reproduction
+  needs:
+    - job: cpc_2021_data
+      artifacts: true
+  rules:
+    - if: $REPRODUCE_CPC2021 != null
+  script:
+    - wget https://zenodo.org/record/5603255/files/argo-2021-10-27-SMCIA-R1-data.zip?download=1 -O ref_data.zip
+    - unzip -d ref_data ref_data.zip
+    - git clone --depth=1 https://gitlab.com/dglaeser/fieldcompare
+    - cd fieldcompare && python -m pip install . && cd ..
+    - rm -rf fieldcompare
+    - |
+      fieldcompare dir \
+        cases/initialization/CPC2021-results \
+        --reference-dir ref_data/cases/initialization/CPC2021-results \
+        --include-files "*.csv" \
+        --exclude-fields "CPU_TIME*" \
+        --exclude-fields "VOLUME_FROM_SURFACE*" \
+        --exclude-fields "VOLUME_ERROR_FROM_SURFACE*" \
+        --relative-tolerance 1e-6
+
+
 cpc_2021_visualize:
   stage: visualization 
   dependencies:
