@@ -100,7 +100,6 @@ void Foam::interpolationSchemes::convert
     }
 }
 
-/*
 Foam::vector Foam::interpolationSchemes::gradLeastSquare
 (
     const vector & p, 
@@ -114,9 +113,6 @@ Foam::vector Foam::interpolationSchemes::gradLeastSquare
     DynamicField<vector> centres(100);
     DynamicField<scalar> values(100);
 
-    //centres.append(p);
-    //values.append(alphap);
-
     forAll (c, i)
     {
         centres.append(c[i]);
@@ -128,8 +124,8 @@ Foam::vector Foam::interpolationSchemes::gradLeastSquare
 
     return lsGrad.grad(centres, values);
 }
-*/
 
+/*
 Foam::vector Foam::interpolationSchemes::gradLeastSquare
 (
     const vector & p, 
@@ -173,6 +169,7 @@ Foam::vector Foam::interpolationSchemes::gradLeastSquare
 
     return (inv(t) & b); 
 }
+*/
 
 Foam::vector2D Foam::interpolationSchemes::gradLeastSquare
 (
@@ -233,6 +230,28 @@ Foam::scalar Foam::interpolationSchemes::inverseDistanceInterpolate
 
 Foam::scalar Foam::interpolationSchemes::inverseDistanceInterpolate
 (
+    const vector & p, 
+    const vector & n,
+    const vectorField & c,
+    const scalarField & psi,
+    const scalar & r 
+)
+{
+    scalar w = 0; 
+    scalar sum = 0;
+    forAll(psi, i)
+    {
+        scalar a = Foam::pow(mag((c[i] - p) & n), r);
+        scalar d = 1.0 / max(a, SMALL);
+        sum += psi[i]*d; 
+        w += d; 
+    }
+
+    return sum/w;
+}
+
+Foam::scalar Foam::interpolationSchemes::inverseDistanceInterpolate
+(
     const vector2D & p, 
     const Field<vector2D> & c,
     const scalarField & psi,
@@ -260,10 +279,14 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
 )
 {
     scalar psi_p = inverseDistanceInterpolate(p, c, psi, r); 
+
+    if (mag(psi_p) < 1e-8)
+        return psi_p;
+
     scalar psi_p2 = psi_p + 1; 
 
-    label count = 0;
-    while(fabs(psi_p - psi_p2) > 1e-5)
+    scalar delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
+    while(delta > 1e-5)
     {
         psi_p2 = psi_p;
 
@@ -287,8 +310,55 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
 
         psi_p = inverseDistanceInterpolate(p, c, psi_bar, r);
 
-        count++;
-        if (count > 20) break;
+        delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
+    }
+    return psi_p;
+}
+
+Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder 
+(
+    const vector & p, 
+    const vector & n, 
+    const vectorField & c, 
+    const scalarField & psi, 
+    const scalar & r
+)
+{
+    scalar psi_p = inverseDistanceInterpolate(p, n, c, psi, r); 
+
+    if (mag(psi_p) < 1e-8)
+        return psi_p;
+
+    scalar psi_p2 = psi_p + 1; 
+
+    scalar delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
+    while(delta > 1e-5)
+    {
+        psi_p2 = psi_p;
+
+        vector grad;
+        if(c.size() == 1)
+        {
+            grad.x() = (psi[0] - psi_p2) / (c[0].x() - p.x());
+            grad.y() = (psi[0] - psi_p2) / (c[0].y() - p.y());
+            grad.z() = (psi[0] - psi_p2) / (c[0].z() - p.z());
+        }
+        else
+        {
+            grad = gradLeastSquare(p, psi_p2, c, psi); 
+        }
+
+        scalarField psi_bar(psi.size()); 
+        forAll(psi, i)
+        {
+            //vector pt = (c[i] - p);
+            vector pt = (c[i] - p) & n * n;
+            psi_bar[i] = psi[i] - (grad & pt);   
+        }                
+
+        psi_p = inverseDistanceInterpolate(p, n, c, psi_bar, r);
+
+        delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
     }
     return psi_p;
 }
@@ -399,6 +469,30 @@ Foam::scalar Foam::interpolationSchemes::IDeCinterpolate
     else
     {
         return interpolateSecondOrder(p, c, psi, r);
+    }
+}
+
+Foam::scalar Foam::interpolationSchemes::IDeCinterpolate
+(
+    const vector& p,
+    const vector& n,
+    const vectorField& c,
+    const scalarField& psi,
+    const label& r
+)
+{
+    if(mesh_.nSolutionD() == 2)
+    {
+        Vector2D<label> index = getDimension();
+        Field<vector2D> c2d(c.size());
+        convert(c2d, c, index);
+        vector2D p2d;
+        convert(p2d, p, index);
+        return interpolateSecondOrder(p2d, c2d, psi, r);
+    }
+    else
+    {
+        return interpolateSecondOrder(p, n, c, psi, r);
     }
 }
 

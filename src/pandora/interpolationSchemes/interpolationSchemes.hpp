@@ -129,6 +129,15 @@ class interpolationSchemes
             const scalar & r 
         );
 
+        scalar inverseDistanceInterpolate
+        (
+            const vector & p, 
+            const vector & n,
+            const vectorField & c,
+            const scalarField & psi,
+            const scalar & r 
+        );
+
         //- 2D inverse distance weighting interpolation
         scalar inverseDistanceInterpolate
         (
@@ -142,6 +151,15 @@ class interpolationSchemes
         scalar interpolateSecondOrder
         (
             const vector & p, 
+            const vectorField & c,
+            const scalarField & psi,
+            const scalar & r 
+        );
+
+        scalar interpolateSecondOrder
+        (
+            const vector & p, 
+            const vector & n,
             const vectorField & c,
             const scalarField & psi,
             const scalar & r 
@@ -187,6 +205,15 @@ public:
         scalar IDeCinterpolate
         (
             const vector& p,
+            const vectorField& c,
+            const scalarField& psi,
+            const label& r
+        );
+        
+        scalar IDeCinterpolate
+        (
+            const vector& p,
+            const vector& n,
             const vectorField& c,
             const scalarField& psi,
             const label& r
