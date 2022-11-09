@@ -1,0 +1,36 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      vofInitDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+fieldName       alpha.dispersed;
+algorithm       SMCA;
+writeGeometry   off;
+invert          off;
+writeAllFields  on;
+checkVolume     off;
+refinementLevel 6;
+
+distCalc
+{
+    surfaceType     levelSet;
+    surface         ellipsoid;
+    center          (0.0 0.0 0.0);
+    axes            (5.25e-4 4.762e-4 1.0);
+    orientation     inward;
+    narrowBandWidth 5.0;
+    bulkValue       0.0;
+}
+
+// ************************************************************************* //

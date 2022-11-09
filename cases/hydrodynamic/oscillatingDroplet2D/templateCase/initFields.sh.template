@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+<!--(if INIT_APPROACH=="inside-outside")-->
+# SMCIA also computes the signed distance field used as input for
+# setFields
+surfaceInitVolumeFraction
+setFields
+<!--(elif INIT_APPROACH=="setAlphaField")-->
+setAlphaField
+<!--(elif INIT_APPROACH=="smcia")-->
+surfaceInitVolumeFraction
+<!--(end)-->
+
+#------------------------------------------------------------------------------
