@@ -372,10 +372,14 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
 )
 {
     scalar psi_p = inverseDistanceInterpolate(p, c, psi, r); 
-    scalar psi_p2 = psi_p + 1; 
-    scalarField pt(psi.size());
 
-    while(fabs(psi_p - psi_p2) > 1e-5)
+    if (mag(psi_p) < 1e-8)
+        return psi_p;
+
+    scalar psi_p2 = psi_p + 1; 
+
+    scalar delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
+    while(delta > 1e-5)
     {
         psi_p2 = psi_p;
 
@@ -386,9 +390,10 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
             grad.x() = (psi[0] - psi_p2) / (c[0].x() - p.x());
             grad.y() = (psi[0] - psi_p2) / (c[0].y() - p.y());
         }
-
         else
+        {
             grad = gradLeastSquare(p, psi_p2, c, psi); 
+        }
 
         scalarField psi_bar(psi.size()); 
 
@@ -396,8 +401,10 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
         {
             psi_bar[i] = psi[i]  - (grad & (c[i] - p));   
         }                
-        pt = psi_bar;
+
         psi_p = inverseDistanceInterpolate(p, c, psi_bar, r);
+
+        delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
     }
 
     return psi_p;
@@ -457,6 +464,7 @@ Foam::scalar Foam::interpolationSchemes::IDeCinterpolate
     const label& r
 )
 {
+/*
     if(mesh_.nSolutionD() == 2)
     {
         Vector2D<label> index = getDimension();
@@ -467,6 +475,7 @@ Foam::scalar Foam::interpolationSchemes::IDeCinterpolate
         return interpolateSecondOrder(p2d, c2d, psi, r);
     }
     else
+*/
     {
         return interpolateSecondOrder(p, c, psi, r);
     }

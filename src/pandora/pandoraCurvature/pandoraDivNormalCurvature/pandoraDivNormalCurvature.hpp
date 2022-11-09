@@ -63,6 +63,8 @@ protected:
     const label nAverage_; 
     volVectorField averagedNormals_; 
 
+    void normalise(vectorField& vec);
+
 public:
 
     // Static Data Members

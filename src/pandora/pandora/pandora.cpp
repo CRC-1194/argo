@@ -261,15 +261,11 @@ const surfaceScalarField& pandora::surfaceTensionForce
 {
     volScalarField& cellCurvature = curvPtr_->cellCurvature();
 
-    // interIsoFoam with regularisation and extension. 
-    //volScalarField& cellCurvature = 
-    //    indicator.mesh().lookupObjectRef<volScalarField>("interfaceProperties:K");
+    //updateInterfaceCells(indicator);
 
-    updateInterfaceCells(indicator);
+    //curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell_); 
 
-    curvRegularisationPtr_->regularise(cellCurvature, isInterfaceCell_); 
-
-    curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
+    //curvExtensionPtr_->extend(cellCurvature, isInterfaceCell_); 
 
     fSigma_ = 
         sigma_ * fvc::interpolate(cellCurvature) * fvc::snGrad(indicator);
