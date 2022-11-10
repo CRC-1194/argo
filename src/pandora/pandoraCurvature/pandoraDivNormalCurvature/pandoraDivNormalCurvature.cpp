@@ -127,6 +127,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
     const boolList& nextToInter = RDF.nextToInterface();
     distribute.updateStencil(nextToInter);
 
+    /*
     volScalarField rdf = RDF;
     forAll (rdf, i)
         rdf[i] = 0.0;
@@ -143,6 +144,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
         );
     }
     RDF.correctBoundaryConditions();
+    */
 
     volVectorField gradRDF(fvc::grad(RDF));
     normalise(gradRDF);
@@ -343,21 +345,19 @@ scalar sphereRadius = 0.002; // Sphere radius
                     avgNormTmp[cellI][2] = valuesZ[0];
                 }
 
-                else if (centres.capacity() >= 4)
-                {
-                    // TODO: How to add the restriction of mag(avgNormTmp[cellI]) = 1 
-                    // into the interpolation process? Guoliang
-                    avgNormTmp[cellI][0] = interp.IDeCinterpolate(p, centres, valuesX, 1);
-                    avgNormTmp[cellI][1] = interp.IDeCinterpolate(p, centres, valuesY, 1);
-                    avgNormTmp[cellI][2] = interp.IDeCinterpolate(p, centres, valuesZ, 1);
-                }
-
-                else
+                else if (centres.capacity() >= 2 && centres.capacity() <= 4)
                 {
                     //Pout<<"!!!TWOorTHREE!!!"<<nl;
                     avgNormTmp[cellI][0] = interp.IDWinterpolate(p, centres, valuesX, 1);
                     avgNormTmp[cellI][1] = interp.IDWinterpolate(p, centres, valuesY, 1);
                     avgNormTmp[cellI][2] = interp.IDWinterpolate(p, centres, valuesZ, 1);
+                }
+
+                else
+                {
+                    avgNormTmp[cellI][0] = interp.IDeCinterpolate(p, centres, valuesX, 1);
+                    avgNormTmp[cellI][1] = interp.IDeCinterpolate(p, centres, valuesY, 1);
+                    avgNormTmp[cellI][2] = interp.IDeCinterpolate(p, centres, valuesZ, 1);
                 }
             }
             normalise(avgNormTmp);
@@ -368,12 +368,41 @@ scalar sphereRadius = 0.002; // Sphere radius
         }
     }
 
-#include "error.hpp"
+//#include "error.hpp"
 
     cellCurvature_ = -tr(fvc::grad(averagedNormals_));
     //cellCurvature_ = -fvc::div(averagedNormals_);
     cellCurvature_.correctBoundaryConditions();
 
+
+
+
+
+    forAll (cellCurvature_, cellI)
+    {
+        if (markers[cellI] == 0 /*|| markers[cellI] == 1*/)
+        {
+            cellCurvature_[cellI] = 2.0 / 
+                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
+        }
+        else
+        {
+            cellCurvature_[cellI] = 0;
+        }
+    }
+    cellCurvature_.correctBoundaryConditions();
+
+
+
+
+
+
+
+
+
+
+/*
+{
     // Interpolate curvature from cell centres to PLIC centres
     volScalarField curvature("curvature" ,cellCurvature_);
     curvature.correctBoundaryConditions();
@@ -417,15 +446,24 @@ scalar sphereRadius = 0.002; // Sphere radius
            values.shrink();
 
            if (points.capacity() == 0)
+           {
                cellCurvature_[cellI] = 0.0;
+           }
+
            else if (points.capacity() == 1)
+           {
                cellCurvature_[cellI] = values[0];
-           else if (points.capacity() == 2)
+           }
+
+           else if (points.capacity() >= 2 && points.capacity() <= 4)
+           {
                cellCurvature_[cellI] = interp.IDWinterpolate(p, points, values, 1);
-           else if (points.capacity() == 3)
-               cellCurvature_[cellI] = interp.IDWinterpolate(p, points, values, 1);
+           }
+
            else
+           {
                cellCurvature_[cellI] = interp.IDeCinterpolate(p, points, values, 1);
+           }
        }
        else
        {
@@ -433,9 +471,9 @@ scalar sphereRadius = 0.002; // Sphere radius
        }
     }
     cellCurvature_.correctBoundaryConditions();
-
-/*
+}
 */
+
 {
     labelField count{cellCurvature_.size(), 0};
     scalarField curvatureSum{cellCurvature_.size(), 0.0};
@@ -501,6 +539,8 @@ scalar sphereRadius = 0.002; // Sphere radius
         cellCurvature_.correctBoundaryConditions();
     }
 }
+/*
+*/
 
 
 
@@ -593,12 +633,7 @@ scalar sphereRadius = 0.002; // Sphere radius
                     curvature[cellI] = values[0];
                 }
 
-                else if (points.capacity() == 2)
-                {
-                    curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
-                }
-
-                else if (points.capacity() == 3)
+                else if (points.capacity() >= 2 && points.capacity() <= 4)
                 {
                     curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
                 }
