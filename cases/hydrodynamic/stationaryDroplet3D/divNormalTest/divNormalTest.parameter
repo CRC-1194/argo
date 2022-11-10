@@ -9,17 +9,19 @@ values
 
     RESOLUTION 
     (
+        //30 60 120
         32 64 128
+        //20 40 60 80 100 120 140 160
     );
 
     N_PROPAGATIONS
     (
-        2 
+        6 
     );
 
     N_AVERAGES
     (
-        1 
+        6 
     );
 
     N_EXTENSIONS

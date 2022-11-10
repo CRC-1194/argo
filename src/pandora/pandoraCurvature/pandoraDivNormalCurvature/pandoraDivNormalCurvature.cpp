@@ -564,8 +564,10 @@ scalar sphereRadius = 0.002; // Sphere radius
                     {
                         n /= mag(n);
 
-                        vector centre = distribute.getValue(interfaceCentres, mapCentres, gblIdx);
-                        scalar curv = distribute.getValue(cellCurvature_, mapCurvs, gblIdx);
+                        vector centre = 
+                            distribute.getValue(interfaceCentres, mapCentres, gblIdx);
+                        scalar curv = 
+                            distribute.getValue(cellCurvature_, mapCurvs, gblIdx);
 
                         vector dist = centre - p;
                         vector distToSurf = dist & n / mag(n) * n;
@@ -583,25 +585,27 @@ scalar sphereRadius = 0.002; // Sphere radius
 
                 if (points.capacity() == 0)
                 {
-                    //Pout<<"!!!ZERO!!!"<<nl;
-                    continue;
+                    curvature[cellI] = 0.0;
                 }
 
                 else if (points.capacity() == 1)
                 {
-                    //Pout<<"!!!ONE!!!"<<nl;
                     curvature[cellI] = values[0];
                 }
 
-                else if (points.capacity() >= 4)
+                else if (points.capacity() == 2)
                 {
-                    curvature[cellI] = interp.IDeCinterpolate(p, points, values, 1);
+                    curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
+                }
+
+                else if (points.capacity() == 3)
+                {
+                    curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
                 }
 
                 else
                 {
-                    //Pout<<"!!!TWOorTHREE!!!"<<nl;
-                    curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
+                    curvature[cellI] = interp.IDeCinterpolate(p, points, values, 1);
                 }
             }
             curvature.correctBoundaryConditions();

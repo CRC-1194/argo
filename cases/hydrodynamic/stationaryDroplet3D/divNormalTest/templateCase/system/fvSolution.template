@@ -45,7 +45,7 @@ solvers
         //solver          PCG;
         //preconditioner  diagonal;
         solver          GAMG;
-        smoother        DICGaussSeidel;
+        smoother        GaussSeidel;
         tolerance       1e-09;
         relTol          0;
     }
@@ -56,20 +56,12 @@ solvers
         preconditioner  
         {
             preconditioner GAMG;
+            smoother       GaussSeidel;
             tolerance      1e-09;
             relTol         0;
-            smoother       DIC;//GaussSeidel;
-            nPreSweeps     0;
-            nPostSweeps    2;
-            nBottomSweeps  2;
-            cacheAgglomeration false;
-            nCellsInCoarsestLevel 10;
-            agglomerator   faceAreaPair;
-            mergeLevels    1;
         }
         tolerance       1e-09;
         relTol          0;
-        //maxIter         100;
     }
 
     p_rghFinal
@@ -81,19 +73,25 @@ solvers
 
     U
     {
+        //solver          GAMG;
+        //smoother        GaussSeidel;
+
         solver          PBiCGStab;
         //preconditioner  diagonal;
         preconditioner  DILU;
-        tolerance       1e-06;
+        tolerance       1e-09;
         relTol          0;
     }
 
     UFinal
     {
+        //solver          GAMG;
+        //smoother        GaussSeidel;
+
         solver          PBiCGStab;
         //preconditioner  diagonal;
         preconditioner  DILU;
-        tolerance       1e-06;
+        tolerance       1e-09;
         relTol          0;
     }
 }
@@ -120,15 +118,15 @@ pandora
     }
     curvatureExtension
     {
-        //type noExtension;
-        type averageExtension;
-        nExtensionIterations @!N_EXTENSIONS!@; 
+        type noExtension;
+        //type averageExtension;
+        //nExtensionIterations @!N_EXTENSIONS!@; 
     }
     curvatureRegularisation
     {
-        //type noRegularisation;
-        type tangentialAverage;
-        nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
+        type noRegularisation;
+        //type tangentialAverage;
+        //nAveragingIterations @!N_TANGENTIAL_AVERAGES!@; 
     }
 }
 

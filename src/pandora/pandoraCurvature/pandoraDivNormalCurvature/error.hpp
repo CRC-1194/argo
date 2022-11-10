@@ -35,7 +35,7 @@ reduce(l2, sumOp<scalar>());
 reduce(count, sumOp<label>());
 reduce(lInf, maxOp<scalar>());
 
-//Info<<"count = "<<count<<nl;
+Info<<"count = "<<count<<nl;
 if (count > 0)
 {
     Info<<"l1 = "<<l1/count*100<<nl;
@@ -43,6 +43,7 @@ if (count > 0)
     Info<<"lInf = "<<lInf*100<<nl;
 }
 
+/*
 scalar absErrorRdf = 0;
 scalar l1Rdf = 0;
 scalar l2Rdf = 0;
@@ -111,7 +112,6 @@ if (countCurv > 0)
     Info<<"lInfCurv = "<<lInfCurv<<nl;
 }
 
-/*
 exactNormals.rename("normExct");
 if (cellCurvature_.time().writeTime())
     exactNormals.write();
