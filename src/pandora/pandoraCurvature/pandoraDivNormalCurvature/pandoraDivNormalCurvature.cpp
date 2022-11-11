@@ -333,13 +333,11 @@ scalar sphereRadius = 0.002; // Sphere radius
 
                 if (centres.capacity() == 0)
                 {
-                    //Pout<<"!!!ZERO!!!"<<nl;
-                    continue;
+                    avgNormTmp[cellI] = vector::zero;
                 }
 
                 else if (centres.capacity() == 1)
                 {
-                    //Pout<<"!!!ONE!!!"<<nl;
                     avgNormTmp[cellI][0] = valuesX[0];
                     avgNormTmp[cellI][1] = valuesY[0];
                     avgNormTmp[cellI][2] = valuesZ[0];
@@ -347,7 +345,6 @@ scalar sphereRadius = 0.002; // Sphere radius
 
                 else if (centres.capacity() >= 2 && centres.capacity() <= 4)
                 {
-                    //Pout<<"!!!TWOorTHREE!!!"<<nl;
                     avgNormTmp[cellI][0] = interp.IDWinterpolate(p, centres, valuesX, 1);
                     avgNormTmp[cellI][1] = interp.IDWinterpolate(p, centres, valuesY, 1);
                     avgNormTmp[cellI][2] = interp.IDWinterpolate(p, centres, valuesZ, 1);
@@ -391,7 +388,6 @@ scalar sphereRadius = 0.002; // Sphere radius
         }
     }
     cellCurvature_.correctBoundaryConditions();
-
 
 
 
@@ -474,6 +470,8 @@ scalar sphereRadius = 0.002; // Sphere radius
 }
 */
 
+/*
+*/
 {
     labelField count{cellCurvature_.size(), 0};
     scalarField curvatureSum{cellCurvature_.size(), 0.0};
@@ -539,25 +537,10 @@ scalar sphereRadius = 0.002; // Sphere radius
         cellCurvature_.correctBoundaryConditions();
     }
 }
+
 /*
 */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
+{
     for (label i = 0; i < 1; ++i)
     {
         volScalarField curvature = cellCurvature_;
@@ -581,76 +564,68 @@ scalar sphereRadius = 0.002; // Sphere radius
 
         const labelListList& stencil = distribute.getStencil();
 
-        // Perform the interpolation in order from largest to smallest
-        // neighbour cell numbers. Guoliang
-        //for (label j = maxCount[i]; j > 0; --j)
+        forAll (markers, cellI)
         {
-            forAll (markers, cellI)
+            if (!zone[cellI]) continue;
+
+            point p = mesh().C()[cellI];
+
+            DynamicField<vector> points;
+            DynamicField<scalar> values;
+
+            for (const label gblIdx : stencil[cellI])
             {
-                if (markers[cellI] != i + 1) continue;
-                //if (!nextToInter[cellI]) continue;
-                //if (counts[cellI] != j) continue;
+                vector n = distribute.getValue(interfaceNormals, mapNormals, gblIdx);
 
-                point p = mesh().C()[cellI];
-
-                DynamicField<vector> points;
-                DynamicField<scalar> values;
-
-                for (const label gblIdx : stencil[cellI])
+                if (mag(n) != 0)
                 {
-                    vector n = distribute.getValue(interfaceNormals, mapNormals, gblIdx);
+                    n /= mag(n);
 
-                    if (mag(n) != 0)
-                    {
-                        n /= mag(n);
+                    vector centre = 
+                        distribute.getValue(interfaceCentres, mapCentres, gblIdx);
+                    scalar curv = 
+                        distribute.getValue(cellCurvature_, mapCurvs, gblIdx);
 
-                        vector centre = 
-                            distribute.getValue(interfaceCentres, mapCentres, gblIdx);
-                        scalar curv = 
-                            distribute.getValue(cellCurvature_, mapCurvs, gblIdx);
+                    vector dist = centre - p;
+                    vector distToSurf = dist & n / mag(n) * n;
+                    vector verticalDist = dist - distToSurf;
 
-                        vector dist = centre - p;
-                        vector distToSurf = dist & n / mag(n) * n;
-                        vector verticalDist = dist - distToSurf;
+                    vector cc = p - verticalDist;
 
-                        vector cc = p - verticalDist;
-
-                        points.append(cc);
-                        values.append(curv);
-                    }
-                }
-
-                points.shrink();
-                values.shrink();
-
-                if (points.capacity() == 0)
-                {
-                    curvature[cellI] = 0.0;
-                }
-
-                else if (points.capacity() == 1)
-                {
-                    curvature[cellI] = values[0];
-                }
-
-                else if (points.capacity() >= 2 && points.capacity() <= 4)
-                {
-                    curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
-                }
-
-                else
-                {
-                    curvature[cellI] = interp.IDeCinterpolate(p, points, values, 1);
+                    points.append(cc);
+                    values.append(curv);
                 }
             }
-            curvature.correctBoundaryConditions();
 
-            cellCurvature_ = curvature;
-            cellCurvature_.correctBoundaryConditions();
+            points.shrink();
+            values.shrink();
+
+            if (points.capacity() == 0)
+            {
+                curvature[cellI] = 0.0;
+            }
+
+            else if (points.capacity() == 1)
+            {
+                curvature[cellI] = values[0];
+            }
+
+            else if (points.capacity() >= 2 && points.capacity() <= 4)
+            {
+                curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
+            }
+
+            else
+            {
+                curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
+            }
         }
+        curvature.correctBoundaryConditions();
+
+        cellCurvature_ = curvature;
+        cellCurvature_.correctBoundaryConditions();
     }
-/*
-*/
+}
 
 
 

@@ -283,8 +283,10 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
     if (mag(psi_p) < 1e-8)
         return psi_p;
 
+    scalar psi_p0 = psi_p; 
     scalar psi_p2 = psi_p + 1; 
 
+    label loop = 0;
     scalar delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
     while(delta > 1e-5)
     {
@@ -311,8 +313,16 @@ Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder
         psi_p = inverseDistanceInterpolate(p, c, psi_bar, r);
 
         delta = fabs((psi_p-psi_p2) / (psi_p2+SMALL));
+
+        if ((++loop) > 20) break; 
     }
-    return psi_p;
+
+    scalar minValue = min(psi);
+    scalar maxValue = max(psi);
+    if (psi_p < minValue || psi_p > maxValue)
+        return psi_p0;
+    else
+        return psi_p;
 }
 
 Foam::scalar Foam::interpolationSchemes::interpolateSecondOrder 
