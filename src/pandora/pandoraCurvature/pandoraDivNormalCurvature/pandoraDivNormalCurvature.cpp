@@ -374,10 +374,11 @@ scalar sphereRadius = 0.002; // Sphere radius
 
 
 
-
+/*
+*/
     forAll (cellCurvature_, cellI)
     {
-        if (markers[cellI] == 0 /*|| markers[cellI] == 1*/)
+        if (markers[cellI] == 0)
         {
             cellCurvature_[cellI] = 2.0 / 
                 (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
@@ -388,7 +389,6 @@ scalar sphereRadius = 0.002; // Sphere radius
         }
     }
     cellCurvature_.correctBoundaryConditions();
-
 
 
 
@@ -420,9 +420,22 @@ scalar sphereRadius = 0.002; // Sphere radius
 
     const labelListList& stencil = distribute.getStencil();
 
+    const volScalarField& alpha = mesh().lookupObject<volScalarField>(fieldName_);
+
     forAll(cellCurvature_, cellI)
     {
-       if (markers[cellI] == 0)
+       if (!zone[cellI])
+       {
+           cellCurvature_[cellI] = 0;
+           continue;
+       }
+
+       if (alpha[cellI] < 0.99 && alpha[cellI] > 0.01)
+       {
+            cellCurvature_[cellI] = 2.0 / 
+                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
+       }
+       else
        {
            vector p = interfaceCentres[cellI];
 
@@ -461,16 +474,10 @@ scalar sphereRadius = 0.002; // Sphere radius
                cellCurvature_[cellI] = interp.IDeCinterpolate(p, points, values, 1);
            }
        }
-       else
-       {
-           cellCurvature_[cellI] = 0;
-       }
     }
     cellCurvature_.correctBoundaryConditions();
 }
-*/
 
-/*
 */
 {
     labelField count{cellCurvature_.size(), 0};
@@ -617,7 +624,7 @@ scalar sphereRadius = 0.002; // Sphere radius
 
             else
             {
-                curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
+                curvature[cellI] = interp.IDeCinterpolate(p, points, values, 1);
             }
         }
         curvature.correctBoundaryConditions();
