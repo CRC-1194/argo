@@ -127,44 +127,6 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
     const boolList& nextToInter = RDF.nextToInterface();
     distribute.updateStencil(nextToInter);
 
-
-{
-    boolList interfaceCells = surf.interfaceCell();
-
-    FaceCentreField_.clear();
-    FaceNormalField_.clear();
-
-    FaceCentreField_.setCapacity(mesh.nCells());
-    FaceNormalField_.setCapacity(mesh.nCells());
-    DynamicField<scalar> KatInterFace(mesh.nCells());
-
-    forAll(faceCentre,cellI)
-    {
-        if (mag(faceNormal[cellI]) != 0)
-        {
-            FaceCentreField_.append(faceCentre[cellI]);
-            FaceNormalField_.append(faceNormal[cellI]);
-            interfaceCells[cellI] = true;
-        }
-        else
-        {
-            interfaceCells[cellI] = false;
-        }
-    }
-
-    labelList neiProcs = getNeibourProcs(RDF.nextToInterface());
-
-    distributeField<vector>(neiProcs,FaceCentreField_);
-    distributeField<vector>(neiProcs,FaceNormalField_);
-
-    RDF.constructRDFOctree(RDF.nextToInterface(),FaceCentreField_,FaceNormalField_);
-
-    RDF.correctBoundaryConditions(); // update proc patches
-}
-
-
-
-
     /*
     volScalarField rdf = RDF;
     forAll (rdf, i)
