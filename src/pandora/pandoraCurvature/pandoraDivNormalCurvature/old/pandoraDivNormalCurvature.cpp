@@ -350,16 +350,16 @@ scalar sphereRadius = 0.002; // Sphere radius
 
                 else if (centres.capacity() >= 2 && centres.capacity() <= 4)
                 {
-                    avgNormTmp[cellI][0] = interp.IDWinterpolate(p, centres, valuesX, 1);
-                    avgNormTmp[cellI][1] = interp.IDWinterpolate(p, centres, valuesY, 1);
-                    avgNormTmp[cellI][2] = interp.IDWinterpolate(p, centres, valuesZ, 1);
+                    avgNormTmp[cellI][0] = interp.IDWinterp(p, centres, valuesX, 1);
+                    avgNormTmp[cellI][1] = interp.IDWinterp(p, centres, valuesY, 1);
+                    avgNormTmp[cellI][2] = interp.IDWinterp(p, centres, valuesZ, 1);
                 }
 
                 else
                 {
-                    avgNormTmp[cellI][0] = interp.IDeCinterpolate(p, centres, valuesX, 1);
-                    avgNormTmp[cellI][1] = interp.IDeCinterpolate(p, centres, valuesY, 1);
-                    avgNormTmp[cellI][2] = interp.IDeCinterpolate(p, centres, valuesZ, 1);
+                    avgNormTmp[cellI][0] = interp.IDeCinterp(p, centres, valuesX, 1);
+                    avgNormTmp[cellI][1] = interp.IDeCinterp(p, centres, valuesY, 1);
+                    avgNormTmp[cellI][2] = interp.IDeCinterp(p, centres, valuesZ, 1);
                 }
             }
             normalise(avgNormTmp);
@@ -479,12 +479,12 @@ if (mesh().time().writeTime())
 
            else if (points.capacity() >= 2 && points.capacity() <= 4)
            {
-               cellCurvature_[cellI] = interp.IDWinterpolate(p, points, values, 1);
+               cellCurvature_[cellI] = interp.IDWinterp(p, points, values, 1);
            }
 
            else
            {
-               cellCurvature_[cellI] = interp.IDeCinterpolate(p, points, values, 1);
+               cellCurvature_[cellI] = interp.IDeCinterp(p, points, values, 1);
            }
        }
     }
@@ -637,13 +637,13 @@ if (mesh().time().writeTime())
 
             else if (points.capacity() >= 2 && points.capacity() <= 4)
             {
-                curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
+                curvature[cellI] = interp.IDWinterp(p, points, values, 1);
             }
 
             else
             {
-                curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
-                //curvature[cellI] = interp.IDeCinterpolate(p, points, values, 1);
+                curvature[cellI] = interp.IDWinterp(p, points, values, 1);
+                //curvature[cellI] = interp.IDeCinterp(p, points, values, 1);
             }
         }
         curvature.correctBoundaryConditions();
