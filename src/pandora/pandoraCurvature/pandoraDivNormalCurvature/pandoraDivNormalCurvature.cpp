@@ -39,15 +39,27 @@ License
 #include "processorFvPatchField.H"
 #include "reconstructionSchemes.H"
 #include "reconstructedDistanceFunction.H"
+#include "zoneDistribute.H"
 #include "tensor2D.H"
 
 #include "volPointInterpolation.H"
 #include "isoSurfaceTopo.H"
 #include "triSurfaceMesh.H"
 
-#include "wedgePolyPatch.H"
+#include "interpolationSchemes.hpp"
 
 namespace Foam {
+
+void pandoraDivNormalCurvature::normalise(vectorField& vec)
+{
+    forAll (vec, i)
+    {
+        if (mag(vec[i]) < ROOTVSMALL)
+            vec[i] = vector::zero;
+        else
+            vec[i] /= mag(vec[i]);
+    }
+}
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -64,8 +76,8 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
     :
         pandoraCurvature(mesh, dict), 
         fieldName_(curvatureDict_.get<word>("normalField")),
-        nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 2)), 
-        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 2)), 
+        nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 6)), 
+        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 6)), 
         averagedNormals_ 
         (
             IOobject
@@ -78,131 +90,140 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
             ),
             mesh, 
             dimensionedVector("averagedNormals", dimless, vector(0,0,0))
-        ),
-        curvFromTr_(dict.lookupOrDefault("curvFromTr",true)),
-        markers_
-        (
-            IOobject
-            (
-                "cellMarkers",
-                mesh.time().timeName(),
-                mesh,
-                IOobject::NO_READ,
-                IOobject::AUTO_WRITE
-            ),
-            mesh,
-            dimensionedScalar("cellMarkers", dimless, -1),
-            "calculated"
-        ),
-        interCells_(mesh.nCells(), false),
-        cellDistLevel_
-        (
-            IOobject
-            (
-                "cellDistLevel_",
-                mesh.time().timeName(),
-                mesh,
-                IOobject::NO_READ,
-                IOobject::NO_WRITE
-            ),
-            mesh,
-            dimensionedScalar("cellDistLevel_", dimless, -1),
-            "calculated"
-        ),
-        nextToInter_(mesh.nCells(), false),
-        cellPointCells_(mesh.nCells(), 0),
-        distribute_(zoneDistribute::New(mesh)),
-        interp_(mesh),
-        index_(mesh.nSolutionD(), -1),
-        maxCpc_(nPropagate_, 0.0)
+        )
 {
     Info<<"Selecting divNormal curvature"<<nl;
-
-    // curvature from trace does not work with wedges
-    bool wedge = false;
-    const polyBoundaryMesh& patches = mesh.boundaryMesh();
-    for (const polyPatch& pp : patches)
-    {
-        if(isA<wedgePolyPatch>(pp))
-        {
-            wedge = true;
-        }
-    }
-
-    if(wedge)
-    {
-        curvFromTr_ = false;
-    }
-
-    // Get the dimension of the case. 
-    const labelVector& solutionD = mesh.solutionD();
-    label k = 0;
-    forAll (solutionD, j)
-    {
-        if (solutionD[j] == 1)
-        {
-            index_[k++] = j;
-        }
-    }
 }
 
-// * * * * * * * * * * Protect Member Functions  * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
-void pandoraDivNormalCurvature::normalise(vectorField& vec)
+volScalarField& pandoraDivNormalCurvature::cellCurvature()
 {
-    forAll (vec, i)
+    const auto& meshDb = cellCurvature_.mesh().thisDb();
+    if (!meshDb.found(fieldName_))
     {
-        if (mag(vec[i]) < ROOTVSMALL)
-            vec[i] = vector::zero;
-        else
-            vec[i] /= mag(vec[i]);
+        FatalErrorInFunction
+            << "pandoraDivNormalCurvature::cellCurvature \n"
+            << "Field " << fieldName_ << " not in mesh registry." 
+	    << "Available registered fields are : \n" 
+	    << mesh().names() 
+            << abort(FatalError);
     }
-}
 
-void Foam::pandoraDivNormalCurvature::updateMarkersAndCounts()
-{
-    const fvMesh& mesh = cellCurvature_.mesh();
+    interpolationSchemes interp(mesh());
 
-    forAll (markers_, cellI)
+    reconstructionSchemes& surf = 
+        mesh().lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
+    surf.reconstruct(false);
+
+    reconstructedDistanceFunction& RDF = 
+        mesh().lookupObjectRef<reconstructedDistanceFunction>("RDF");
+
+    const volVectorField& interfaceNormals = surf.normal();
+    const volVectorField& interfaceCentres = surf.centre();
+
+    RDF.markCellsNearSurf(surf.interfaceCell(), 2);
+    zoneDistribute& distribute = zoneDistribute::New(mesh());
+    const boolList& nextToInter = RDF.nextToInterface();
+    distribute.updateStencil(nextToInter);
+
+    /*
+    volScalarField rdf = RDF;
+    forAll (rdf, i)
+        rdf[i] = 0.0;
+    rdf.correctBoundaryConditions();
+    if (RDF.internalField() == rdf.internalField())
     {
-        if (cellDistLevel_[cellI] == 0)
+        RDF.constructRDF
+        (
+            RDF.nextToInterface(),
+            interfaceCentres,
+            interfaceNormals,
+            distribute,
+            false
+        );
+    }
+    RDF.correctBoundaryConditions();
+    */
+
+volScalarField rdf = RDF;
+rdf.rename("rdf");
+if (mesh().time().writeTime())
+    rdf.write();
+
+    volVectorField gradRDF(fvc::grad(RDF));
+    normalise(gradRDF);
+    gradRDF.correctBoundaryConditions();
+
+vector sphereCentre(0.005, 0.005, 0.005);
+scalar sphereRadius = 0.002; // Sphere radius
+
+    // Mark interface markers
+    volScalarField markers
+    (
+        IOobject
+        (
+            "cellMarkers",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("cellMarkers", dimless, -1)
+    );
+
+    // Count interpolated cell's neighbour cell numbers
+    volScalarField counts
+    (
+        IOobject
+        (
+            "cellCounts",
+            mesh().time().timeName(),
+            mesh(),
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh(),
+        dimensionedScalar("cellCounts", dimless, 0)
+    );
+
+    forAll (markers, cellI)
+    {
+        if (mag(interfaceNormals[cellI]) != 0)
         {
-            markers_[cellI] = 0;
-        }
-        else
-        {
-            markers_[cellI] = -1;
+            markers[cellI] = 0;
         }
     }
-    markers_.correctBoundaryConditions();
+    markers.correctBoundaryConditions();
 
-    const auto& own = mesh.owner();
-    const auto& nei = mesh.neighbour();
+    const auto& own = mesh().owner();
+    const auto& nei = mesh().neighbour();
 
-    for (label i = 0; i < 1; ++i)
+    labelList maxCount(nPropagate_);
+    for (label i = 0; i < nPropagate_; ++i)
     {
+        volScalarField markersTmp = markers;
+
         forAll (nei, fid)
         {
-            if (
-                    markers_[own[fid]] == i 
-                 && markers_[nei[fid]] == -1 
-                 && cellDistLevel_[nei[fid]] != -1
-               )
+            if (markers[own[fid]] == i && markers[nei[fid]] == -1 && nextToInter[nei[fid]])
             {
-                markers_[nei[fid]] = i + 1;
+                //markers[nei[fid]] = i + 1;
+                markersTmp[nei[fid]] = i + 1;
+                counts[nei[fid]]++;
             }
-            if (
-                    markers_[nei[fid]] == i 
-                 && markers_[own[fid]] == -1 
-                 && cellDistLevel_[own[fid]] != -1
-               )
+            if (markers[nei[fid]] == i && markers[own[fid]] == -1 && nextToInter[own[fid]])
             {
-                markers_[own[fid]] = i + 1;
+                //markers[own[fid]] = i + 1;
+                markersTmp[own[fid]] = i + 1;
+                counts[own[fid]]++;
             }
         }
-        markers_.correctBoundaryConditions();
+        //markers.correctBoundaryConditions();
+        markersTmp.correctBoundaryConditions();
 
-        auto& meshBoundary = markers_.boundaryFieldRef();
+        auto& meshBoundary = markers.boundaryFieldRef();
         for (auto& mb : meshBoundary)
         {
             if (isA<processorFvPatch>(mb.patch()))
@@ -215,211 +236,265 @@ void Foam::pandoraDivNormalCurvature::updateMarkersAndCounts()
                 
                 forAll(mb, j)
                 {
-                    if (
-                            neibrValue[j] == i 
-                         && markers_[faceToCell[j]] == -1 
-                         && cellDistLevel_[faceToCell[j]] != -1
-                       )
+                    if (neibrValue[j] == i && markers[faceToCell[j]] == -1 && nextToInter[faceToCell[j]])
                     {
-                        markers_[faceToCell[j]] = i + 1;
+                        //markers[faceToCell[j]] = i + 1;
+                        markersTmp[faceToCell[j]] = i + 1;
+                        counts[faceToCell[j]]++;
                     }
                 }
             }
         }
-        markers_.correctBoundaryConditions();
+        markersTmp.correctBoundaryConditions();
+        counts.correctBoundaryConditions();
+
+        markers = markersTmp;
+        markers.correctBoundaryConditions();
+
+        maxCount[i] = max(counts).value();
     }
-}
 
-void Foam::pandoraDivNormalCurvature::normalPropagate
-(
-    const bool& needUpdate, 
-    volVectorField& interCellNormals
-)
-{
-    const fvMesh& mesh = cellCurvature_.mesh();
+    averagedNormals_ = gradRDF; 
+    forAll (averagedNormals_, i)
+    {
+        if (markers[i] != 0)
+        {
+            averagedNormals_[i] = vector::zero;
+        }
+    }
+    averagedNormals_.correctBoundaryConditions();
 
+
+    // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
     {
-        boolList zone(mesh.nCells(), false);
+        boolList zone(mesh().nCells(), false);
         forAll (zone, zi)
         {
-            if (cellDistLevel_[zi] == i + 1)
+            if (!nextToInter[zi]) continue;
+
+            if (markers[zi] == i + 1)
             {
                 zone[zi] = true;
             }
         }
-        distribute_.setUpCommforZone(zone, false);
+
+        distribute.setUpCommforZone(zone, false);
         Map<vector> mapMC = 
-            distribute_.getDatafromOtherProc(zone, mesh.C());
-        const labelListList& stencil = distribute_.getStencil();
+            distribute.getDatafromOtherProc(zone, mesh().C());
 
-        if (needUpdate)
-        {
-            labelField cpc(mesh.nCells(), 0);
-
-            Map<scalar> mapCDL = 
-                distribute_.getDatafromOtherProc(zone, cellDistLevel_);
-
-            forAll (cellDistLevel_, cellI)
-            {
-                if (!zone[cellI]) continue;
-
-                for (const label gblIdx : stencil[cellI])
-                {
-                    scalar cdl = distribute_.getValue(cellDistLevel_, mapCDL, gblIdx);
-                    if (cdl > -1 && cdl < i + 1)
-                    {
-                        cpc[cellI]++;
-                    }
-                }
-            }
-
-            maxCpc_[i] = max(cpc);
-            reduce(maxCpc_[i], maxOp<label>());
-
-            cellPointCells_ += cpc; 
-        }
+        const labelListList& stencil = distribute.getStencil();
 
         // Perform the interpolation in order from largest to smallest
         // neighbour cell numbers. Guoliang
-        for (label j = maxCpc_[i]; j > 0; j--)
+        for (label j = maxCount[i]; j > 0; --j)
         {
             Map<vector> mapNormals = 
-                distribute_.getDatafromOtherProc(zone, interCellNormals);
+                distribute.getDatafromOtherProc(zone, averagedNormals_);
+            volVectorField avgNormTmp = averagedNormals_;
 
-            volVectorField avgNormTmp = interCellNormals;
-
-            forAll (cellDistLevel_, cellI)
+            forAll (markers, cellI)
             {
-                if (!zone[cellI]) continue;
-                //if (cellPointCells_[cellI] != j) continue;
+                if (markers[cellI] != i + 1) continue;
+                if (!nextToInter[cellI]) continue;
+                if (counts[cellI] != j) continue;
 
                 avgNormTmp[cellI] = vector::zero;
 
-                point p = mesh.C()[cellI];
+                point p = mesh().C()[cellI];
 
-                DynamicList<vector> centres;
-                List<DynamicList<scalar>> values(index_.size());
+                DynamicField<vector> centres;
+                DynamicField<scalar> valuesX;
+                DynamicField<scalar> valuesY;
+                DynamicField<scalar> valuesZ;
 
                 for (const label gblIdx : stencil[cellI])
                 {
-                    vector n = distribute_.getValue(interCellNormals, mapNormals, gblIdx);
+                    vector n = distribute.getValue(averagedNormals_, mapNormals, gblIdx);
 
                     if (mag(n) != 0)
                     {
                         n /= mag(n);
 
-                        vector centre = distribute_.getValue(mesh.C(), mapMC, gblIdx);
+                        vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
 
                         vector dist = centre - p;
                         vector distToSurf = dist & n / mag(n) * n;
                         vector verticalDist = dist - distToSurf;
 
-                        if (mag(verticalDist) < 1e-8)
-                        {
-                            avgNormTmp[cellI] = n;
-                            centres.clearStorage();
-                            break;
-                        }
-
                         vector cc = p - verticalDist;
-                        centres.append(cc);
 
-                        forAll (index_, k)
-                        {
-                            values[k].append(n[index_[k]]);
-                        }
+                        centres.append(cc);
+                        valuesX.append(n.x());
+                        valuesY.append(n.y());
+                        valuesZ.append(n.z());
                     }
                 }
 
-                if (centres.capacity() == 0) continue;
-
                 centres.shrink();
-                forAll (values, vi)
-                    values[vi].shrink();
+                valuesX.shrink();
+                valuesY.shrink();
+                valuesZ.shrink();
 
-                // The choice of these two depends, but the results are close.  
-                // On coarse mesh, IDeC is better. On fine mesh, LS is better. 
-                // Need further investigation. 
-                forAll (index_, k)
+                if (centres.capacity() == 0)
                 {
-                    avgNormTmp[cellI][index_[k]] = interp_.IDeCinterp(p, centres, values[k]);
-                    //avgNormTmp[cellI][index_[k]] = interp_.LSfitting(p, centres, values[k]);
+                    avgNormTmp[cellI] = vector::zero;
+                }
+
+                else if (centres.capacity() == 1)
+                {
+                    avgNormTmp[cellI][0] = valuesX[0];
+                    avgNormTmp[cellI][1] = valuesY[0];
+                    avgNormTmp[cellI][2] = valuesZ[0];
+                }
+
+                else if (centres.capacity() >= 2 && centres.capacity() <= 4)
+                {
+                    avgNormTmp[cellI][0] = interp.IDWinterp(p, centres, valuesX, 1);
+                    avgNormTmp[cellI][1] = interp.IDWinterp(p, centres, valuesY, 1);
+                    avgNormTmp[cellI][2] = interp.IDWinterp(p, centres, valuesZ, 1);
+                }
+
+                else
+                {
+                    avgNormTmp[cellI][0] = interp.IDeCinterp(p, centres, valuesX, 1);
+                    avgNormTmp[cellI][1] = interp.IDeCinterp(p, centres, valuesY, 1);
+                    avgNormTmp[cellI][2] = interp.IDeCinterp(p, centres, valuesZ, 1);
                 }
             }
             normalise(avgNormTmp);
             avgNormTmp.correctBoundaryConditions();
 
-            interCellNormals = avgNormTmp;
-            interCellNormals.correctBoundaryConditions();
+            averagedNormals_ = avgNormTmp;
+            averagedNormals_.correctBoundaryConditions();
         }
     }
-}
 
-void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& interfaceCentres)
+//#include "error.hpp"
+
+    cellCurvature_ = -tr(fvc::grad(averagedNormals_));
+    //cellCurvature_ = -fvc::div(averagedNormals_);
+    cellCurvature_.correctBoundaryConditions();
+
+volScalarField curv1 = cellCurvature_;
+curv1.rename("curv1");
+if (mesh().time().writeTime())
+    curv1.write();
+
+
+/*
+    forAll (cellCurvature_, cellI)
+    {
+        if (markers[cellI] == 0)
+        {
+            cellCurvature_[cellI] = 2.0 / 
+                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
+        }
+        else
+        {
+            cellCurvature_[cellI] = 0;
+        }
+    }
+    cellCurvature_.correctBoundaryConditions();
+*/
+
+/*
+volScalarField curv2 = cellCurvature_;
+curv2.rename("curv2");
+if (mesh().time().writeTime())
+    curv2.write();
+*/
+
+
+
+
+
+
+
+
 {
-    const fvMesh& mesh = cellCurvature_.mesh();
+    // Interpolate curvature from cell centres to PLIC centres
     volScalarField curvature("curvature" ,cellCurvature_);
     curvature.correctBoundaryConditions();
 
-    boolList zone(mesh.nCells(), false);
+    boolList zone(mesh().nCells(), false);
     forAll (zone, zi)
     {
-        if (cellDistLevel_[zi] == 0)
+        if (markers[zi] == 0)
         {
             zone[zi] = true;
         }
     }
 
-    distribute_.setUpCommforZone(zone, false);
+    distribute.setUpCommforZone(zone, false);
     Map<vector> mapMC = 
-        distribute_.getDatafromOtherProc(zone, mesh.C());
+        distribute.getDatafromOtherProc(zone, mesh().C());
     Map<scalar> mapCurv = 
-        distribute_.getDatafromOtherProc(zone, curvature);
+        distribute.getDatafromOtherProc(zone, curvature);
 
-    const labelListList& stencil = distribute_.getStencil();
+    const labelListList& stencil = distribute.getStencil();
+
+    const volScalarField& alpha = mesh().lookupObject<volScalarField>(fieldName_);
 
     forAll(cellCurvature_, cellI)
     {
-        if (zone[cellI])
-        {
-            vector p = interfaceCentres[cellI];
+       if (!zone[cellI])
+       {
+           cellCurvature_[cellI] = 0;
+           continue;
+       }
 
-            DynamicList<vector> points;
-            DynamicList<scalar> values;
+       if (alpha[cellI] < 0.99 && alpha[cellI] > 0.01)
+       {
+            cellCurvature_[cellI] = 2.0 / 
+                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
+       }
+       else
+       {
+           vector p = interfaceCentres[cellI];
 
-            for (const label gblIdx : stencil[cellI])
-            {
-               scalar curv = distribute_.getValue(curvature, mapCurv, gblIdx);
-               vector cent = distribute_.getValue(mesh.C(), mapMC, gblIdx);
+           DynamicField<vector> points;
+           DynamicField<scalar> values;
+
+           for (const label gblIdx : stencil[cellI])
+           {
+               vector cent = distribute.getValue(mesh().C(), mapMC, gblIdx);
+               scalar curv = distribute.getValue(curvature, mapCurv, gblIdx);
 
                points.append(cent);
                values.append(curv);
-            }
+           }
 
-            points.shrink();
-            values.shrink();
+           points.shrink();
+           values.shrink();
 
-            // LS gives better results than IDeC. 
-            //cellCurvature_[cellI] = interp_.IDeCinterp(p, points, values);
-            cellCurvature_[cellI] = interp_.LSfitting(p, points, values);
-        }
-        else
-        {
-           cellCurvature_[cellI] = 0;
-        }
+           if (points.capacity() == 0)
+           {
+               cellCurvature_[cellI] = 0.0;
+           }
+
+           else if (points.capacity() == 1)
+           {
+               cellCurvature_[cellI] = values[0];
+           }
+
+           else if (points.capacity() >= 2 && points.capacity() <= 4)
+           {
+               cellCurvature_[cellI] = interp.IDWinterp(p, points, values, 1);
+           }
+
+           else
+           {
+               cellCurvature_[cellI] = interp.IDeCinterp(p, points, values, 1);
+           }
+       }
     }
     cellCurvature_.correctBoundaryConditions();
 }
 
-void Foam::pandoraDivNormalCurvature::curvAverage()
 {
     labelField count{cellCurvature_.size(), 0};
     scalarField curvatureSum{cellCurvature_.size(), 0.0};
-
-    const fvMesh& mesh = cellCurvature_.mesh();
-    const auto& own = mesh.owner();
-    const auto& nei = mesh.neighbour();
 
     for (label iter = 0; iter != nAverage_; ++iter)
     {
@@ -428,7 +503,7 @@ void Foam::pandoraDivNormalCurvature::curvAverage()
 
         forAll (faceCurvature, fid)
         {
-            if ((cellDistLevel_[own[fid]] == 0) && (cellDistLevel_[nei[fid]] == 0))
+            if ((markers[own[fid]] == 0) && (markers[nei[fid]] == 0))
             {
                 // Curvature okay: face shared by interface cells
                 count[own[fid]] += 1;
@@ -440,7 +515,7 @@ void Foam::pandoraDivNormalCurvature::curvAverage()
         }
 
         // Iterate processor boundaries
-        const auto& isInterfaceCellBoundary = cellDistLevel_.boundaryField();
+        const auto& isInterfaceCellBoundary = markers.boundaryField();
         const auto& faceCurvatureBoundary = faceCurvature.boundaryField();
 
         forAll(isInterfaceCellBoundary, patchID)
@@ -457,7 +532,7 @@ void Foam::pandoraDivNormalCurvature::curvAverage()
 
                 forAll(isInterfaceCellPatch, I)
                 {
-                    if ((cellDistLevel_[faceToCell[I]] == 0) && (nei[I] == 0))
+                    if ((markers[faceToCell[I]] == 0) && (nei[I] == 0))
                     {
                         // Curvature okay: face shared by interface cells
                         count[faceToCell[I]] += 1;
@@ -482,229 +557,119 @@ void Foam::pandoraDivNormalCurvature::curvAverage()
         cellCurvature_.correctBoundaryConditions();
     }
 }
+/*
 
-void Foam::pandoraDivNormalCurvature::curvExtend
-(
-    const volVectorField& interfaceCentres,
-    const volVectorField& interfaceNormals
-)
+volScalarField curv3 = cellCurvature_;
+curv3.rename("curv3");
+if (mesh().time().writeTime())
+    curv3.write();
+*/
+
 {
-    const fvMesh& mesh = cellCurvature_.mesh();
-    volScalarField curvature = cellCurvature_;
-
-    boolList zone(mesh.nCells(), false);
-    forAll (zone, zi)
+    for (label i = 0; i < 1; ++i)
     {
-        if (markers_[zi] == 1)
+        volScalarField curvature = cellCurvature_;
+
+        boolList zone(mesh().nCells(), false);
+        forAll (zone, zi)
         {
-            zone[zi] = true;
-        }
-    }
-
-    distribute_.setUpCommforZone(zone, false);
-    Map<vector> mapCentres = 
-        distribute_.getDatafromOtherProc(zone, interfaceCentres);
-    Map<vector> mapNormals = 
-        distribute_.getDatafromOtherProc(zone, interfaceNormals);
-    Map<scalar> mapCurvs = 
-        distribute_.getDatafromOtherProc(zone, cellCurvature_);
-
-    const labelListList& stencil = distribute_.getStencil();
-
-    forAll (markers_, cellI)
-    {
-        if (!zone[cellI]) continue;
-
-        point p = mesh.C()[cellI];
-
-        DynamicList<vector> points;
-        DynamicList<scalar> values;
-
-        for (const label gblIdx : stencil[cellI])
-        {
-            vector n = distribute_.getValue(interfaceNormals, mapNormals, gblIdx);
-
-            if (mag(n) != 0)
+            if (markers[zi] == i + 1)
             {
-                n /= mag(n);
-
-                vector centre = 
-                    distribute_.getValue(interfaceCentres, mapCentres, gblIdx);
-                scalar curv = 
-                    distribute_.getValue(cellCurvature_, mapCurvs, gblIdx);
-
-                vector dist = centre - p;
-                vector distToSurf = dist & n / mag(n) * n;
-                vector verticalDist = dist - distToSurf;
-
-                if (mag(verticalDist) < 1e-8)
-                {
-                    curvature[cellI] = curv;
-                    points.clearStorage();
-                    break;
-                }
-
-                vector cc = p - verticalDist;
-
-                points.append(cc);
-                values.append(curv);
+                zone[zi] = true;
             }
         }
 
-        if (points.capacity() == 0) continue;
+        distribute.setUpCommforZone(zone, false);
+        Map<vector> mapCentres = 
+            distribute.getDatafromOtherProc(zone, interfaceCentres);
+        Map<vector> mapNormals = 
+            distribute.getDatafromOtherProc(zone, interfaceNormals);
+        Map<scalar> mapCurvs = 
+            distribute.getDatafromOtherProc(zone, cellCurvature_);
 
-        points.shrink();
-        values.shrink();
+        const labelListList& stencil = distribute.getStencil();
 
-        // The choice of these two depends, but the results are close.  
-        // On coarse mesh, LS is better. On fine mesh, IDeC is better. 
-        // Update: problem with LS, suggest using IDeC. 
-        //curvature[cellI] = interp_.IDWinterp(p, points, values);
-        curvature[cellI] = interp_.IDeCinterp(p, points, values);
-        //curvature[cellI] = interp_.LSfitting(p, points, values);
+        forAll (markers, cellI)
+        {
+            if (!zone[cellI]) continue;
+
+            point p = mesh().C()[cellI];
+
+            DynamicField<vector> points;
+            DynamicField<scalar> values;
+
+            for (const label gblIdx : stencil[cellI])
+            {
+                vector n = distribute.getValue(interfaceNormals, mapNormals, gblIdx);
+
+                if (mag(n) != 0)
+                {
+                    n /= mag(n);
+
+                    vector centre = 
+                        distribute.getValue(interfaceCentres, mapCentres, gblIdx);
+                    scalar curv = 
+                        distribute.getValue(cellCurvature_, mapCurvs, gblIdx);
+
+                    vector dist = centre - p;
+                    vector distToSurf = dist & n / mag(n) * n;
+                    vector verticalDist = dist - distToSurf;
+
+                    vector cc = p - verticalDist;
+
+                    points.append(cc);
+                    values.append(curv);
+                }
+            }
+
+            points.shrink();
+            values.shrink();
+
+            if (points.capacity() == 0)
+            {
+                curvature[cellI] = 0.0;
+            }
+
+            else if (points.capacity() == 1)
+            {
+                curvature[cellI] = values[0];
+            }
+
+            else if (points.capacity() >= 2 && points.capacity() <= 4)
+            {
+                curvature[cellI] = interp.IDWinterp(p, points, values, 1);
+            }
+
+            else
+            {
+                //curvature[cellI] = interp.IDWinterp(p, points, values, 1);
+                curvature[cellI] = interp.IDeCinterp(p, points, values, 1);
+            }
+        }
+        curvature.correctBoundaryConditions();
+
+        cellCurvature_ = curvature;
+        cellCurvature_.correctBoundaryConditions();
     }
-    curvature.correctBoundaryConditions();
-
-    cellCurvature_ = curvature;
-    cellCurvature_.correctBoundaryConditions();
 }
-
-
-// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
-
-volScalarField& pandoraDivNormalCurvature::cellCurvature()
-{
-    const fvMesh& mesh = cellCurvature_.mesh();
-    const surfaceVectorField& Sf = mesh.Sf();
-
-    const auto& meshDb = cellCurvature_.mesh().thisDb();
-    if (!meshDb.found(fieldName_))
-    {
-        FatalErrorInFunction
-            << "pandoraDivNormalCurvature::cellCurvature \n"
-            << "Field " << fieldName_ << " not in mesh registry." 
-	    << "Available registered fields are : \n" 
-	    << mesh.names() 
-            << abort(FatalError);
-    }
-
-    reconstructionSchemes& surf =
-        mesh.lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
-
-    surf.reconstruct(false);
-
-    const volVectorField& interfaceNormals = surf.normal();
-    const volVectorField& interfaceCentres = surf.centre();
-    const boolList& interfaceCells = surf.interfaceCell();
-
-    reconstructedDistanceFunction& RDF = 
-        mesh.lookupObjectRef<reconstructedDistanceFunction>("RDF");
-
-    // Check if the interface cells are updated
-    bool needUpdate = false;
-    if (interCells_ != interfaceCells) 
-    {
-        needUpdate = true;
-    }
-    reduce(needUpdate, maxOp<bool>());
-
-    if (needUpdate)
-    {
-        cellPointCells_ = 0.0;
-        interCells_ = interfaceCells;
-        RDF.markCellsNearSurf(interfaceCells, 2);
-        cellDistLevel_ == RDF.cellDistLevel();
-        nextToInter_ = RDF.nextToInterface();
-        distribute_.updateStencil(nextToInter_);
-        updateMarkersAndCounts();
-    }
-
-    volVectorField gradRDF(fvc::grad(RDF));
-    normalise(gradRDF);
-    gradRDF.correctBoundaryConditions();
-
-vector sphereCentre(0.005, 0.005, 0.005);
-scalar sphereRadius = 0.002; // Sphere radius
-
-    averagedNormals_ = gradRDF;  
-    forAll (averagedNormals_, i)
-    {
-        if (cellDistLevel_[i] != 0)
-        {
-            averagedNormals_[i] = vector::zero;
-        }
-    }
-    normalise(averagedNormals_);
-    averagedNormals_.correctBoundaryConditions();
-
-    // Propagate the interface normals to the narrow band
-    normalPropagate(needUpdate, averagedNormals_);
-
-//#include "error.hpp"
-
-    surfaceVectorField interfaceVec("interfaceVec",fvc::interpolate((averagedNormals_)));
-
-    surfaceVectorField normalVec("normalVec" ,interfaceVec);
-    normalise(normalVec);
-
-    // correct contact angle
-    //correctContactAngle(normalVec.boundaryFieldRef(), interfaceVec.boundaryFieldRef());
-
-    if (curvFromTr_)
-    {
-        const fvBoundaryMesh& boundary = mesh.boundary();
-
-        forAll(boundary, patchi)
-        {
-            fvPatchVectorField& nHatp = averagedNormals_.boundaryFieldRef()[patchi];
-            nHatp = normalVec.boundaryFieldRef()[patchi];
-        }
-    }
-
-    // Face unit interface normal flux
-    surfaceScalarField nHatf_ = normalVec & Sf;
-
-    // Simple expression for curvature
-    if (curvFromTr_)
-    {
-        cellCurvature_ = -tr(fvc::grad(averagedNormals_));
-    }
-    else
-    {
-        cellCurvature_ = -fvc::div(nHatf_);
-    }
-    cellCurvature_.correctBoundaryConditions();
-
-
-
-
-    forAll (cellCurvature_, cellI)
-    {
-        if (cellDistLevel_[cellI] == 0)
-        {
-            cellCurvature_[cellI] = 2.0 / 
-                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
-        }
-        else
-        {
-            cellCurvature_[cellI] = 0;
-        }
-    }
-    cellCurvature_.correctBoundaryConditions();
-
 /*
-    // Interpolate curvature from cell centres to PLIC centres
-    curvInterpolate(interfaceCentres);
+
+volScalarField curv4 = cellCurvature_;
+curv4.rename("curv4");
+if (mesh().time().writeTime())
+    curv4.write();
 */
 
-    // Laplace averaging of the curvature
-    if (nAverage_ > 0)
-    {
-        curvAverage();
-    }
 
-    // Extend the interface curvature to the first layer
-    curvExtend(interfaceCentres, interfaceNormals);
+
+
+
+
+
+
+markers.rename("cellMarker");
+if (mesh().time().writeTime())
+    markers.write();
 
     return cellCurvature_;
 }

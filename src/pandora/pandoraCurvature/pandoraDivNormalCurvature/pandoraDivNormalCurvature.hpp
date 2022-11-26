@@ -41,10 +41,6 @@ SourceFiles
 #define pandoraDivNormalCurvature_H
 
 #include "pandoraCurvature.hpp"
-#include "zoneDistribute.H"
-#include "labelVector.H"
-
-#include "interpolationSchemes.hpp"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -67,29 +63,7 @@ protected:
     const label nAverage_; 
     volVectorField averagedNormals_; 
 
-
-        Switch curvFromTr_;
-
-        // Cell markers
-        volScalarField markers_;
-
-        // Copy of the previous interface cells 
-        boolList interCells_;
-
-        volScalarField cellDistLevel_;
-        boolList nextToInter_;
-        labelField cellPointCells_;
-        zoneDistribute& distribute_;
-        interpolationSchemes interp_;
-        labelList index_;
-        labelList maxCpc_;
-
-        void normalise(vectorField&);
-        void updateMarkersAndCounts();
-        void normalPropagate(const bool&, volVectorField&);
-        void curvInterpolate(const volVectorField&);
-        void curvAverage();
-        void curvExtend(const volVectorField&, const volVectorField&);
+    void normalise(vectorField& vec);
 
 public:
 

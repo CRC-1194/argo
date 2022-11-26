@@ -292,7 +292,7 @@ void Foam::pandoraDivNormalCurvature::normalPropagate
             forAll (cellDistLevel_, cellI)
             {
                 if (!zone[cellI]) continue;
-                //if (cellPointCells_[cellI] != j) continue;
+                if (cellPointCells_[cellI] != j) continue;
 
                 avgNormTmp[cellI] = vector::zero;
 
@@ -401,8 +401,8 @@ void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& inte
             values.shrink();
 
             // LS gives better results than IDeC. 
-            //cellCurvature_[cellI] = interp_.IDeCinterp(p, points, values);
-            cellCurvature_[cellI] = interp_.LSfitting(p, points, values);
+            cellCurvature_[cellI] = interp_.IDeCinterp(p, points, values);
+            //cellCurvature_[cellI] = interp_.LSfitting(p, points, values);
         }
         else
         {
@@ -678,6 +678,7 @@ scalar sphereRadius = 0.002; // Sphere radius
 
 
 
+/*
     forAll (cellCurvature_, cellI)
     {
         if (cellDistLevel_[cellI] == 0)
@@ -691,11 +692,10 @@ scalar sphereRadius = 0.002; // Sphere radius
         }
     }
     cellCurvature_.correctBoundaryConditions();
+*/
 
-/*
     // Interpolate curvature from cell centres to PLIC centres
     curvInterpolate(interfaceCentres);
-*/
 
     // Laplace averaging of the curvature
     if (nAverage_ > 0)

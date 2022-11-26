@@ -383,7 +383,6 @@ if (mesh().time().writeTime())
 
 
 /*
-*/
     forAll (cellCurvature_, cellI)
     {
         if (markers[cellI] == 0)
@@ -397,12 +396,14 @@ if (mesh().time().writeTime())
         }
     }
     cellCurvature_.correctBoundaryConditions();
+*/
 
 /*
 volScalarField curv2 = cellCurvature_;
 curv2.rename("curv2");
 if (mesh().time().writeTime())
     curv2.write();
+*/
 
 
 
@@ -490,7 +491,6 @@ if (mesh().time().writeTime())
     }
     cellCurvature_.correctBoundaryConditions();
 }
-*/
 
 {
     labelField count{cellCurvature_.size(), 0};
@@ -642,8 +642,8 @@ if (mesh().time().writeTime())
 
             else
             {
-                curvature[cellI] = interp.IDWinterp(p, points, values, 1);
-                //curvature[cellI] = interp.IDeCinterp(p, points, values, 1);
+                //curvature[cellI] = interp.IDWinterp(p, points, values, 1);
+                curvature[cellI] = interp.IDeCinterp(p, points, values, 1);
             }
         }
         curvature.correctBoundaryConditions();
