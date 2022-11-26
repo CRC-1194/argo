@@ -169,7 +169,7 @@ Foam::scalar Foam::interpolationSchemes::IDeCinterp
     if (c.size() == 1)
         return psi[0];
 
-    else if (mesh_.nGeometricD() == 3 && (c.size() == 2 || c.size() == 3))
+    else if (mesh_.nGeometricD() == 3 && (c.size() == 2 || c.size() == 3 || c.size() == 4))
         return inverseDistanceInterpolate(p, c, psi, r);
 
     else if (mesh_.nGeometricD() == 2 && c.size() == 2)
@@ -190,7 +190,7 @@ Foam::scalar Foam::interpolationSchemes::LSfitting
     if (c.size() == 1)
         return psi[0];
 
-    else if (mesh_.nGeometricD() == 3 && (c.size() == 2 || c.size() == 3))
+    else if (mesh_.nGeometricD() == 3 && (c.size() == 2 || c.size() == 3 || c.size() == 4))
         return inverseDistanceInterpolate(p, c, psi, r);
 
     else if (mesh_.nGeometricD() == 2 && c.size() == 2)

@@ -64,8 +64,8 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
     :
         pandoraCurvature(mesh, dict), 
         fieldName_(curvatureDict_.get<word>("normalField")),
-        nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 2)), 
-        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 2)), 
+        nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 6)), 
+        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 0)), 
         averagedNormals_ 
         (
             IOobject
@@ -110,11 +110,11 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
             "calculated"
         ),
         nextToInter_(mesh.nCells(), false),
-        cellPointCells_(mesh.nCells(), 0),
+        counts_(mesh.nCells(), 0),
         distribute_(zoneDistribute::New(mesh)),
         interp_(mesh),
         index_(mesh.nSolutionD(), -1),
-        maxCpc_(nPropagate_, 0.0)
+        maxCount_(nPropagate_, 0.0)
 {
     Info<<"Selecting divNormal curvature"<<nl;
 
@@ -179,28 +179,33 @@ void Foam::pandoraDivNormalCurvature::updateMarkersAndCounts()
     const auto& own = mesh.owner();
     const auto& nei = mesh.neighbour();
 
-    for (label i = 0; i < 1; ++i)
+    for (label i = 0; i < nPropagate_; ++i)
     {
+        labelField counts(mesh.nCells(), 0);
+        volScalarField markersTmp = markers_;
+
         forAll (nei, fid)
         {
             if (
                     markers_[own[fid]] == i 
                  && markers_[nei[fid]] == -1 
-                 && cellDistLevel_[nei[fid]] != -1
+                 && nextToInter_[nei[fid]]
                )
             {
-                markers_[nei[fid]] = i + 1;
+                markersTmp[nei[fid]] = i + 1;
+                counts[nei[fid]]++;
             }
             if (
                     markers_[nei[fid]] == i 
                  && markers_[own[fid]] == -1 
-                 && cellDistLevel_[own[fid]] != -1
+                 && nextToInter_[own[fid]]
                )
             {
-                markers_[own[fid]] = i + 1;
+                markersTmp[own[fid]] = i + 1;
+                counts[own[fid]]++;
             }
         }
-        markers_.correctBoundaryConditions();
+        markersTmp.correctBoundaryConditions();
 
         auto& meshBoundary = markers_.boundaryFieldRef();
         for (auto& mb : meshBoundary)
@@ -218,15 +223,22 @@ void Foam::pandoraDivNormalCurvature::updateMarkersAndCounts()
                     if (
                             neibrValue[j] == i 
                          && markers_[faceToCell[j]] == -1 
-                         && cellDistLevel_[faceToCell[j]] != -1
+                         && nextToInter_[faceToCell[j]]
                        )
                     {
-                        markers_[faceToCell[j]] = i + 1;
+                        markersTmp[faceToCell[j]] = i + 1;
+                        counts[faceToCell[j]]++;
                     }
                 }
             }
         }
+        markersTmp.correctBoundaryConditions();
+        markers_ = markersTmp;
         markers_.correctBoundaryConditions();
+
+        maxCount_[i] = max(counts);
+        reduce(maxCount_[i], maxOp<label>());
+        counts_ += counts;
     }
 }
 
@@ -243,7 +255,7 @@ void Foam::pandoraDivNormalCurvature::normalPropagate
         boolList zone(mesh.nCells(), false);
         forAll (zone, zi)
         {
-            if (cellDistLevel_[zi] == i + 1)
+            if (markers_[zi] == i + 1)
             {
                 zone[zi] = true;
             }
@@ -253,46 +265,19 @@ void Foam::pandoraDivNormalCurvature::normalPropagate
             distribute_.getDatafromOtherProc(zone, mesh.C());
         const labelListList& stencil = distribute_.getStencil();
 
-        if (needUpdate)
-        {
-            labelField cpc(mesh.nCells(), 0);
-
-            Map<scalar> mapCDL = 
-                distribute_.getDatafromOtherProc(zone, cellDistLevel_);
-
-            forAll (cellDistLevel_, cellI)
-            {
-                if (!zone[cellI]) continue;
-
-                for (const label gblIdx : stencil[cellI])
-                {
-                    scalar cdl = distribute_.getValue(cellDistLevel_, mapCDL, gblIdx);
-                    if (cdl > -1 && cdl < i + 1)
-                    {
-                        cpc[cellI]++;
-                    }
-                }
-            }
-
-            maxCpc_[i] = max(cpc);
-            reduce(maxCpc_[i], maxOp<label>());
-
-            cellPointCells_ += cpc; 
-        }
-
         // Perform the interpolation in order from largest to smallest
         // neighbour cell numbers. Guoliang
-        for (label j = maxCpc_[i]; j > 0; j--)
+        for (label j = maxCount_[i]; j > 0; j--)
         {
             Map<vector> mapNormals = 
                 distribute_.getDatafromOtherProc(zone, interCellNormals);
 
             volVectorField avgNormTmp = interCellNormals;
 
-            forAll (cellDistLevel_, cellI)
+            forAll (markers_, cellI)
             {
                 if (!zone[cellI]) continue;
-                if (cellPointCells_[cellI] != j) continue;
+                if (counts_[cellI] != j) continue;
 
                 avgNormTmp[cellI] = vector::zero;
 
@@ -356,7 +341,11 @@ void Foam::pandoraDivNormalCurvature::normalPropagate
     }
 }
 
-void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& interfaceCentres)
+void Foam::pandoraDivNormalCurvature::curvInterpolate
+(
+    const volVectorField& interfaceCentres,
+    const volScalarField& RDF
+)
 {
     const fvMesh& mesh = cellCurvature_.mesh();
     volScalarField curvature("curvature" ,cellCurvature_);
@@ -365,7 +354,7 @@ void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& inte
     boolList zone(mesh.nCells(), false);
     forAll (zone, zi)
     {
-        if (cellDistLevel_[zi] == 0)
+        if (markers_[zi] == 0)
         {
             zone[zi] = true;
         }
@@ -378,10 +367,22 @@ void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& inte
         distribute_.getDatafromOtherProc(zone, curvature);
 
     const labelListList& stencil = distribute_.getStencil();
+    const volScalarField& alpha = mesh.lookupObject<volScalarField>(fieldName_);
 
     forAll(cellCurvature_, cellI)
     {
-        if (zone[cellI])
+        if (!zone[cellI])
+        {
+            cellCurvature_[cellI] = 0;
+            continue;
+        }
+
+        if (alpha[cellI] < 0.99 && alpha[cellI] > 0.01)
+        {
+             cellCurvature_[cellI] = 2.0 / 
+                 (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
+        }
+        else
         {
             vector p = interfaceCentres[cellI];
 
@@ -404,10 +405,6 @@ void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& inte
             cellCurvature_[cellI] = interp_.IDeCinterp(p, points, values);
             //cellCurvature_[cellI] = interp_.LSfitting(p, points, values);
         }
-        else
-        {
-           cellCurvature_[cellI] = 0;
-        }
     }
     cellCurvature_.correctBoundaryConditions();
 }
@@ -428,7 +425,7 @@ void Foam::pandoraDivNormalCurvature::curvAverage()
 
         forAll (faceCurvature, fid)
         {
-            if ((cellDistLevel_[own[fid]] == 0) && (cellDistLevel_[nei[fid]] == 0))
+            if ((markers_[own[fid]] == 0) && (markers_[nei[fid]] == 0))
             {
                 // Curvature okay: face shared by interface cells
                 count[own[fid]] += 1;
@@ -440,7 +437,7 @@ void Foam::pandoraDivNormalCurvature::curvAverage()
         }
 
         // Iterate processor boundaries
-        const auto& isInterfaceCellBoundary = cellDistLevel_.boundaryField();
+        const auto& isInterfaceCellBoundary = markers_.boundaryField();
         const auto& faceCurvatureBoundary = faceCurvature.boundaryField();
 
         forAll(isInterfaceCellBoundary, patchID)
@@ -457,7 +454,7 @@ void Foam::pandoraDivNormalCurvature::curvAverage()
 
                 forAll(isInterfaceCellPatch, I)
                 {
-                    if ((cellDistLevel_[faceToCell[I]] == 0) && (nei[I] == 0))
+                    if ((markers_[faceToCell[I]] == 0) && (nei[I] == 0))
                     {
                         // Curvature okay: face shared by interface cells
                         count[faceToCell[I]] += 1;
@@ -610,7 +607,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
 
     if (needUpdate)
     {
-        cellPointCells_ = 0.0;
+        counts_ = 0.0;
         interCells_ = interfaceCells;
         RDF.markCellsNearSurf(interfaceCells, 2);
         cellDistLevel_ == RDF.cellDistLevel();
@@ -634,7 +631,7 @@ scalar sphereRadius = 0.002; // Sphere radius
             averagedNormals_[i] = vector::zero;
         }
     }
-    normalise(averagedNormals_);
+    //normalise(averagedNormals_);
     averagedNormals_.correctBoundaryConditions();
 
     // Propagate the interface normals to the narrow band
@@ -676,7 +673,7 @@ scalar sphereRadius = 0.002; // Sphere radius
     cellCurvature_.correctBoundaryConditions();
 
     // Interpolate curvature from cell centres to PLIC centres
-    curvInterpolate(interfaceCentres);
+    curvInterpolate(interfaceCentres, RDF);
 
     // Laplace averaging of the curvature
     if (nAverage_ > 0)

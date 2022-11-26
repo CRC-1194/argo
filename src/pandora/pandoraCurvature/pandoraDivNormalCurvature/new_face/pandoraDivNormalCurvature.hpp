@@ -78,16 +78,16 @@ protected:
 
         volScalarField cellDistLevel_;
         boolList nextToInter_;
-        labelField cellPointCells_;
+        labelField counts_;
         zoneDistribute& distribute_;
         interpolationSchemes interp_;
         labelList index_;
-        labelList maxCpc_;
+        labelList maxCount_;
 
         void normalise(vectorField&);
         void updateMarkersAndCounts();
         void normalPropagate(const bool&, volVectorField&);
-        void curvInterpolate(const volVectorField&);
+        void curvInterpolate(const volVectorField&, const volScalarField&);
         void curvAverage();
         void curvExtend(const volVectorField&, const volVectorField&);
 
