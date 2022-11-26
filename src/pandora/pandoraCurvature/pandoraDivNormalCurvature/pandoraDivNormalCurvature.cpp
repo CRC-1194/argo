@@ -146,6 +146,11 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
     RDF.correctBoundaryConditions();
     */
 
+volScalarField rdf = RDF;
+rdf.rename("rdf");
+if (mesh().time().writeTime())
+    rdf.write();
+
     volVectorField gradRDF(fvc::grad(RDF));
     normalise(gradRDF);
     gradRDF.correctBoundaryConditions();
@@ -371,7 +376,10 @@ scalar sphereRadius = 0.002; // Sphere radius
     //cellCurvature_ = -fvc::div(averagedNormals_);
     cellCurvature_.correctBoundaryConditions();
 
-
+volScalarField curv1 = cellCurvature_;
+curv1.rename("curv1");
+if (mesh().time().writeTime())
+    curv1.write();
 
 
 /*
@@ -390,14 +398,19 @@ scalar sphereRadius = 0.002; // Sphere radius
     }
     cellCurvature_.correctBoundaryConditions();
 
-
-
-
-
-
-
-
 /*
+volScalarField curv2 = cellCurvature_;
+curv2.rename("curv2");
+if (mesh().time().writeTime())
+    curv2.write();
+
+
+
+
+
+
+
+
 {
     // Interpolate curvature from cell centres to PLIC centres
     volScalarField curvature("curvature" ,cellCurvature_);
@@ -477,8 +490,8 @@ scalar sphereRadius = 0.002; // Sphere radius
     }
     cellCurvature_.correctBoundaryConditions();
 }
-
 */
+
 {
     labelField count{cellCurvature_.size(), 0};
     scalarField curvatureSum{cellCurvature_.size(), 0.0};
@@ -544,9 +557,14 @@ scalar sphereRadius = 0.002; // Sphere radius
         cellCurvature_.correctBoundaryConditions();
     }
 }
-
 /*
+
+volScalarField curv3 = cellCurvature_;
+curv3.rename("curv3");
+if (mesh().time().writeTime())
+    curv3.write();
 */
+
 {
     for (label i = 0; i < 1; ++i)
     {
@@ -624,7 +642,8 @@ scalar sphereRadius = 0.002; // Sphere radius
 
             else
             {
-                curvature[cellI] = interp.IDeCinterpolate(p, points, values, 1);
+                curvature[cellI] = interp.IDWinterpolate(p, points, values, 1);
+                //curvature[cellI] = interp.IDeCinterpolate(p, points, values, 1);
             }
         }
         curvature.correctBoundaryConditions();
@@ -633,6 +652,13 @@ scalar sphereRadius = 0.002; // Sphere radius
         cellCurvature_.correctBoundaryConditions();
     }
 }
+/*
+
+volScalarField curv4 = cellCurvature_;
+curv4.rename("curv4");
+if (mesh().time().writeTime())
+    curv4.write();
+*/
 
 
 
