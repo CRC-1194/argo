@@ -162,9 +162,9 @@ if (mesh.time().writeTime())
 vector sphereCentre(0.005, 0.005, 0.005);
 scalar sphereRadius = 0.002; // Sphere radius
 
-#include "error/error_rdf0.hpp"
-#include "error/error_rdf1.hpp"
-#include "error/error_gradrdf.hpp"
+//#include "error/error_rdf0.hpp"
+//#include "error/error_rdf1.hpp"
+//#include "error/error_gradrdf.hpp"
 
     // Mark interface markers
     volScalarField markers
@@ -380,14 +380,14 @@ scalar sphereRadius = 0.002; // Sphere radius
         }
     }
 
-#include "error/error_norm1.hpp"
-#include "error/error_norm2.hpp"
+//#include "error/error_norm1.hpp"
+//#include "error/error_norm2.hpp"
 
     cellCurvature_ = -tr(fvc::grad(averagedNormals_));
     //cellCurvature_ = -fvc::div(averagedNormals_);
     cellCurvature_.correctBoundaryConditions();
 
-#include "error/error_curv0.hpp"
+//#include "error/error_curv0.hpp"
 
 volScalarField curv1 = cellCurvature_;
 curv1.rename("curv1");
@@ -395,7 +395,6 @@ if (mesh.time().writeTime())
     curv1.write();
 
 
-/*
     forAll (cellCurvature_, cellI)
     {
         if (markers[cellI] == 0)
@@ -409,6 +408,7 @@ if (mesh.time().writeTime())
         }
     }
     cellCurvature_.correctBoundaryConditions();
+/*
 */
 
 /*
@@ -416,7 +416,6 @@ volScalarField curv2 = cellCurvature_;
 curv2.rename("curv2");
 if (mesh.time().writeTime())
     curv2.write();
-*/
 
 
 
@@ -504,6 +503,7 @@ if (mesh.time().writeTime())
     }
     cellCurvature_.correctBoundaryConditions();
 }
+*/
 
 {
     labelField count{cellCurvature_.size(), 0};
@@ -571,7 +571,7 @@ if (mesh.time().writeTime())
     }
 }
 
-#include "error/error_curv1.hpp"
+//#include "error/error_curv1.hpp"
 /*
 
 volScalarField curv3 = cellCurvature_;
@@ -668,7 +668,7 @@ if (mesh.time().writeTime())
     }
 }
 
-#include "error/error_curv2.hpp"
+//#include "error/error_curv2.hpp"
 /*
 
 volScalarField curv4 = cellCurvature_;
