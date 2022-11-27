@@ -11,7 +11,7 @@ def computeDeltaT(values):
     if "DELTA_T" in values:
         return values["DELTA_T"]
 
-    
+
     domainLength = values["DOMAIN_LENGTH"]
     resolution = values["RESOLUTION"]
     h = domainLength/resolution
@@ -24,7 +24,11 @@ def computeDeltaT(values):
         rho_ambient = 1.0
         rho_droplet = 1000.0
         sigma = 72.75e-3
-    elif values["FLUID_PAIRING"] == "oil_novec7500-water": 
+    elif values["FLUID_PAIRING"] == "oil-water":
+        rho_ambient = 1000.0
+        rho_droplet = 800.0
+        sigma = 7e-2
+    elif values["FLUID_PAIRING"] == "oil_novec7500-water":
         rho_ambient = 1000.0
         rho_droplet = 1614.0
         sigma = 49.5e-3

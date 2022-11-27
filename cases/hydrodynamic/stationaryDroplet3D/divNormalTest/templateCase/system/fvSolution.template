@@ -112,8 +112,8 @@ pandora
     curvature
     {
         type divNormal;
-        nPropagate @!N_PROPAGATIONS!@;  
-        nAverage   @!N_AVERAGES!@; 
+        //nPropagate @!N_PROPAGATIONS!@;  
+        //nAverage   @!N_AVERAGES!@; 
         normalField "alpha.dispersed"; 
     }
     curvatureExtension

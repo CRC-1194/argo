@@ -34,6 +34,23 @@ phases          (dispersed continuous);
 
     sigma               72.75e-3;
 
+<!--(elif FLUID_PAIRING=="oil-water")-->
+    dispersed
+    {
+        transportModel  Newtonian;
+        nu              1.48e-05;
+        rho             800.0;
+    }
+
+    continuous
+    {
+        transportModel  Newtonian;
+        nu              1.0e-06;
+        rho             1000.0;
+    }
+
+    sigma               7e-2;
+
 <!--(elif FLUID_PAIRING=="oil_novec7500-water")-->
     dispersed
     {
