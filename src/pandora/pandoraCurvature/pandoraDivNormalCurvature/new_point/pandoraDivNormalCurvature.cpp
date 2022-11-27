@@ -65,7 +65,7 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
         pandoraCurvature(mesh, dict), 
         fieldName_(curvatureDict_.get<word>("normalField")),
         nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 2)), 
-        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 2)), 
+        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 0)), 
         averagedNormals_ 
         (
             IOobject
@@ -356,7 +356,11 @@ void Foam::pandoraDivNormalCurvature::normalPropagate
     }
 }
 
-void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& interfaceCentres)
+void Foam::pandoraDivNormalCurvature::curvInterpolate
+(
+    const volVectorField& interfaceCentres,
+    const volScalarField& RDF
+)
 {
     const fvMesh& mesh = cellCurvature_.mesh();
     volScalarField curvature("curvature" ,cellCurvature_);
@@ -378,10 +382,22 @@ void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& inte
         distribute_.getDatafromOtherProc(zone, curvature);
 
     const labelListList& stencil = distribute_.getStencil();
+    const volScalarField& alpha = mesh.lookupObject<volScalarField>(fieldName_);
 
     forAll(cellCurvature_, cellI)
     {
-        if (zone[cellI])
+        if (!zone[cellI])
+        {
+            cellCurvature_[cellI] = 0;
+            continue;
+        }
+
+        if (alpha[cellI] < 0.99 && alpha[cellI] > 0.01)
+        {
+             cellCurvature_[cellI] = 2.0 / 
+                 (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
+        }
+        else
         {
             vector p = interfaceCentres[cellI];
 
@@ -403,10 +419,6 @@ void Foam::pandoraDivNormalCurvature::curvInterpolate(const volVectorField& inte
             // LS gives better results than IDeC. 
             cellCurvature_[cellI] = interp_.IDeCinterp(p, points, values);
             //cellCurvature_[cellI] = interp_.LSfitting(p, points, values);
-        }
-        else
-        {
-           cellCurvature_[cellI] = 0;
         }
     }
     cellCurvature_.correctBoundaryConditions();
@@ -626,6 +638,10 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
 vector sphereCentre(0.005, 0.005, 0.005);
 scalar sphereRadius = 0.002; // Sphere radius
 
+#include "error/error_rdf0.hpp"
+#include "error/error_rdf1.hpp"
+#include "error/error_gradrdf.hpp"
+
     averagedNormals_ = gradRDF;  
     forAll (averagedNormals_, i)
     {
@@ -634,11 +650,14 @@ scalar sphereRadius = 0.002; // Sphere radius
             averagedNormals_[i] = vector::zero;
         }
     }
-    normalise(averagedNormals_);
+    //normalise(averagedNormals_);
     averagedNormals_.correctBoundaryConditions();
 
     // Propagate the interface normals to the narrow band
     normalPropagate(needUpdate, averagedNormals_);
+
+#include "error/error_norm1.hpp"
+#include "error/error_norm2.hpp"
 
 //#include "error.hpp"
 
@@ -675,27 +694,10 @@ scalar sphereRadius = 0.002; // Sphere radius
     }
     cellCurvature_.correctBoundaryConditions();
 
-
-
-
-/*
-    forAll (cellCurvature_, cellI)
-    {
-        if (cellDistLevel_[cellI] == 0)
-        {
-            cellCurvature_[cellI] = 2.0 / 
-                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
-        }
-        else
-        {
-            cellCurvature_[cellI] = 0;
-        }
-    }
-    cellCurvature_.correctBoundaryConditions();
-*/
+#include "error/error_curv0.hpp"
 
     // Interpolate curvature from cell centres to PLIC centres
-    curvInterpolate(interfaceCentres);
+    curvInterpolate(interfaceCentres, RDF);
 
     // Laplace averaging of the curvature
     if (nAverage_ > 0)
@@ -703,8 +705,12 @@ scalar sphereRadius = 0.002; // Sphere radius
         curvAverage();
     }
 
+#include "error/error_curv1.hpp"
+
     // Extend the interface curvature to the first layer
     curvExtend(interfaceCentres, interfaceNormals);
+
+#include "error/error_curv2.hpp"
 
     return cellCurvature_;
 }

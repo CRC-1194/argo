@@ -623,6 +623,10 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
 vector sphereCentre(0.005, 0.005, 0.005);
 scalar sphereRadius = 0.002; // Sphere radius
 
+#include "error/error_rdf0.hpp"
+#include "error/error_rdf1.hpp"
+#include "error/error_gradrdf.hpp"
+
     averagedNormals_ = gradRDF;  
     forAll (averagedNormals_, i)
     {
@@ -636,6 +640,9 @@ scalar sphereRadius = 0.002; // Sphere radius
 
     // Propagate the interface normals to the narrow band
     normalPropagate(needUpdate, averagedNormals_);
+
+#include "error/error_norm1.hpp"
+#include "error/error_norm2.hpp"
 
 //#include "error.hpp"
 
@@ -672,6 +679,8 @@ scalar sphereRadius = 0.002; // Sphere radius
     }
     cellCurvature_.correctBoundaryConditions();
 
+#include "error/error_curv0.hpp"
+
     // Interpolate curvature from cell centres to PLIC centres
     curvInterpolate(interfaceCentres, RDF);
 
@@ -681,8 +690,12 @@ scalar sphereRadius = 0.002; // Sphere radius
         curvAverage();
     }
 
+#include "error/error_curv1.hpp"
+
     // Extend the interface curvature to the first layer
     curvExtend(interfaceCentres, interfaceNormals);
+
+#include "error/error_curv2.hpp"
 
     return cellCurvature_;
 }

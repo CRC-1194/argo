@@ -77,7 +77,7 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
         pandoraCurvature(mesh, dict), 
         fieldName_(curvatureDict_.get<word>("normalField")),
         nPropagate_(curvatureDict_.getOrDefault<label>("nPropagate", 6)), 
-        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 6)), 
+        nAverage_(curvatureDict_.getOrDefault<label>("nAverage", 0)), 
         averagedNormals_ 
         (
             IOobject
@@ -99,6 +99,7 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
 
 volScalarField& pandoraDivNormalCurvature::cellCurvature()
 {
+    const fvMesh& mesh = cellCurvature_.mesh();
     const auto& meshDb = cellCurvature_.mesh().thisDb();
     if (!meshDb.found(fieldName_))
     {
@@ -106,26 +107,29 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
             << "pandoraDivNormalCurvature::cellCurvature \n"
             << "Field " << fieldName_ << " not in mesh registry." 
 	    << "Available registered fields are : \n" 
-	    << mesh().names() 
+	    << mesh.names() 
             << abort(FatalError);
     }
 
-    interpolationSchemes interp(mesh());
+    interpolationSchemes interp(mesh);
 
     reconstructionSchemes& surf = 
-        mesh().lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
+        mesh.lookupObjectRef<reconstructionSchemes>("reconstructionScheme");
     surf.reconstruct(false);
 
     reconstructedDistanceFunction& RDF = 
-        mesh().lookupObjectRef<reconstructedDistanceFunction>("RDF");
+        mesh.lookupObjectRef<reconstructedDistanceFunction>("RDF");
 
     const volVectorField& interfaceNormals = surf.normal();
     const volVectorField& interfaceCentres = surf.centre();
 
     RDF.markCellsNearSurf(surf.interfaceCell(), 2);
-    zoneDistribute& distribute = zoneDistribute::New(mesh());
+    zoneDistribute& distribute = zoneDistribute::New(mesh);
     const boolList& nextToInter = RDF.nextToInterface();
     distribute.updateStencil(nextToInter);
+
+    const boolList& nextToInter_ = RDF.nextToInterface();
+    const volScalarField& cellDistLevel_ = RDF.cellDistLevel();
 
     /*
     volScalarField rdf = RDF;
@@ -148,7 +152,7 @@ volScalarField& pandoraDivNormalCurvature::cellCurvature()
 
 volScalarField rdf = RDF;
 rdf.rename("rdf");
-if (mesh().time().writeTime())
+if (mesh.time().writeTime())
     rdf.write();
 
     volVectorField gradRDF(fvc::grad(RDF));
@@ -158,18 +162,22 @@ if (mesh().time().writeTime())
 vector sphereCentre(0.005, 0.005, 0.005);
 scalar sphereRadius = 0.002; // Sphere radius
 
+#include "error/error_rdf0.hpp"
+#include "error/error_rdf1.hpp"
+#include "error/error_gradrdf.hpp"
+
     // Mark interface markers
     volScalarField markers
     (
         IOobject
         (
             "cellMarkers",
-            mesh().time().timeName(),
-            mesh(),
+            mesh.time().timeName(),
+            mesh,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
-        mesh(),
+        mesh,
         dimensionedScalar("cellMarkers", dimless, -1)
     );
 
@@ -179,12 +187,12 @@ scalar sphereRadius = 0.002; // Sphere radius
         IOobject
         (
             "cellCounts",
-            mesh().time().timeName(),
-            mesh(),
+            mesh.time().timeName(),
+            mesh,
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
-        mesh(),
+        mesh,
         dimensionedScalar("cellCounts", dimless, 0)
     );
 
@@ -197,8 +205,8 @@ scalar sphereRadius = 0.002; // Sphere radius
     }
     markers.correctBoundaryConditions();
 
-    const auto& own = mesh().owner();
-    const auto& nei = mesh().neighbour();
+    const auto& own = mesh.owner();
+    const auto& nei = mesh.neighbour();
 
     labelList maxCount(nPropagate_);
     for (label i = 0; i < nPropagate_; ++i)
@@ -254,6 +262,8 @@ scalar sphereRadius = 0.002; // Sphere radius
         maxCount[i] = max(counts).value();
     }
 
+    volScalarField markers_ = markers;
+
     averagedNormals_ = gradRDF; 
     forAll (averagedNormals_, i)
     {
@@ -268,7 +278,7 @@ scalar sphereRadius = 0.002; // Sphere radius
     // Interface normals propagate. 
     for (label i = 0; i < nPropagate_; ++i)
     {
-        boolList zone(mesh().nCells(), false);
+        boolList zone(mesh.nCells(), false);
         forAll (zone, zi)
         {
             if (!nextToInter[zi]) continue;
@@ -281,7 +291,7 @@ scalar sphereRadius = 0.002; // Sphere radius
 
         distribute.setUpCommforZone(zone, false);
         Map<vector> mapMC = 
-            distribute.getDatafromOtherProc(zone, mesh().C());
+            distribute.getDatafromOtherProc(zone, mesh.C());
 
         const labelListList& stencil = distribute.getStencil();
 
@@ -301,7 +311,7 @@ scalar sphereRadius = 0.002; // Sphere radius
 
                 avgNormTmp[cellI] = vector::zero;
 
-                point p = mesh().C()[cellI];
+                point p = mesh.C()[cellI];
 
                 DynamicField<vector> centres;
                 DynamicField<scalar> valuesX;
@@ -316,7 +326,7 @@ scalar sphereRadius = 0.002; // Sphere radius
                     {
                         n /= mag(n);
 
-                        vector centre = distribute.getValue(mesh().C(), mapMC, gblIdx);
+                        vector centre = distribute.getValue(mesh.C(), mapMC, gblIdx);
 
                         vector dist = centre - p;
                         vector distToSurf = dist & n / mag(n) * n;
@@ -370,15 +380,18 @@ scalar sphereRadius = 0.002; // Sphere radius
         }
     }
 
-//#include "error.hpp"
+#include "error/error_norm1.hpp"
+#include "error/error_norm2.hpp"
 
     cellCurvature_ = -tr(fvc::grad(averagedNormals_));
     //cellCurvature_ = -fvc::div(averagedNormals_);
     cellCurvature_.correctBoundaryConditions();
 
+#include "error/error_curv0.hpp"
+
 volScalarField curv1 = cellCurvature_;
 curv1.rename("curv1");
-if (mesh().time().writeTime())
+if (mesh.time().writeTime())
     curv1.write();
 
 
@@ -401,7 +414,7 @@ if (mesh().time().writeTime())
 /*
 volScalarField curv2 = cellCurvature_;
 curv2.rename("curv2");
-if (mesh().time().writeTime())
+if (mesh.time().writeTime())
     curv2.write();
 */
 
@@ -417,7 +430,7 @@ if (mesh().time().writeTime())
     volScalarField curvature("curvature" ,cellCurvature_);
     curvature.correctBoundaryConditions();
 
-    boolList zone(mesh().nCells(), false);
+    boolList zone(mesh.nCells(), false);
     forAll (zone, zi)
     {
         if (markers[zi] == 0)
@@ -428,13 +441,13 @@ if (mesh().time().writeTime())
 
     distribute.setUpCommforZone(zone, false);
     Map<vector> mapMC = 
-        distribute.getDatafromOtherProc(zone, mesh().C());
+        distribute.getDatafromOtherProc(zone, mesh.C());
     Map<scalar> mapCurv = 
         distribute.getDatafromOtherProc(zone, curvature);
 
     const labelListList& stencil = distribute.getStencil();
 
-    const volScalarField& alpha = mesh().lookupObject<volScalarField>(fieldName_);
+    const volScalarField& alpha = mesh.lookupObject<volScalarField>(fieldName_);
 
     forAll(cellCurvature_, cellI)
     {
@@ -458,7 +471,7 @@ if (mesh().time().writeTime())
 
            for (const label gblIdx : stencil[cellI])
            {
-               vector cent = distribute.getValue(mesh().C(), mapMC, gblIdx);
+               vector cent = distribute.getValue(mesh.C(), mapMC, gblIdx);
                scalar curv = distribute.getValue(curvature, mapCurv, gblIdx);
 
                points.append(cent);
@@ -557,11 +570,13 @@ if (mesh().time().writeTime())
         cellCurvature_.correctBoundaryConditions();
     }
 }
+
+#include "error/error_curv1.hpp"
 /*
 
 volScalarField curv3 = cellCurvature_;
 curv3.rename("curv3");
-if (mesh().time().writeTime())
+if (mesh.time().writeTime())
     curv3.write();
 */
 
@@ -570,7 +585,7 @@ if (mesh().time().writeTime())
     {
         volScalarField curvature = cellCurvature_;
 
-        boolList zone(mesh().nCells(), false);
+        boolList zone(mesh.nCells(), false);
         forAll (zone, zi)
         {
             if (markers[zi] == i + 1)
@@ -593,7 +608,7 @@ if (mesh().time().writeTime())
         {
             if (!zone[cellI]) continue;
 
-            point p = mesh().C()[cellI];
+            point p = mesh.C()[cellI];
 
             DynamicField<vector> points;
             DynamicField<scalar> values;
@@ -652,11 +667,13 @@ if (mesh().time().writeTime())
         cellCurvature_.correctBoundaryConditions();
     }
 }
+
+#include "error/error_curv2.hpp"
 /*
 
 volScalarField curv4 = cellCurvature_;
 curv4.rename("curv4");
-if (mesh().time().writeTime())
+if (mesh.time().writeTime())
     curv4.write();
 */
 
@@ -668,7 +685,7 @@ if (mesh().time().writeTime())
 
 
 markers.rename("cellMarker");
-if (mesh().time().writeTime())
+if (mesh.time().writeTime())
     markers.write();
 
     return cellCurvature_;

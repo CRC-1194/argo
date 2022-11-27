@@ -87,7 +87,7 @@ protected:
         void normalise(vectorField&);
         void updateMarkersAndCounts();
         void normalPropagate(const bool&, volVectorField&);
-        void curvInterpolate(const volVectorField&);
+        void curvInterpolate(const volVectorField&, const volScalarField&);
         void curvAverage();
         void curvExtend(const volVectorField&, const volVectorField&);
 
