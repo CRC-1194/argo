@@ -69,6 +69,7 @@ protected:
 
 
         Switch curvFromTr_;
+        Switch curvInterp_;
 
         // Cell markers
         volScalarField markers_;
@@ -88,6 +89,7 @@ protected:
         void updateMarkersAndCounts();
         void normalPropagate(const bool&, volVectorField&);
         void curvInterpolate(const volVectorField&, const volScalarField&);
+        void curvScaled(const volScalarField&);
         void curvAverage();
         void curvExtend(const volVectorField&, const volVectorField&);
 

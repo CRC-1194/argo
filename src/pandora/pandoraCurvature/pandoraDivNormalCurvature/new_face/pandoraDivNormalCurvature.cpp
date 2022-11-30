@@ -79,7 +79,8 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
             mesh, 
             dimensionedVector("averagedNormals", dimless, vector(0,0,0))
         ),
-        curvFromTr_(dict.lookupOrDefault("curvFromTr",true)),
+        curvFromTr_(dict.lookupOrDefault("curvFromTr", true)),
+        curvInterp_(dict.lookupOrDefault("curvInterp", true)),
         markers_
         (
             IOobject
@@ -409,6 +410,26 @@ void Foam::pandoraDivNormalCurvature::curvInterpolate
     cellCurvature_.correctBoundaryConditions();
 }
 
+void Foam::pandoraDivNormalCurvature::curvScaled
+(
+    const volScalarField& RDF
+)
+{
+    forAll (cellCurvature_, cellI)
+    {
+        if (markers_[cellI] == 0)
+        {
+            cellCurvature_[cellI] = 2.0 / 
+                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
+        }
+        else
+        {
+            cellCurvature_[cellI] = 0;
+        }
+    }
+    cellCurvature_.correctBoundaryConditions();
+}
+
 void Foam::pandoraDivNormalCurvature::curvAverage()
 {
     labelField count{cellCurvature_.size(), 0};
@@ -635,7 +656,6 @@ scalar sphereRadius = 0.002; // Sphere radius
             averagedNormals_[i] = vector::zero;
         }
     }
-    //normalise(averagedNormals_);
     averagedNormals_.correctBoundaryConditions();
 
     // Propagate the interface normals to the narrow band
@@ -682,23 +702,15 @@ scalar sphereRadius = 0.002; // Sphere radius
 //#include "error/error_curv0.hpp"
 
     // Interpolate curvature from cell centres to PLIC centres
-    //curvInterpolate(interfaceCentres, RDF);
-
-{
-    forAll (cellCurvature_, cellI)
+    if (curvInterp_)
     {
-        if (markers_[cellI] == 0)
-        {
-            cellCurvature_[cellI] = 2.0 / 
-                (2.0 / (cellCurvature_[cellI] + ROOTVSMALL) + RDF[cellI]);
-        }
-        else
-        {
-            cellCurvature_[cellI] = 0;
-        }
+        curvInterpolate(interfaceCentres, RDF);
     }
-    cellCurvature_.correctBoundaryConditions();
-}
+    // Scale the curvature by RDF
+    else
+    {
+        curvScaled(RDF);
+    }
 
     // Laplace averaging of the curvature
     if (nAverage_ > 0)
