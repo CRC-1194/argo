@@ -169,10 +169,10 @@ Foam::scalar Foam::interpolationSchemes::IDeCinterp
     if (c.size() == 1)
         return psi[0];
 
-    else if (mesh_.nGeometricD() == 3 && (c.size() == 2 || c.size() == 3))
-        return inverseDistanceInterpolate(p, c, psi, r);
-
-    else if (mesh_.nGeometricD() == 2 && c.size() == 2)
+    else if (
+                (mesh_.nSolutionD() == 3 && c.size() <= 4) ||
+                (mesh_.nSolutionD() == 2 && c.size() <= 2)
+            )
         return inverseDistanceInterpolate(p, c, psi, r);
 
     else
@@ -190,10 +190,10 @@ Foam::scalar Foam::interpolationSchemes::LSfitting
     if (c.size() == 1)
         return psi[0];
 
-    else if (mesh_.nGeometricD() == 3 && (c.size() == 2 || c.size() == 3))
-        return inverseDistanceInterpolate(p, c, psi, r);
-
-    else if (mesh_.nGeometricD() == 2 && c.size() == 2)
+    else if (
+                (mesh_.nSolutionD() == 3 && c.size() <= 4) ||
+                (mesh_.nSolutionD() == 2 && c.size() <= 2)
+            )
         return inverseDistanceInterpolate(p, c, psi, r);
 
     multiDimPolyFitter<scalar> polyFitter("polyDegree1", mesh_.geometricD());
