@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 //volVectorField norm = advector.surf().normal();
 //volVectorField cent = advector.surf().centre();
 
-advector.surf().reconstruct();
+//advector.surf().reconstruct();
 
 fSigma = pandoraModel.surfaceTensionForce(alpha1);
 
@@ -217,8 +217,8 @@ fSigma = pandoraModel.surfaceTensionForce(alpha1);
                 turbulence->correct();
             }
 
-scalar maxU = max(mag(U)).value();
-Info<<"maxU = "<<maxU<<nl<<nl;
+scalar maxU3 = max(mag(U)).value();
+Info<<"maxU = "<<maxU3<<nl;
         }
 
         runTime.write();

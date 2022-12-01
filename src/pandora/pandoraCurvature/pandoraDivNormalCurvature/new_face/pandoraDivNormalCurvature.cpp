@@ -79,8 +79,8 @@ pandoraDivNormalCurvature::pandoraDivNormalCurvature
             mesh, 
             dimensionedVector("averagedNormals", dimless, vector(0,0,0))
         ),
-        curvFromTr_(dict.lookupOrDefault("curvFromTr", true)),
-        curvInterp_(dict.lookupOrDefault("curvInterp", true)),
+        curvFromTr_(curvatureDict_.lookupOrDefault("curvFromTr", true)),
+        curvInterp_(curvatureDict_.lookupOrDefault("curvInterp", true)),
         markers_
         (
             IOobject
