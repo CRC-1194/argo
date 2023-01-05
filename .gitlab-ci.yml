@@ -127,7 +127,7 @@ cpc_2021_regression:
     - |
       fieldcompare dir \
         cases/initialization/CPC2021-results \
-        --reference-dir ref_data/cases/initialization/CPC2021-results \
+        ref_data/cases/initialization/CPC2021-results \
         --include-files "*.csv" \
         --exclude-fields "CPU_TIME*" \
         --exclude-fields "VOLUME_FROM_SURFACE*" \
