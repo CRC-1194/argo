@@ -35,7 +35,7 @@ gradSchemes
 
 divSchemes
 {
-#ifeq $timeSchemes upwind
+#ifeq $fluxSchemes upwind
     div(rhoPhi,U)   Gauss upwind;
 #else
     div(rhoPhi,U)   Gauss  limitedLinearV 1;

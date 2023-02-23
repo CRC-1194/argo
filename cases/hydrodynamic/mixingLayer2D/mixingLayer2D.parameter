@@ -31,7 +31,7 @@ values
 
     resolution
     (
-            128 //256
+           256 //128
     );
 
     fluxSchemes
@@ -43,7 +43,7 @@ values
     timeSchemes
     (
             Euler
-	    CrankNicolson0.9 
+//	    CrankNicolson0.9 
     );
 
     CFL_num 

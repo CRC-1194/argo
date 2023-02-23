@@ -45,7 +45,7 @@ timePrecision   6;
 
 runTimeModifiable yes;
 
-adjustTimeStep  yes;
+adjustTimeStep  no;
 
 maxCo           @!CFL_num!@; //0.05;
 
@@ -53,5 +53,6 @@ maxAlphaCo      @!CFL_num!@;
 
 maxDeltaT       1;
 
-
+#include "FOsumE"  
+#include "FO_visRDF"
 // ************************************************************************* //
