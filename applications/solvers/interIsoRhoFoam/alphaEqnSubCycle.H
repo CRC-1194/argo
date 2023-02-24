@@ -1,3 +1,4 @@
+// Info << "## alphaEqnSubCycle.H is executed rightly!!"<<endl;
 if (pimple.nCorrPIMPLE() > 1)
 {
     // If nOuterCorrectors > 1 then for all but the first loop the advection
@@ -66,4 +67,4 @@ if (!pimple.firstIter())
     phi = 2.0*phi - phi.prevIter();
 }
 
-rho == alpha1*rho1 + alpha2*rho2;
+// rho == alpha1*rho1 + alpha2*rho2;

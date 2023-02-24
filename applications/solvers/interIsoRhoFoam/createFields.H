@@ -134,3 +134,7 @@ mesh.setFluxRequired(alpha1.name());
 
 isoAdvection advector(alpha1, phi, U);
 
+volScalarField alpha1_cr = alpha1;
+alpha1_cr.rename("alpha1_cr");
+isoAdvection advector_cr(alpha1_cr, phi, U);
+cutFaceAdvect cutFace(alpha1_cr.mesh(), alpha1_cr);

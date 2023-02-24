@@ -32,7 +32,7 @@ volScalarField rhoFromAlphaf
 rho.write(); 
 rhoFromAlphaf.write();
 
-cutFaceAdvect cutFace(alpha1.mesh(), alpha1);
+// cutFaceAdvect cutFace(alpha1.mesh(), alpha1);
 // surfaceIteratorPLIC sIterPLIC(alpha1.mesh(), 1e-8);
 
 //fractional volumetric flux
@@ -64,3 +64,4 @@ volScalarField tAlpha
     alpha1
 );
 
+limitMassFlux MassBound(tAlpha, phi);

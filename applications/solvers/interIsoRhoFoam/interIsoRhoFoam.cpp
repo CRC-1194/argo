@@ -73,6 +73,8 @@ Description
 // #include "OBJstream.H"
 #include "fvMesh.H"
 // #include "writeIsoFaces.H"
+#include "limitMassFlux.H"
+#include "processorBC.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -130,7 +132,7 @@ int main(int argc, char *argv[])
         //tAlpha.oldTime() == alpha1;
         // #include "computeRhof.H"
 
-        #include "alphaEqn.H"
+//        #include "alphaEqn.H"  ## set back to orig alpha update approach
 
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
@@ -184,8 +186,8 @@ int main(int argc, char *argv[])
             }
 
 
-            //#include "alphaControls.H"
-            //#include "alphaEqnSubCycle.H"
+            #include "alphaControls.H"
+            #include "alphaEqnSubCycle.H" //"alphaEqnSubCycle.H"
             // Jun ,testen bitte
 
             // Equation 21 in Overleaf for Euler integration, for n
@@ -198,7 +200,30 @@ int main(int argc, char *argv[])
             //
 //             rhoPhi = (rho1 - rho2)*advector.alphaPhi() + rho2*phi;
             #include "computeRhof.H"
-            rhoPhi == rhof * phi;
+
+// ######   compare the difference between alphaPhi from isoAdvector and alphaf*phi
+/*     	    const auto& alphafPhi = alphaf*phi;
+            DynamicList<scalar> diff;
+            forAll(phi, fi)
+            {
+                if (mag(phi[fi]) > SMALL)
+                {
+                    diff.append((advector.alphaPhi()[fi]-alphafPhi.ref()[fi])/phi[fi]);
+                }
+                
+            }
+            Info << "### The difference between alphaPhi/phi and alphaf: " << gMax(mag(diff)) << endl;
+            diff.clear();*/
+/*            if (pimple.nCorrPIMPLE() > 1)
+            {
+                if (!pimple.firstIter())
+                {
+                    rhoPhi = rhof * 0.5*(phi.prevIter() + phi);
+                }
+            }
+*/
+//            rhoPhi == rhof * 0.5*(phi.prevIter() + phi); //phi; 
+
             // TODO: Mixture update? 
 
             // in Momentum equation, convective term:
@@ -221,9 +246,29 @@ int main(int argc, char *argv[])
                //rho.correctBoundaryConditions();
             }
 
+	    Info<< "### density from rhoEqn = "
+                << "  Min(" << rho.name() << ") = " << min(rho).value()
+                << "  Max(" << rho.name() << ") = " << max(rho).value()
+                << endl;
+
+/*            rhoFromAlphaf == rho;
             tAlpha == (rho-rho2)/(rho1-rho2); //temporary alpha field used to bound rhoFromAlphaf
-//            #include "alphaSuSp.H"
-//            rho == tAlpha*(rho1-rho2) + rho2;
+//	    Info << "### Conservation before bounding: " << fvc::domainIntegrate(1-tAlpha) << endl;
+            #include "alphaSuSp.H"
+    	    MassBound.Boundingprocess(Sp, Su, alphaf);
+//            Info << "### Conservation after bounding: " << fvc::domainIntegrate(1-tAlpha) << endl;
+            tAlpha.correctBoundaryConditions();
+            rho == tAlpha*(rho1-rho2) + rho2;
+
+            Info<< "### bounded density from rhoEqn = "
+                << "  Min(" << rho.name() << ") = " << min(rho).value()
+                << "  Max(" << rho.name() << ") = " << max(rho).value()
+                << endl;
+
+            Info<< "### difference beween bounded density and orig densityfrom rhoEqn = "
+                << "  Min(rho_diff) = " << min(rhoFromAlphaf-rho).value()
+                << "  Max(rho_diff) = " << max(rhoFromAlphaf-rho).value()
+                << endl;*/ 
             // If rhoPhi is computed and upated in alphaEqnSubcycle.H
             // there is no need to calculate it explicitly, so 
             // TODO: Remove this 
@@ -253,7 +298,7 @@ int main(int argc, char *argv[])
             // mixture.correct() corrects sigma*K - we need this for surface tension.
             mixture.correct();
             // but mixture.correct() also overwrites muf, so we need our muf 
-            muf == alphaf*rho1*nu1 + (1 - alphaf)*rho2*nu2;
+//            muf == alphaf*rho1*nu1 + (1 - alphaf)*rho2*nu2;
 
 
             if (pimple.frozenFlow())
@@ -276,10 +321,10 @@ int main(int argc, char *argv[])
             }
         }
 
-        rhoFromAlphaf == rho;
+//        rhoFromAlphaf == rho;
         // Reset the density using cell-centered volume fractions.
         rho == alpha1*rho1 + (1.0 - alpha1)*rho2;
-        Info << "max difference between rho und rhoFromAlphaf: " << max(mag(rho - rhoFromAlphaf)) <<endl;
+      //  Info << "max difference between rho und rhoFromAlphaf: " << max(mag(rho - rhoFromAlphaf)) <<endl;
      //   Info << ((rho1 - rho2)*alpha1+rho2 - rhoFromAlphaf).value() <<endl;
         runTime.write();
 
